@@ -2,12 +2,20 @@ version: v1
 scope_id: tradeflow-deep-v1
 case_id: tradeflow
 source_label: testdb
-schema: TITANS_TRADEFLOW
-object_types:
-  - TABLE
-  - VIEW
-  - MATERIALIZED_VIEW
-  - SYNONYM
+database_type: ORACLE
+
+include:
+  schemas:
+    - TITANS_TRADEFLOW
+  object_types:
+    - TABLE
+    - VIEW
+    - MATERIALIZED_VIEW
+    - SYNONYM
+
+exclude:
+  schema_suffixes: []
+  schemas: []
 
 selection:
   v1b: STRATIFIED_SAMPLE_AFTER_PANORAMA_FACTS

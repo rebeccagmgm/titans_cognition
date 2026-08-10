@@ -188,3 +188,27 @@ def test_tradeflow_inference_links_candidates_to_evidence_and_keeps_unknown():
         for row in inference.inference_results
     )
     assert all(row["evaluation_eligibility"] == "EVALUABLE" for row in inference.inference_results)
+
+
+def test_comment_signals_create_weak_role_candidates_with_comment_evidence():
+    facts = _facts()
+    facts.objects[1]["object_comment"] = "历史持仓表"
+    facts.columns[1]["column_comment"] = "数量"
+    sample = select_tradeflow_sample(facts)
+    derived = derive_tradeflow_features(facts, sample)
+    inference = infer_tradeflow(facts, derived)
+
+    assert any(
+        row.get("object_role") == "STATE_HISTORY"
+        and row.get("evidence_grade") == "WEAK"
+        for row in inference.object_role_candidates
+    )
+    assert any(
+        row.get("field_role") == "QUANTITY"
+        and row.get("evidence_grade") == "WEAK"
+        for row in inference.field_role_candidates
+    )
+    assert any(
+        row["evidence_type"] == "COMMENT" and row["summary"] in {"历史持仓表", "数量"}
+        for row in inference.evidence_items
+    )

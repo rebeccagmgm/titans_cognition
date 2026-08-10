@@ -1,8 +1,8 @@
 """Conservative, evidence-linked V1B structural candidates.
 
-The rules in this module are deliberately modest.  A declared key can support
-technical identity and declared grain; naming signals can only produce weak
-role candidates with explicit limitations.  Unknown is represented by an
+The rules in this module are deliberately modest. A declared key can support
+technical identity and declared grain; name/comment signals can only produce
+weak role candidates with explicit limitations. Unknown is represented by an
 Inference Result, never by a fake candidate.
 """
 
@@ -206,11 +206,15 @@ def infer_tradeflow(
                 object_ids,
                 evidence_grade="WEAK" if object_ids else "INSUFFICIENT",
                 reason=(
-                    "Role candidates are naming signals only and require review."
+                    "Role candidates are comment/name signals only and require review."
                     if object_ids
-                    else "No bounded structural role signal was strong enough to publish."
+                    else "No bounded structural or comment role signal was strong enough to publish."
                 ),
-                missing=[] if object_ids else ["COMMENT", "DEFINITION", "ORACLE_DEPENDENCY"],
+                missing=(
+                    []
+                    if object_ids
+                    else (["DEFINITION", "ORACLE_DEPENDENCY"] if objects[asset].get("object_comment") else ["COMMENT", "DEFINITION", "ORACLE_DEPENDENCY"])
+                ),
                 next_verification="Review comments/DDL and a known business example before accepting a role.",
             )
         )
@@ -251,13 +255,38 @@ def _field_role_candidates(
     ids_by_column: dict[str, list[str]] = defaultdict(list)
     for column in columns:
         column_id = str(column["column_id"])
-        roles: list[tuple[str, str]] = []
+        roles: dict[str, dict[str, object]] = {}
         if column_id in key_columns:
-            roles.append(("IDENTIFIER", "declared key membership; technical signal only"))
+            roles["IDENTIFIER"] = {
+                "qualifier": "declared key membership; technical signal only",
+                "sources": [column_id],
+            }
         for role, token in (("STATUS", "STATUS"), ("TYPE_CODE", "TYPE"), ("AMOUNT", "AMT"), ("QUANTITY", "QTY")):
             if token in str(column.get("column_name", "")).upper().split("_"):
-                roles.append((role, "name-only signal; business meaning not established"))
-        for role, qualifier in roles:
+                roles.setdefault(
+                    role,
+                    {
+                        "qualifier": "name-only signal; business meaning not established",
+                        "sources": [column_id],
+                    },
+                )
+        for role, keywords in _COMMENT_FIELD_ROLE_SIGNALS:
+            if _contains_any(column.get("column_comment"), keywords):
+                spec = roles.setdefault(
+                    role,
+                    {
+                        "qualifier": "comment signal; business meaning not independently validated",
+                        "sources": [],
+                    },
+                )
+                spec["qualifier"] = (
+                    f"{spec['qualifier']}; comment signal"
+                    if "comment signal" not in str(spec["qualifier"])
+                    else spec["qualifier"]
+                )
+                spec["sources"].append(f"{column_id}:COMMENT:COLUMN")
+        for role, spec in roles.items():
+            qualifier = str(spec["qualifier"])
             candidate_id = _candidate_id(run_id, "FIELD_ROLE", f"{column_id}|{role}")
             ids_by_column[column_id].append(candidate_id)
             result.field_role_candidates.append(
@@ -277,12 +306,14 @@ def _field_role_candidates(
                     method_version="v1",
                 )
             )
-            if role == "IDENTIFIER":
+            if role == "IDENTIFIER" and column_id in spec["sources"]:
                 for constraint in constraints:
                     if column_id in constraint.get("column_ids", []):
                         _link(result, candidate_id, evidence_by_source, str(constraint["constraint_id"]), "SUPPORTS", "STRONG", "Column is explicitly part of a declared key.")
-            else:
+            if column_id in spec["sources"] and role != "IDENTIFIER":
                 _link(result, candidate_id, evidence_by_source, column_id, "SUPPORTS", "WEAK", "The role is generated from a name token and requires review.")
+            if f"{column_id}:COMMENT:COLUMN" in spec["sources"]:
+                _link(result, candidate_id, evidence_by_source, f"{column_id}:COMMENT:COLUMN", "SUPPORTS", "WEAK", "The role is generated from a column comment and requires review.")
     return dict(ids_by_column)
 
 
@@ -325,12 +356,61 @@ def _object_role_candidates(
     object_row: dict[str, object],
     evidence_by_source: dict[str, dict[str, object]],
 ) -> list[str]:
-    # Name tokens remain available in derived features and the review pack, but
-    # V1B does not publish an Object Role Candidate from names alone.  Without
-    # comments, DDL, field distribution, or reviewed business evidence, the
-    # task must remain UNKNOWN rather than becoming a weak semantic label.
-    del result, run_id, case_id, asset, object_row, evidence_by_source
-    return []
+    comment = object_row.get("object_comment")
+    ids: list[str] = []
+    for role, keywords in _COMMENT_OBJECT_ROLE_SIGNALS:
+        if not _contains_any(comment, keywords):
+            continue
+        candidate_id = _candidate_id(run_id, "OBJECT_ROLE", f"{asset}|COMMENT|{role}")
+        ids.append(candidate_id)
+        result.object_role_candidates.append(
+            _envelope(
+                candidate_id,
+                run_id,
+                case_id,
+                asset,
+                "WEAK",
+                None,
+                f"Object comment contains a bounded {role} signal; business role is not independently validated.",
+                ["single database comment is insufficient for a confirmed business role"],
+                asset_id=asset,
+                object_role=role,
+                role_qualifier="object_comment_keyword",
+                method_id="rule.object_role.comment_signal",
+                method_version="v1.1",
+            )
+        )
+        _link(
+            result,
+            candidate_id,
+            evidence_by_source,
+            f"{asset}:COMMENT:OBJECT",
+            "SUPPORTS",
+            "WEAK",
+            "The role candidate is based on a table comment and requires review.",
+        )
+    return ids
+
+
+_COMMENT_OBJECT_ROLE_SIGNALS = (
+    ("EVENT_TRANSACTION", ("事件", "交易", "event", "transaction")),
+    ("STATE_HISTORY", ("历史", "history")),
+    ("SNAPSHOT", ("当前", "快照", "snapshot", "current")),
+)
+
+_COMMENT_FIELD_ROLE_SIGNALS = (
+    ("IDENTIFIER", ("标识", "编号", "代码", "identifier")),
+    ("STATUS", ("状态", "status")),
+    ("TYPE_CODE", ("类型", "分类", "type")),
+    ("AMOUNT", ("金额", "本金", "amount")),
+    ("QUANTITY", ("数量", "手数", "quantity")),
+    ("TIME", ("日期", "时间", "date", "time")),
+)
+
+
+def _contains_any(value: object, keywords: tuple[str, ...]) -> bool:
+    text = str(value or "").casefold()
+    return any(keyword.casefold() in text for keyword in keywords)
 
 
 def _relation_candidates(

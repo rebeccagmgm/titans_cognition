@@ -1,6 +1,12 @@
 version: v1
 case_id: tradeflow
-review_status: ADJUDICATED_CORE_AND_HOLDOUT
+review_status: REWORK_REQUIRED
+prior_review_status: ADJUDICATED_CORE_AND_HOLDOUT
+rework:
+  status: PENDING_REVIEW
+  reason: "After restoring Chinese table/column comments, the role holdout produced a weak SNAPSHOT candidate from the table comment; the prior name-only UNKNOWN decision must not be reused without re-adjudication."
+  affected_case_ids:
+    - holdout_role_and_counterevidence_001
 decisions:
   - review_id: review-20260810-identity-trd-option-event
     target_type: CANDIDATE
