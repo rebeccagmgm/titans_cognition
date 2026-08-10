@@ -20,6 +20,7 @@ from .evaluation import (
     evaluate_tradeflow,
     load_inference_directory,
     load_yaml_mapping,
+    render_review_pack,
 )
 from .extract import (
     ColumnMetadata,
@@ -167,6 +168,9 @@ def _build_parser() -> argparse.ArgumentParser:
     deep_evaluate.add_argument("--gold-set", required=True, type=Path)
     deep_evaluate.add_argument("--reviews", required=True, type=Path)
     deep_evaluate.add_argument("--output", required=True, type=Path)
+    review_pack = subparsers.add_parser("deep-review-pack")
+    review_pack.add_argument("--evaluation-report", required=True, type=Path)
+    review_pack.add_argument("--output", required=True, type=Path)
     return parser
 
 
@@ -363,6 +367,23 @@ def main(argv: list[str] | None = None) -> int:
                     "gold_set_status": report["gold_set_status"],
                     "adjudicated_case_count": report["adjudicated_case_count"],
                     "unknown_result_count": report["evidence_quality"]["unknown_result_count"],
+                    "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "deep-review-pack":
+        report = json.loads(args.evaluation_report.read_text(encoding="utf-8"))
+        if not isinstance(report, dict):
+            raise ValueError("evaluation report must be a mapping")
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(render_review_pack(report), encoding="utf-8")
+        print(
+            json.dumps(
+                {
+                    "gate_b_status": report.get("gate_b", {}).get("status"),
                     "output": str(args.output),
                 },
                 ensure_ascii=False,

@@ -152,6 +152,61 @@ def evaluate_tradeflow(
     }
 
 
+def render_review_pack(report: dict[str, object]) -> str:
+    """Render a compact human-review document from an evaluation report."""
+
+    gate_b = report.get("gate_b", {})
+    lines = [
+        "# TRADEFLOW V1B Review Pack",
+        "",
+        f"- Gold Set status: `{report.get('gold_set_status')}`",
+        f"- Cases: `{report.get('gold_set_case_count')}`",
+        f"- Adjudicated: `{report.get('adjudicated_case_count')}`",
+        f"- Gate B: `{gate_b.get('status')}`",
+        "",
+        "This pack is a review aid. It does not create review decisions or authorize V1C.",
+        "",
+        "## Cases",
+        "",
+    ]
+    for case in report.get("case_reports", []):
+        status = case.get("annotation_status")
+        lines.extend(
+            [
+                f"### {case.get('case_id')}",
+                "",
+                f"- Task: `{case.get('task')}`",
+                f"- Subject: `{case.get('subject_ref')}`",
+                f"- Annotation: `{status}`",
+                f"- Expected: `{case.get('expected_outcome')}`",
+                f"- Actual: `{case.get('actual_outcome')}`",
+                f"- Draft match: `{case.get('correct')}`",
+            ]
+        )
+        actual_values = case.get("actual_candidate_values", [])
+        if actual_values:
+            lines.append(f"- Actual candidate values: `{json.dumps(actual_values, ensure_ascii=False)}`")
+        evidence = case.get("evidence_check", {})
+        lines.append(f"- Evidence types observed: `{', '.join(evidence.get('actual_types', [])) or 'none'}`")
+        if case.get("errors"):
+            lines.append("- Review flags:")
+            for error in case["errors"]:
+                lines.append(f"  - `{error.get('error_category')}`: {error.get('message')}")
+        else:
+            lines.append("- Review flags: none from the current automated checks")
+        lines.append("")
+    lines.extend(
+        [
+            "## Gate B blockers",
+            "",
+        ]
+    )
+    for reason in gate_b.get("reasons", []):
+        lines.append(f"- {reason}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _evaluate_case(
     case: dict[str, Any],
     results: list[dict[str, object]],
@@ -209,6 +264,14 @@ def _evaluate_case(
                     "message": "Actual outcome or accepted candidate value does not match the adjudicated expectation.",
                 }
             )
+    else:
+        errors.append(
+            {
+                "case_id": case.get("case_id"),
+                "error_category": "INVALID_GOLD_SET",
+                "message": f"Unsupported expected outcome: {expected_outcome}",
+            }
+        )
     if actual_keys & set(unacceptable):
         correct = False
         errors.append(
@@ -218,15 +281,6 @@ def _evaluate_case(
                 "message": "The run published a value explicitly marked unacceptable by the Gold Set.",
             }
         )
-    else:
-        errors.append(
-            {
-                "case_id": case.get("case_id"),
-                "error_category": "INVALID_GOLD_SET",
-                "message": f"Unsupported expected outcome: {expected_outcome}",
-            }
-        )
-
     evidence_check = _evidence_check(
         result,
         candidate_rows,

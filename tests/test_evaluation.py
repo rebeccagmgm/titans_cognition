@@ -1,4 +1,4 @@
-from titans_cognition.evaluation import evaluate_tradeflow
+from titans_cognition.evaluation import evaluate_tradeflow, render_review_pack
 
 
 def test_draft_gold_set_is_not_counted_or_promoted_to_gate_b():
@@ -35,6 +35,10 @@ def test_draft_gold_set_is_not_counted_or_promoted_to_gate_b():
     assert report["gate_b"]["status"] == "BLOCKED"
     assert report["v1c_authorized"] is False
     assert report["case_reports"][0]["evaluation_status"] == "DRAFT_NOT_COUNTED"
+    assert all(
+        error["error_category"] != "INVALID_GOLD_SET"
+        for error in report["case_reports"][0]["errors"]
+    )
 
 
 def test_evaluation_requires_all_competing_values_and_rejects_unacceptable_value():
@@ -82,3 +86,30 @@ def test_evaluation_requires_all_competing_values_and_rejects_unacceptable_value
     )
     assert report["case_reports"][0]["correct"] is False
     assert report["case_reports"][0]["errors"][0]["error_category"] == "ROLE_OVERCLASSIFICATION"
+
+
+def test_review_pack_is_descriptive_and_does_not_adjudicate():
+    report = {
+        "gold_set_status": "DRAFT",
+        "gold_set_case_count": 1,
+        "adjudicated_case_count": 0,
+        "gate_b": {"status": "BLOCKED", "reasons": ["needs review"]},
+        "case_reports": [
+            {
+                "case_id": "c1",
+                "task": "IDENTITY",
+                "subject_ref": "asset-1",
+                "annotation_status": "DRAFT",
+                "expected_outcome": "UNKNOWN",
+                "actual_outcome": "UNKNOWN",
+                "correct": True,
+                "actual_candidate_values": [],
+                "evidence_check": {"actual_types": []},
+                "errors": [],
+            }
+        ],
+    }
+    text = render_review_pack(report)
+    assert "Gate B: `BLOCKED`" in text
+    assert "Annotation: `DRAFT`" in text
+    assert "does not create review decisions" in text
