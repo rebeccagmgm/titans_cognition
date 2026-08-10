@@ -5,8 +5,15 @@ from titans_cognition.provider import (
     CommandResult,
     GfDerivativeDbProvider,
     _BatchDefinitionStore,
+    _decode_adapter_output,
 )
 from titans_cognition.scope import ScopeConfig
+
+
+def test_provider_decodes_gb18030_adapter_output_without_replacement_characters():
+    encoded = "北上极速腿当前持仓表".encode("gb18030")
+
+    assert _decode_adapter_output(encoded) == "北上极速腿当前持仓表"
 
 
 def test_gf_provider_builds_provider_neutral_metadata_from_dictionary_rows():

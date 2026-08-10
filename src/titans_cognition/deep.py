@@ -22,7 +22,7 @@ CASE_ID = "tradeflow"
 SAMPLE_METHOD_ID = "sample.tradeflow.physical_stratified"
 SAMPLE_METHOD_VERSION = "v1"
 FEATURE_METHOD_ID = "feature.tradeflow.physical"
-FEATURE_METHOD_VERSION = "v1"
+FEATURE_METHOD_VERSION = "v1.1"
 SIMILARITY_METHOD_ID = "similarity.tradeflow.structure_jaccard"
 SIMILARITY_METHOD_VERSION = "v1"
 
@@ -248,6 +248,7 @@ def derive_tradeflow_features(
                     "asset_id": asset,
                     "column_id": column_id,
                     "column_name": column.get("column_name"),
+                    "column_comment": column.get("column_comment"),
                     "name_tokens": _tokens(str(column.get("column_name", ""))),
                     "data_type_family": _data_type_family(str(column.get("data_type", ""))),
                     "nullable_declared": column.get("nullable_declared"),
@@ -270,6 +271,7 @@ def derive_tradeflow_features(
                 "asset_id": asset,
                 "object_name": object_row.get("object_name"),
                 "object_type": object_row.get("object_type"),
+                "object_comment": object_row.get("object_comment"),
                 "column_count": len(columns),
                 "constraint_count": len(constraints),
                 "primary_key_count": len(key_sets["PRIMARY_KEY_CONSTRAINTS"]),

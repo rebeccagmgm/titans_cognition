@@ -111,13 +111,28 @@ def _default_runner(command: list[str], timeout_seconds: int) -> CommandResult:
     completed = subprocess.run(
         command,
         capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
+        text=False,
         timeout=timeout_seconds,
         check=False,
     )
-    return CommandResult(completed.returncode, completed.stdout, completed.stderr)
+    return CommandResult(
+        completed.returncode,
+        _decode_adapter_output(completed.stdout),
+        _decode_adapter_output(completed.stderr),
+    )
+
+
+def _decode_adapter_output(value: bytes | str) -> str:
+    """Decode Windows adapter output without replacing valid Chinese comments."""
+
+    if isinstance(value, str):
+        return value
+    for encoding in ("utf-8", "gb18030"):
+        try:
+            return value.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return value.decode("utf-8", errors="replace")
 
 
 def _canonical_type(value: str) -> str:

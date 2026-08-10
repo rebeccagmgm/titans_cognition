@@ -24,6 +24,7 @@ def _facts() -> PhysicalFacts:
                 "schema_name": "TITANS_TRADEFLOW",
                 "object_name": name,
                 "object_type": "TABLE",
+                "object_comment": "测试对象",
                 "extraction_status": "SUCCESS",
                 "is_boundary": False,
             }
@@ -36,6 +37,7 @@ def _facts() -> PhysicalFacts:
                     "column_name": f"ID{ordinal}",
                     "ordinal_position": ordinal,
                     "data_type": "NUMBER",
+                    "column_comment": "标识字段",
                     "nullable_declared": False,
                 }
             )
@@ -145,6 +147,8 @@ def test_tradeflow_features_keep_unknown_business_meaning_out():
     assert derived.structure_similarity
     assert all("identity" not in row for row in derived.object_features)
     assert all(row["method_id"].startswith("feature.") for row in derived.column_features)
+    assert all(row["object_comment"] == "测试对象" for row in derived.object_features)
+    assert all(row["column_comment"] == "标识字段" for row in derived.column_features)
 
 
 def test_tradeflow_inference_links_candidates_to_evidence_and_keeps_unknown():
@@ -172,6 +176,11 @@ def test_tradeflow_inference_links_candidates_to_evidence_and_keeps_unknown():
     assert candidate_ids <= linked_ids
     assert inference.relation_candidates == []
     assert inference.object_role_candidates == []
+    assert any(
+        row["evidence_type"] == "COMMENT"
+        and row["summary"] == "测试对象"
+        for row in inference.evidence_items
+    )
     assert any(
         row["task_type"] == "IDENTITY"
         and row["outcome"] == "UNKNOWN"

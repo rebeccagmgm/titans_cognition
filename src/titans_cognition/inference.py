@@ -390,7 +390,26 @@ def _physical_evidence(
     rows: list[dict[str, object]] = []
     for row in facts.objects:
         if str(row.get("asset_id")) in selected_ids:
-            rows.append(_evidence("OBJECT", str(row["asset_id"]), row.get("object_name"), row.get("extraction_status", "SUCCESS"), case_id))
+            asset_id = str(row["asset_id"])
+            rows.append(
+                _evidence(
+                    "OBJECT",
+                    asset_id,
+                    _summary(row),
+                    row.get("extraction_status", "SUCCESS"),
+                    case_id,
+                )
+            )
+            if row.get("object_comment"):
+                rows.append(
+                    _evidence(
+                        "COMMENT",
+                        f"{asset_id}:COMMENT:OBJECT",
+                        row.get("object_comment"),
+                        row.get("extraction_status", "SUCCESS"),
+                        case_id,
+                    )
+                )
     for collection, kind, key in (
         (facts.columns, "COLUMN", "column_id"),
         (facts.constraints, "CONSTRAINT", "constraint_id"),
@@ -399,6 +418,16 @@ def _physical_evidence(
         for row in collection:
             if str(row.get("asset_id")) in selected_ids:
                 rows.append(_evidence(kind, str(row[key]), _summary(row), row.get("extraction_status", "SUCCESS"), case_id))
+                if kind == "COLUMN" and row.get("column_comment"):
+                    rows.append(
+                        _evidence(
+                            "COMMENT",
+                            f"{row[key]}:COMMENT:COLUMN",
+                            row.get("column_comment"),
+                            row.get("extraction_status", "SUCCESS"),
+                            case_id,
+                        )
+                    )
     return rows
 
 
