@@ -82,3 +82,40 @@ exclude: {}
         / "derived"
         / "schema_summary.json"
     ).exists()
+
+    baseline_path = tmp_path / "baseline.json"
+    baseline_path.write_text(
+        json.dumps(
+            {
+                "objects": [
+                    {
+                        "schema_name": "TITANS_TRADEFLOW",
+                        "object_type": "TABLE",
+                        "object_name": "T_EVENT",
+                    }
+                ],
+                "columns": [{"schema_name": "TITANS_TRADEFLOW", "column_count": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert (
+        main(
+            [
+                "reconcile",
+                "--scope",
+                str(scope_path),
+                "--facts-dir",
+                str(tmp_path / "output"),
+                "--baseline-json",
+                str(baseline_path),
+                "--output",
+                str(tmp_path / "reconciliation.json"),
+            ]
+        )
+        == 0
+    )
+
+    reconciliation = json.loads(capsys.readouterr().out)
+    assert reconciliation["data_reconciliation_status"] == "PASS"
+    assert reconciliation["gate_a_status"] == "BLOCKED"

@@ -23,6 +23,7 @@ from .io import (
     write_parquet_facts,
 )
 from .provider import GfDerivativeDbProvider
+from .reconcile import reconcile_facts
 from .scope import load_scope
 
 
@@ -111,6 +112,11 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("json", "parquet", "both"),
         default="json",
     )
+    reconcile = subparsers.add_parser("reconcile")
+    reconcile.add_argument("--scope", required=True, type=Path)
+    reconcile.add_argument("--facts-dir", required=True, type=Path)
+    reconcile.add_argument("--baseline-json", required=True, type=Path)
+    reconcile.add_argument("--output", type=Path)
     return parser
 
 
@@ -151,6 +157,23 @@ def main(argv: list[str] | None = None) -> int:
                 ensure_ascii=False,
             )
         )
+        return 0
+
+    if args.command == "reconcile":
+        scope = load_scope(args.scope)
+        facts = read_json_facts(args.facts_dir)
+        baseline = json.loads(args.baseline_json.read_text(encoding="utf-8"))
+        if not isinstance(baseline, dict):
+            raise ValueError("baseline JSON must be an object")
+        report = reconcile_facts(scope, facts, baseline)
+        if args.output:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
+                + "\n",
+                encoding="utf-8",
+            )
+        print(json.dumps(report, ensure_ascii=False))
         return 0
 
     scope = load_scope(args.scope)
