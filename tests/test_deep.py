@@ -1,5 +1,6 @@
 from titans_cognition.deep import derive_tradeflow_features, select_tradeflow_sample
 from titans_cognition.extract import PhysicalFacts
+from titans_cognition.inference import infer_tradeflow
 
 
 def _facts() -> PhysicalFacts:
@@ -41,6 +42,7 @@ def _facts() -> PhysicalFacts:
         if stratum == "PK_COMPOSITE":
             constraints.append(
                 {
+                    "constraint_id": f"{asset}:CONSTRAINT:PK",
                     "asset_id": asset,
                     "constraint_type": "PRIMARY_KEY",
                     "column_ids": [f"{asset}:COLUMN:ID1", f"{asset}:COLUMN:ID2"],
@@ -49,6 +51,7 @@ def _facts() -> PhysicalFacts:
         elif stratum == "PK_SINGLE":
             constraints.append(
                 {
+                    "constraint_id": f"{asset}:CONSTRAINT:PK",
                     "asset_id": asset,
                     "constraint_type": "PRIMARY_KEY",
                     "column_ids": [f"{asset}:COLUMN:ID1"],
@@ -57,6 +60,7 @@ def _facts() -> PhysicalFacts:
         elif stratum == "UK_ONLY":
             constraints.append(
                 {
+                    "constraint_id": f"{asset}:CONSTRAINT:UK",
                     "asset_id": asset,
                     "constraint_type": "UNIQUE_KEY",
                     "column_ids": [f"{asset}:COLUMN:ID1"],
@@ -103,3 +107,35 @@ def test_tradeflow_features_keep_unknown_business_meaning_out():
     assert derived.structure_similarity
     assert all("identity" not in row for row in derived.object_features)
     assert all(row["method_id"].startswith("feature.") for row in derived.column_features)
+
+
+def test_tradeflow_inference_links_candidates_to_evidence_and_keeps_unknown():
+    facts = _facts()
+    sample = select_tradeflow_sample(facts)
+    derived = derive_tradeflow_features(facts, sample)
+    inference = infer_tradeflow(facts, derived)
+
+    assert inference.identity_candidates
+    assert inference.grain_candidates
+    assert inference.candidate_evidence
+    candidate_ids = {
+        row["candidate_id"]
+        for rows in (
+            inference.identity_candidates,
+            inference.grain_candidates,
+            inference.field_role_candidates,
+            inference.object_role_candidates,
+            inference.relation_candidates,
+        )
+        for row in rows
+    }
+    linked_ids = {row["candidate_id"] for row in inference.candidate_evidence}
+    assert candidate_ids
+    assert candidate_ids <= linked_ids
+    assert any(
+        row["task_type"] == "IDENTITY"
+        and row["outcome"] == "UNKNOWN"
+        and row["subject_id"].endswith(":E_NONE")
+        for row in inference.inference_results
+    )
+    assert all(row["evaluation_eligibility"] == "EVALUABLE" for row in inference.inference_results)

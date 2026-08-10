@@ -7,6 +7,7 @@ from typing import Any
 from .derive import DerivedObservations
 from .deep import TradeflowDerived
 from .extract import PhysicalFacts
+from .inference import TradeflowInference
 
 
 class ResultWriteError(RuntimeError):
@@ -170,6 +171,31 @@ def write_json_tradeflow_derived(
     }
     paths: dict[str, Path] = {}
     for name, rows in rows_by_name.items():
+        path = root / f"{name}.json"
+        _write_json(path, rows)
+        paths[name] = path
+    return paths
+
+
+def write_json_tradeflow_inference(
+    output_dir: str | Path,
+    inference: TradeflowInference,
+) -> dict[str, Path]:
+    """Write typed V1B candidates, results, and evidence as JSON."""
+
+    root = Path(output_dir) / "deep-cases" / "tradeflow"
+    rows_by_path = {
+        "candidates/identity_candidates": inference.identity_candidates,
+        "candidates/grain_candidates": inference.grain_candidates,
+        "candidates/field_role_candidates": inference.field_role_candidates,
+        "candidates/object_role_candidates": inference.object_role_candidates,
+        "candidates/relation_candidates": inference.relation_candidates,
+        "candidates/inference_results": inference.inference_results,
+        "evidence/evidence_items": inference.evidence_items,
+        "evidence/candidate_evidence": inference.candidate_evidence,
+    }
+    paths: dict[str, Path] = {}
+    for name, rows in rows_by_path.items():
         path = root / f"{name}.json"
         _write_json(path, rows)
         paths[name] = path

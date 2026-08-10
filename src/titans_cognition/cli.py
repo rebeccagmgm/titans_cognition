@@ -15,6 +15,7 @@ from .deep import (
     select_tradeflow_sample,
     write_sample,
 )
+from .inference import infer_tradeflow
 from .extract import (
     ColumnMetadata,
     ConstraintMetadata,
@@ -31,6 +32,7 @@ from .io import (
     write_parquet_derived,
     write_parquet_facts,
     write_json_tradeflow_derived,
+    write_json_tradeflow_inference,
 )
 from .provider import GfDerivativeDbProvider
 from .reconcile import panorama_delivery_ready, reconcile_facts
@@ -151,6 +153,10 @@ def _build_parser() -> argparse.ArgumentParser:
     deep_derive.add_argument("--facts-dir", required=True, type=Path)
     deep_derive.add_argument("--sample", required=True, type=Path)
     deep_derive.add_argument("--output", required=True, type=Path)
+    deep_infer = subparsers.add_parser("deep-infer")
+    deep_infer.add_argument("--facts-dir", required=True, type=Path)
+    deep_infer.add_argument("--sample", required=True, type=Path)
+    deep_infer.add_argument("--output", required=True, type=Path)
     return parser
 
 
@@ -299,6 +305,30 @@ def main(argv: list[str] | None = None) -> int:
                     "column_feature_count": len(derived.column_features),
                     "object_feature_count": len(derived.object_features),
                     "similarity_count": len(derived.structure_similarity),
+                    "outputs": {name: str(path) for name, path in paths.items()},
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "deep-infer":
+        facts = read_json_facts(args.facts_dir)
+        sample = load_sample(str(args.sample))
+        derived = derive_tradeflow_features(facts, sample)
+        inference = infer_tradeflow(facts, derived, case_id=str(sample.get("case_id", "tradeflow")))
+        paths = write_json_tradeflow_inference(args.output, inference)
+        print(
+            json.dumps(
+                {
+                    "identity_candidate_count": len(inference.identity_candidates),
+                    "grain_candidate_count": len(inference.grain_candidates),
+                    "field_role_candidate_count": len(inference.field_role_candidates),
+                    "object_role_candidate_count": len(inference.object_role_candidates),
+                    "relation_candidate_count": len(inference.relation_candidates),
+                    "inference_result_count": len(inference.inference_results),
+                    "evidence_item_count": len(inference.evidence_items),
+                    "candidate_evidence_count": len(inference.candidate_evidence),
                     "outputs": {name: str(path) for name, path in paths.items()},
                 },
                 ensure_ascii=False,
