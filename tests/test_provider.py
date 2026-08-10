@@ -1,11 +1,34 @@
 import json
 
-from titans_cognition.provider import CommandResult, GfDerivativeDbProvider
+from titans_cognition.extract import DefinitionMetadata
+from titans_cognition.provider import (
+    CommandResult,
+    GfDerivativeDbProvider,
+    _BatchDefinitionStore,
+)
 from titans_cognition.scope import ScopeConfig
 
 
 def test_gf_provider_builds_provider_neutral_metadata_from_dictionary_rows():
     def runner(command, _timeout):
+        if command[2] == "ddl-batch":
+            return CommandResult(
+                0,
+                json.dumps(
+                    [
+                        {
+                            "owner": "TITANS_TRADEFLOW",
+                            "object_name": "T_EVENT",
+                            "object_type": "TABLE",
+                            "definition_type": "DDL",
+                            "definition_text": "CREATE TABLE T_EVENT (ID NUMBER);",
+                            "extraction_status": "SUCCESS",
+                            "error_category": None,
+                        }
+                    ]
+                ),
+                "",
+            )
         if command[2] == "ddl":
             assert command[command.index("--table") + 1] == (
                 "TITANS_TRADEFLOW.T_EVENT"
@@ -196,3 +219,53 @@ def test_gf_provider_maps_view_dictionary_text_to_view_sql_definition():
     assert definition.definition_type == "VIEW_SQL"
     assert definition.definition_text == "SELECT ID FROM T_EVENT"
     assert definition.extraction_status == "SUCCESS"
+
+
+def test_batch_definition_store_loads_one_chunk_at_a_time(tmp_path):
+    chunk_a = tmp_path / "definitions-00001.json"
+    chunk_b = tmp_path / "definitions-00002.json"
+    chunk_a.write_text(
+        json.dumps(
+            [
+                {
+                    "owner": "TITANS_TRADEFLOW",
+                    "object_name": "T_EVENT_A",
+                    "definition_type": "DDL",
+                    "definition_text": "CREATE TABLE A (ID NUMBER);",
+                    "extraction_status": "SUCCESS",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    chunk_b.write_text(
+        json.dumps(
+            [
+                {
+                    "owner": "TITANS_TRADEFLOW",
+                    "object_name": "T_EVENT_B",
+                    "definition_type": "DDL",
+                    "definition_text": "CREATE TABLE B (ID NUMBER);",
+                    "extraction_status": "SUCCESS",
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    store = _BatchDefinitionStore.from_manifest(
+        tmp_path,
+        [chunk_a.name, chunk_b.name],
+    )
+    default = DefinitionMetadata(
+        definition_type="DDL",
+        extraction_status="MISSING",
+        error_category="NOT_FOUND",
+    )
+
+    assert store.get(("TITANS_TRADEFLOW", "T_EVENT_A"), default).definition_text == (
+        "CREATE TABLE A (ID NUMBER);"
+    )
+    assert store.get(("TITANS_TRADEFLOW", "T_EVENT_B"), default).definition_text == (
+        "CREATE TABLE B (ID NUMBER);"
+    )

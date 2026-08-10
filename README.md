@@ -4,7 +4,7 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 
 ## 当前状态
 
-- 当前阶段：V1 Spec 已规划，尚未开始实现。
+- 当前阶段：V1A Panorama 已实现并通过 Gate A；下一步是 V1B TRADEFLOW Deep Sample。
 - 数据环境：测试库，只读元数据盘点；不扫描业务数据行。
 - 核心路线：一次 Oracle 元数据提取 → TITANS 全貌与粗结构地图 → TRADEFLOW 深度结构分析 → 类型化候选结果 → 受证据约束的 LLM 语义辅助 → Gold Set 评测 → 最小可浏览地图。
 - V1 存储：Parquet/JSON/YAML + DuckDB 分析，不引入 PostgreSQL、Neo4j、DataHub 或 OpenMetadata。
@@ -62,9 +62,9 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 - V1A 核心切片：已实现 scope 校验、Provider-neutral 元数据记录、物理对象/字段/约束/索引/定义/依赖的规范化，以及 JSON 结果写出；Parquet 写出需要安装项目依赖。
 - 当前 Extract 命令支持 Provider-neutral JSON 快照和现有只读数据库适配器；真实 Panorama smoke 已完成对象、字段、约束、索引、依赖和边界对象的结果完整性核验。
 - V1A `derive` 命令已可从 canonical facts 重建 Schema 汇总、对象结构轮廓、依赖汇总和失败清单；派生结果不生成 Identity、Grain 或业务语义结论。
-- V1A `reconcile` 命令已支持与独立 SQL 基线对账；真实 smoke 的对象数和字段数均对齐，但因对象名基线、Panorama 地图和 Object Card 尚未具备，Gate A 仍为 `BLOCKED`。
+- V1A `reconcile` 命令已支持与独立 SQL 基线对账；真实 Panorama 的对象数、字段数、对象名覆盖、Boundary、失败记录覆盖均通过，且全量定义抽取成功，Gate A 为 `PASS`。
 - V1A `baseline` 命令已生成独立对象名/字段数量基线；静态 Panorama、Schema 页面、物理 Object Card 和 Manifest 已可由 facts 生成。
-- 真实 smoke 的对象数、字段数、对象名覆盖、Boundary 和失败记录覆盖均通过；当前 Gate A 为 `DEGRADED`，原因是本次运行使用 `record-only`，定义抽取尚未全量尝试。
+- 全量 Panorama 运行共记录 2,636 个对象、68,458 个字段，表 DDL 和 View SQL 定义均成功；批量定义入口按块落盘并读取，避免一次性保留全部定义文本。
 - DDL/View SQL 已接入 Provider 的 `--definition-mode all` 路径；默认 `record-only` 仍只记录能力缺口，避免全景扫描隐式执行大量 DDL 子命令。Parquet 实际写出仍需安装项目依赖。
 
 ```text

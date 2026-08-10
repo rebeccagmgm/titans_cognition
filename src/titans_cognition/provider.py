@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 from typing import Any, Callable, Iterable
 
 from .extract import (
@@ -40,6 +41,70 @@ class CommandResult:
 
 CommandRunner = Callable[[list[str], int], CommandResult]
 _IDENTIFIER = re.compile(r"^[A-Z][A-Z0-9_$#]*$")
+
+
+class _BatchDefinitionStore:
+    """File-backed definition chunks; only one chunk is held at a time."""
+
+    def __init__(self, files_by_key: dict[tuple[str, str], Path]):
+        self._files_by_key = files_by_key
+        self._loaded_path: Path | None = None
+        self._loaded: dict[tuple[str, str], dict[str, Any]] = {}
+
+    @classmethod
+    def from_manifest(cls, output_dir: Path, files: list[object]) -> "_BatchDefinitionStore":
+        root = output_dir.resolve()
+        files_by_key: dict[tuple[str, str], Path] = {}
+        for raw_file in files:
+            if not isinstance(raw_file, str):
+                raise AdapterError("FAILED", "INVALID_BATCH_MANIFEST")
+            path = (root / raw_file).resolve()
+            if root not in path.parents or path.suffix.lower() != ".json":
+                raise AdapterError("FAILED", "INVALID_BATCH_MANIFEST")
+            try:
+                rows = json.loads(path.read_text(encoding="utf-8"))
+            except (FileNotFoundError, json.JSONDecodeError) as exc:
+                raise AdapterError("FAILED", "INVALID_BATCH_FILE") from exc
+            if not isinstance(rows, list):
+                raise AdapterError("FAILED", "INVALID_BATCH_FILE")
+            for row in rows:
+                if not isinstance(row, dict):
+                    raise AdapterError("FAILED", "INVALID_BATCH_FILE")
+                key = (
+                    str(row.get("owner", "")).upper(),
+                    str(row.get("object_name", "")).upper(),
+                )
+                if key[0] and key[1]:
+                    files_by_key[key] = path
+        return cls(files_by_key)
+
+    def get(
+        self,
+        key: tuple[str, str],
+        default: DefinitionMetadata,
+    ) -> DefinitionMetadata:
+        path = self._files_by_key.get(key)
+        if path is None:
+            return default
+        if path != self._loaded_path:
+            rows = json.loads(path.read_text(encoding="utf-8"))
+            self._loaded = {
+                (
+                    str(row.get("owner", "")).upper(),
+                    str(row.get("object_name", "")).upper(),
+                ): row
+                for row in rows
+            }
+            self._loaded_path = path
+        row = self._loaded.get(key)
+        if row is None:
+            return default
+        return DefinitionMetadata(
+            definition_type=str(row.get("definition_type", "DDL")).upper(),
+            definition_text=row.get("definition_text") or None,
+            extraction_status=str(row.get("extraction_status", "FAILED")).upper(),
+            error_category=row.get("error_category") or None,
+        )
 
 
 def _default_runner(command: list[str], timeout_seconds: int) -> CommandResult:
@@ -97,10 +162,15 @@ class GfDerivativeDbProvider:
         self.definition_mode = definition_mode
         self.runner = runner
 
-    def _run_result(self, *args: str) -> CommandResult:
+    def _run_result(
+        self,
+        *args: str,
+        timeout_seconds: int | None = None,
+    ) -> CommandResult:
         command = [self.python_executable, self.query_script, *args]
+        command_timeout = timeout_seconds or self.timeout_seconds
         try:
-            result = self.runner(command, self.timeout_seconds)
+            result = self.runner(command, command_timeout)
         except subprocess.TimeoutExpired as exc:
             raise AdapterError("TIMEOUT", "COMMAND_TIMEOUT") from exc
         except OSError as exc:
@@ -230,6 +300,64 @@ class GfDerivativeDbProvider:
             if row.get("OWNER") and row.get("VIEW_NAME") and row.get("TEXT")
         }
 
+    def _fetch_batch_definitions(
+        self,
+        scope: ScopeConfig,
+        output_dir: Path | None = None,
+    ) -> dict[tuple[str, str], DefinitionMetadata] | _BatchDefinitionStore:
+        supported_types = {
+            "TABLE": "table",
+            "VIEW": "view",
+            "MATERIALIZED_VIEW": "materialized-view",
+        }
+        requested_types = [
+            supported_types[object_type]
+            for object_type in scope.object_types
+            if object_type in supported_types
+        ]
+        if not requested_types:
+            return {}
+        args = ["ddl-batch", "--db", self.database]
+        for schema_name in scope.schemas:
+            args.extend(["--schema", schema_name])
+        for object_type in requested_types:
+            args.extend(["--type", object_type])
+        args_with_output = list(args)
+        if output_dir is not None:
+            args_with_output.extend(["--output-dir", str(output_dir)])
+        text = self._run_result(
+            *args_with_output,
+            timeout_seconds=max(self.timeout_seconds, 900),
+        ).stdout
+        try:
+            payload = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise AdapterError("FAILED", "INVALID_JSON") from exc
+        if isinstance(payload, dict) and output_dir is not None:
+            files = payload.get("files")
+            if payload.get("format") != "titans-cognition-definitions-v1" or not isinstance(files, list):
+                raise AdapterError("FAILED", "INVALID_BATCH_MANIFEST")
+            return _BatchDefinitionStore.from_manifest(output_dir, files)
+        if not isinstance(payload, list) or not all(
+            isinstance(row, dict) for row in payload
+        ):
+            raise AdapterError("FAILED", "UNEXPECTED_JSON_SHAPE")
+        definitions: dict[tuple[str, str], DefinitionMetadata] = {}
+        for row in payload:
+            schema_name = str(row.get("owner", "")).upper()
+            object_name = str(row.get("object_name", "")).upper()
+            if not schema_name or not object_name:
+                continue
+            definitions[(schema_name, object_name)] = DefinitionMetadata(
+                definition_type=str(row.get("definition_type", "DDL")).upper(),
+                definition_text=row.get("definition_text") or None,
+                extraction_status=str(
+                    row.get("extraction_status", "FAILED")
+                ).upper(),
+                error_category=row.get("error_category") or None,
+            )
+        return definitions
+
     def _fetch_adapter_definition(
         self,
         schema_name: str,
@@ -268,12 +396,29 @@ class GfDerivativeDbProvider:
         object_type: str,
         view_sql: dict[tuple[str, str], str] | None,
         view_sql_error: AdapterError | None,
+        batch_definitions: dict[tuple[str, str], DefinitionMetadata] | _BatchDefinitionStore | None = None,
+        batch_error: AdapterError | None = None,
     ) -> DefinitionMetadata:
         if self.definition_mode != "all":
             return DefinitionMetadata(
                 definition_type="DDL",
                 extraction_status="FAILED",
                 error_category="PROVIDER_CAPABILITY_NOT_ENABLED",
+            )
+        if batch_error:
+            return DefinitionMetadata(
+                definition_type="VIEW_SQL" if object_type == "VIEW" else "DDL",
+                extraction_status=batch_error.status,
+                error_category=batch_error.category,
+            )
+        if batch_definitions is not None and object_type != "SYNONYM":
+            return batch_definitions.get(
+                (schema_name, object_name),
+                DefinitionMetadata(
+                    definition_type="VIEW_SQL" if object_type == "VIEW" else "DDL",
+                    extraction_status="MISSING",
+                    error_category="BATCH_OBJECT_NOT_RETURNED",
+                ),
             )
         if object_type == "VIEW":
             if view_sql_error:
@@ -302,16 +447,30 @@ class GfDerivativeDbProvider:
         return self._fetch_adapter_definition(schema_name, object_name)
 
     def iter_objects(self, scope: ScopeConfig) -> Iterable[ObjectMetadata]:
+        """Yield objects while cleaning up file-backed batch definitions."""
+        if self.definition_mode != "all":
+            yield from self._iter_objects(scope, None)
+            return
+        with tempfile.TemporaryDirectory(prefix="titans-cognition-definitions-") as raw_dir:
+            yield from self._iter_objects(scope, Path(raw_dir))
+
+    def _iter_objects(
+        self,
+        scope: ScopeConfig,
+        batch_output_dir: Path | None,
+    ) -> Iterable[ObjectMetadata]:
         """Yield all in-scope objects with metadata available from dictionary views."""
 
         object_rows = self._fetch_objects(scope)
         view_sql: dict[tuple[str, str], str] | None = None
         view_sql_error: AdapterError | None = None
+        batch_definitions: dict[tuple[str, str], DefinitionMetadata] | _BatchDefinitionStore | None = None
+        batch_error: AdapterError | None = None
         if self.definition_mode == "all":
             try:
-                view_sql = self._fetch_view_sql(scope)
+                batch_definitions = self._fetch_batch_definitions(scope, batch_output_dir)
             except AdapterError as exc:
-                view_sql_error = exc
+                batch_error = exc
         columns = _rows_by_key(self._fetch_columns(scope), "OWNER", "TABLE_NAME")
         column_comments = {
             (
@@ -416,6 +575,8 @@ class GfDerivativeDbProvider:
                 object_type,
                 view_sql,
                 view_sql_error,
+                batch_definitions,
+                batch_error,
             )
             yield ObjectMetadata(
                 schema_name=schema_name,
