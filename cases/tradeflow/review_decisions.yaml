@@ -1,6 +1,6 @@
 version: v1
 case_id: tradeflow
-review_status: PARTIAL
+review_status: ADJUDICATED_CORE_AND_HOLDOUT
 decisions:
   - review_id: review-20260810-identity-trd-option-event
     target_type: CANDIDATE
@@ -60,6 +60,38 @@ decisions:
     decision: ACCEPTED
     reviewer_label: user-confirmed
     reason: "Accept UNKNOWN because no declared key or row validation supports Grain."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-holdout-technical-identity
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:f5375e59a200
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept technical PK recognition while keeping business Identity unverified."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-holdout-role-unknown
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:ffd526b3782b
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept Unknown; current-position naming is not enough to publish an Object Role."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-holdout-relation-unknown
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:1177b46f6eb0
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept Unknown; structure similarity is not a directed business Relation."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-holdout-no-key-identity
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:18af1b2667c4
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept Unknown; an ordinary index without PK/UK must not become an Identity candidate."
     replacement_value: null
     reviewed_at: 2026-08-10
 gate_b:
