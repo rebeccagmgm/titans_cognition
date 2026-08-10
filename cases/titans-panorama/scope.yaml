@@ -1,0 +1,47 @@
+version: v1
+scope_id: titans-panorama-v1
+scope_kind: PANORAMA
+source_label: testdb
+database_type: ORACLE
+
+include:
+  schemas:
+    - TITANS_ADMIN
+    - TITANS_DM
+    - TITANS_ETL
+    - TITANS_MARGIN
+    - TITANS_MARKETDATA
+    - TITANS_OTCCLEARING
+    - TITANS_QUERY
+    - TITANS_REFDATA
+    - TITANS_RISK
+    - TITANS_TRADING
+    - TITANS_TRADEFLOW
+    - TITANS_WORKFLOW
+  object_types:
+    - TABLE
+    - VIEW
+    - MATERIALIZED_VIEW
+    - SYNONYM
+
+exclude:
+  schema_suffixes:
+    - _PROD
+  schemas:
+    - GF_OTC
+    - GF_FICC
+
+boundary:
+  mode: ONE_HOP_DIRECT_DEPENDENCY
+  metadata_only: true
+  promote_to_deep_case: false
+
+data_access:
+  mode: READ_ONLY_METADATA
+  query_business_rows: false
+  execute_jobs: false
+
+verification_baseline:
+  observed_at: 2026-08-10
+  tradeflow_table_count: 477
+  note: "Counts are planning evidence; the first Extract must re-verify all schemas and object types."

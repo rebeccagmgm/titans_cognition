@@ -1,0 +1,29 @@
+version: v1
+scope_id: tradeflow-deep-v1
+case_id: tradeflow
+source_label: testdb
+schema: TITANS_TRADEFLOW
+object_types:
+  - TABLE
+  - VIEW
+  - MATERIALIZED_VIEW
+  - SYNONYM
+
+selection:
+  v1b: STRATIFIED_SAMPLE_AFTER_PANORAMA_FACTS
+  v1c: FULL_SCHEMA_AFTER_GATE_B
+
+boundary:
+  mode: ONE_HOP_DIRECT_DEPENDENCY
+  metadata_only: true
+  promote_to_deep_case: false
+
+data_access:
+  mode: READ_ONLY_METADATA
+  query_business_rows: false
+  execute_jobs: false
+
+verification_baseline:
+  observed_at: 2026-08-10
+  table_count: 477
+  note: "The table count is a planning baseline and must be re-verified by the first Extract."
