@@ -1,0 +1,36 @@
+version: v1
+scope_id: tradeflow
+status: PENDING_USER
+protocol:
+  baseline_material: "Oracle metadata/DDL list without generated cognition map"
+  cognition_material: "TRADEFLOW V1B cognition map, candidate evidence, and Unknown boundaries"
+  order: "Use a different but same-difficulty object for a single reviewer, or swap tool order for multiple reviewers."
+  rule: "Record observed values only. Do not estimate missing timings or object counts."
+tasks:
+  - task_id: holdout_technical_vs_business_identity_001
+    category: technical_pk_business_identity_grain
+    baseline: &pending_metrics
+      completed: null
+      correct: null
+      unsupported_high_confidence_claims: null
+      elapsed_seconds: null
+      opened_object_count: null
+      navigation_steps: null
+      subjective_misdirection_points: null
+    cognition_map: *pending_metrics
+  - task_id: holdout_role_and_counterevidence_001
+    category: role_and_counterevidence
+    baseline: *pending_metrics
+    cognition_map: *pending_metrics
+  - task_id: holdout_relation_layer_direction_001
+    category: relation_layer_direction
+    baseline: *pending_metrics
+    cognition_map: *pending_metrics
+  - task_id: holdout_unknown_no_key_001
+    category: unknown_or_not_evaluable
+    baseline: *pending_metrics
+    cognition_map: *pending_metrics
+user_value:
+  status: PENDING_USER
+  confirmed: false
+  rationale: ""

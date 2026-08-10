@@ -1,6 +1,41 @@
 from titans_cognition.evaluation import evaluate_tradeflow, render_review_pack
 
 
+def _complete_measurements() -> dict:
+    metrics = {
+        "completed": True,
+        "correct": True,
+        "unsupported_high_confidence_claims": 0,
+        "elapsed_seconds": 10,
+        "opened_object_count": 5,
+        "navigation_steps": 4,
+        "subjective_misdirection_points": 0,
+    }
+    tasks = []
+    for index, task_id in enumerate(
+        (
+            "holdout_technical_vs_business_identity_001",
+            "holdout_role_and_counterevidence_001",
+            "holdout_relation_layer_direction_001",
+            "holdout_unknown_no_key_001",
+        )
+    ):
+        cognition = dict(metrics)
+        cognition["elapsed_seconds"] = 5 if index < 3 else 10
+        tasks.append(
+            {"task_id": task_id, "baseline": metrics, "cognition_map": cognition}
+        )
+    return {
+        "status": "MEASURED",
+        "tasks": tasks,
+        "user_value": {
+            "status": "CONFIRMED",
+            "confirmed": True,
+            "rationale": "The map reduced undirected browsing and exposed evidence boundaries.",
+        },
+    }
+
+
 def test_draft_gold_set_is_not_counted_or_promoted_to_gate_b():
     inference = {
         "identity_candidates": [],
@@ -113,3 +148,14 @@ def test_review_pack_is_descriptive_and_does_not_adjudicate():
     assert "Gate B: `BLOCKED`" in text
     assert "Annotation: `DRAFT`" in text
     assert "does not create review decisions" in text
+
+
+def test_gate_b_measurements_require_real_values_and_three_efficiency_wins():
+    from titans_cognition.measurements import evaluate_gate_b_measurements
+
+    pending = evaluate_gate_b_measurements({"tasks": []})
+    assert pending["efficiency_status"] == "PENDING"
+    measured = evaluate_gate_b_measurements(_complete_measurements())
+    assert measured["efficiency_status"] == "PASS"
+    assert measured["efficiency_win_count"] == 3
+    assert measured["user_value_status"] == "CONFIRMED"

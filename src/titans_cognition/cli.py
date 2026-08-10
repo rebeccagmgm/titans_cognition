@@ -172,6 +172,7 @@ def _build_parser() -> argparse.ArgumentParser:
     deep_evaluate.add_argument("--inference-dir", required=True, type=Path)
     deep_evaluate.add_argument("--gold-set", required=True, type=Path)
     deep_evaluate.add_argument("--reviews", required=True, type=Path)
+    deep_evaluate.add_argument("--measurements", type=Path)
     deep_evaluate.add_argument("--output", required=True, type=Path)
     review_pack = subparsers.add_parser("deep-review-pack")
     review_pack.add_argument("--evaluation-report", required=True, type=Path)
@@ -363,7 +364,10 @@ def main(argv: list[str] | None = None) -> int:
         inference = load_inference_directory(args.inference_dir)
         gold_set = load_yaml_mapping(args.gold_set)
         reviews = load_yaml_mapping(args.reviews)
-        report = evaluate_tradeflow(inference, gold_set, reviews)
+        measurements = (
+            load_yaml_mapping(args.measurements) if args.measurements else None
+        )
+        report = evaluate_tradeflow(inference, gold_set, reviews, measurements)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
             json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",

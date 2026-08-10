@@ -9,6 +9,8 @@ from typing import Any
 
 import yaml
 
+from .measurements import evaluate_gate_b_measurements
+
 
 def load_yaml_mapping(path: str | Path) -> dict[str, Any]:
     """Load a UTF-8 YAML mapping used for Gold Set or review input."""
@@ -46,6 +48,7 @@ def evaluate_tradeflow(
     inference: dict[str, list[dict[str, object]]],
     gold_set: dict[str, Any],
     reviews: dict[str, Any],
+    measurements: dict[str, Any] | None = None,
 ) -> dict[str, object]:
     """Evaluate adjudicated Gold cases and report why Gate B is blocked."""
 
@@ -94,6 +97,7 @@ def evaluate_tradeflow(
         isinstance(task, dict) and task.get("annotation_status") == "ADJUDICATED"
         for task in holdout_tasks
     )
+    measurement_report = evaluate_gate_b_measurements(measurements)
     gate_b = {
         "status": "PASS"
         if (
@@ -103,6 +107,8 @@ def evaluate_tradeflow(
             and holdout_complete
             and bool(reviews.get("gate_b", {}).get("efficiency_evidence_confirmed"))
             and bool(reviews.get("gate_b", {}).get("user_value_confirmed"))
+            and measurement_report["efficiency_status"] == "PASS"
+            and measurement_report["user_value_status"] == "CONFIRMED"
         )
         else "BLOCKED",
         "reasons": [],
@@ -117,8 +123,12 @@ def evaluate_tradeflow(
         gate_b["reasons"].append("four holdout tasks are not adjudicated")
     if not reviews.get("gate_b", {}).get("efficiency_evidence_confirmed"):
         gate_b["reasons"].append("efficiency evidence is not confirmed")
+    if measurement_report["efficiency_status"] != "PASS":
+        gate_b["reasons"].append("Gate B measurement artifact is incomplete")
     if not reviews.get("gate_b", {}).get("user_value_confirmed"):
         gate_b["reasons"].append("user value is not confirmed")
+    if measurement_report["user_value_status"] != "CONFIRMED":
+        gate_b["reasons"].append("measurement artifact has no user value confirmation")
 
     counted_outcomes = Counter(
         str(report.get("actual_outcome")) for report in adjudicated_reports
@@ -148,6 +158,7 @@ def evaluate_tradeflow(
         ],
         "gate_a_status": "PASS",
         "gate_b": gate_b,
+        "gate_b_measurements": measurement_report,
         "v1c_authorized": gate_b["status"] == "PASS",
     }
 
