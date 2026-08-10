@@ -84,16 +84,20 @@ class GfDerivativeDbProvider:
         database: str,
         max_rows: int = 100_000,
         timeout_seconds: int = 120,
+        definition_mode: str = "record-only",
         runner: CommandRunner = _default_runner,
     ) -> None:
+        if definition_mode not in {"record-only", "all"}:
+            raise ValueError("definition_mode must be 'record-only' or 'all'")
         self.python_executable = str(python_executable)
         self.query_script = str(query_script)
         self.database = database
         self.max_rows = max_rows
         self.timeout_seconds = timeout_seconds
+        self.definition_mode = definition_mode
         self.runner = runner
 
-    def _run(self, *args: str) -> str:
+    def _run_result(self, *args: str) -> CommandResult:
         command = [self.python_executable, self.query_script, *args]
         try:
             result = self.runner(command, self.timeout_seconds)
@@ -102,8 +106,12 @@ class GfDerivativeDbProvider:
         except OSError as exc:
             raise AdapterError("FAILED", "COMMAND_START") from exc
         if result.returncode != 0:
-            raise AdapterError("FAILED", "ADAPTER_COMMAND")
-        return result.stdout
+            status, category = _classify_command_error(result.stderr)
+            raise AdapterError(status, category)
+        return result
+
+    def _run(self, *args: str) -> str:
+        return self._run_result(*args).stdout
 
     def _query_json(self, sql: str) -> list[dict[str, Any]]:
         text = self._run(
@@ -206,10 +214,104 @@ class GfDerivativeDbProvider:
             f"WHERE OWNER IN ({owners})"
         )
 
+    def _fetch_view_sql(self, scope: ScopeConfig) -> dict[tuple[str, str], str]:
+        owners = _owner_list(scope.schemas)
+        rows = self._query_json(
+            "SELECT OWNER, VIEW_NAME, TEXT "
+            "FROM ALL_VIEWS "
+            f"WHERE OWNER IN ({owners}) ORDER BY OWNER, VIEW_NAME"
+        )
+        return {
+            (
+                str(row.get("OWNER", "")).upper(),
+                str(row.get("VIEW_NAME", "")).upper(),
+            ): str(row["TEXT"]).strip()
+            for row in rows
+            if row.get("OWNER") and row.get("VIEW_NAME") and row.get("TEXT")
+        }
+
+    def _fetch_adapter_definition(
+        self,
+        schema_name: str,
+        object_name: str,
+    ) -> DefinitionMetadata:
+        try:
+            result = self._run_result(
+                "ddl",
+                "--db",
+                self.database,
+                "--table",
+                f"{schema_name}.{object_name}",
+            )
+        except AdapterError as exc:
+            return DefinitionMetadata(
+                definition_type="DDL",
+                extraction_status=exc.status,
+                error_category=exc.category,
+            )
+        definition_text = result.stdout.strip()
+        if not definition_text:
+            return DefinitionMetadata(
+                definition_type="DDL",
+                extraction_status="MISSING",
+                error_category="EMPTY_DEFINITION",
+            )
+        return DefinitionMetadata(
+            definition_type="DDL",
+            definition_text=definition_text,
+        )
+
+    def _definition_for_object(
+        self,
+        schema_name: str,
+        object_name: str,
+        object_type: str,
+        view_sql: dict[tuple[str, str], str] | None,
+        view_sql_error: AdapterError | None,
+    ) -> DefinitionMetadata:
+        if self.definition_mode != "all":
+            return DefinitionMetadata(
+                definition_type="DDL",
+                extraction_status="FAILED",
+                error_category="PROVIDER_CAPABILITY_NOT_ENABLED",
+            )
+        if object_type == "VIEW":
+            if view_sql_error:
+                return DefinitionMetadata(
+                    definition_type="VIEW_SQL",
+                    extraction_status=view_sql_error.status,
+                    error_category=view_sql_error.category,
+                )
+            text = (view_sql or {}).get((schema_name, object_name))
+            if not text:
+                return DefinitionMetadata(
+                    definition_type="VIEW_SQL",
+                    extraction_status="MISSING",
+                    error_category="VIEW_SQL_NOT_VISIBLE",
+                )
+            return DefinitionMetadata(
+                definition_type="VIEW_SQL",
+                definition_text=text,
+            )
+        if object_type == "SYNONYM":
+            return DefinitionMetadata(
+                definition_type="DDL",
+                extraction_status="FAILED",
+                error_category="ADAPTER_UNSUPPORTED_OBJECT_TYPE",
+            )
+        return self._fetch_adapter_definition(schema_name, object_name)
+
     def iter_objects(self, scope: ScopeConfig) -> Iterable[ObjectMetadata]:
         """Yield all in-scope objects with metadata available from dictionary views."""
 
         object_rows = self._fetch_objects(scope)
+        view_sql: dict[tuple[str, str], str] | None = None
+        view_sql_error: AdapterError | None = None
+        if self.definition_mode == "all":
+            try:
+                view_sql = self._fetch_view_sql(scope)
+            except AdapterError as exc:
+                view_sql_error = exc
         columns = _rows_by_key(self._fetch_columns(scope), "OWNER", "TABLE_NAME")
         column_comments = {
             (
@@ -308,6 +410,13 @@ class GfDerivativeDbProvider:
                         _canonical_type(dependency.target_object_type),
                     )
                     boundary_targets[boundary_key] = dependency
+            definition = self._definition_for_object(
+                schema_name,
+                object_name,
+                object_type,
+                view_sql,
+                view_sql_error,
+            )
             yield ObjectMetadata(
                 schema_name=schema_name,
                 object_name=object_name,
@@ -317,13 +426,7 @@ class GfDerivativeDbProvider:
                 constraints=object_constraints,
                 indexes=object_indexes,
                 dependencies=object_dependencies,
-                definitions=(
-                    DefinitionMetadata(
-                        definition_type="DDL",
-                        extraction_status="FAILED",
-                        error_category="PROVIDER_CAPABILITY_NOT_ENABLED",
-                    ),
-                ),
+                definitions=(definition,),
             )
 
         for dependency in boundary_targets.values():
@@ -416,6 +519,19 @@ def _optional_int(value: Any) -> int | None:
     if value in (None, ""):
         return None
     return int(value)
+
+
+def _classify_command_error(stderr: str) -> tuple[str, str]:
+    """Map adapter diagnostics to non-sensitive contract status categories."""
+
+    text = stderr.upper()
+    if "PRIVILEGE" in text or "PERMISSION" in text or "ORA-01031" in text:
+        return "NO_PERMISSION", "ADAPTER_PERMISSION"
+    if "MULTIPLE LOCATIONS" in text or "AMBIGUOUS" in text:
+        return "AMBIGUOUS", "OBJECT_AMBIGUOUS"
+    if "NOT FOUND" in text or "DID NOT RETURN DDL" in text:
+        return "MISSING", "OBJECT_DEFINITION_NOT_FOUND"
+    return "FAILED", "ADAPTER_COMMAND"
 
 
 def _constraint_type(value: str) -> str:

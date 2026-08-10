@@ -6,6 +6,11 @@ from titans_cognition.scope import ScopeConfig
 
 def test_gf_provider_builds_provider_neutral_metadata_from_dictionary_rows():
     def runner(command, _timeout):
+        if command[2] == "ddl":
+            assert command[command.index("--table") + 1] == (
+                "TITANS_TRADEFLOW.T_EVENT"
+            )
+            return CommandResult(0, "CREATE TABLE T_EVENT (ID NUMBER);\n", "")
         sql = command[command.index("--sql") + 1]
         if "ALL_OBJECTS" in sql:
             rows = [
@@ -91,6 +96,8 @@ def test_gf_provider_builds_provider_neutral_metadata_from_dictionary_rows():
             ]
         elif "ALL_DEPENDENCIES" in sql:
             rows = []
+        elif "ALL_VIEWS" in sql:
+            rows = []
         else:
             raise AssertionError(sql)
         return CommandResult(0, json.dumps(rows), "")
@@ -107,6 +114,7 @@ def test_gf_provider_builds_provider_neutral_metadata_from_dictionary_rows():
         python_executable="python",
         query_script="query.py",
         database="testdb",
+        definition_mode="all",
         runner=runner,
     )
 
@@ -117,3 +125,74 @@ def test_gf_provider_builds_provider_neutral_metadata_from_dictionary_rows():
     assert objects[0].columns[0].column_comment == "technical id"
     assert objects[0].constraints[0].constraint_type == "PRIMARY_KEY"
     assert objects[0].indexes[0].is_unique is True
+    assert objects[0].definitions[0].definition_text == (
+        "CREATE TABLE T_EVENT (ID NUMBER);"
+    )
+
+
+def test_gf_provider_preserves_definition_permission_failure():
+    def runner(command, _timeout):
+        return CommandResult(1, "", "ERROR: ORA-01031 insufficient privileges")
+
+    provider = GfDerivativeDbProvider(
+        python_executable="python",
+        query_script="query.py",
+        database="testdb",
+        runner=runner,
+    )
+
+    definition = provider._fetch_adapter_definition(
+        "TITANS_TRADEFLOW",
+        "T_EVENT",
+    )
+
+    assert definition.extraction_status == "NO_PERMISSION"
+    assert definition.error_category == "ADAPTER_PERMISSION"
+
+
+def test_gf_provider_maps_view_dictionary_text_to_view_sql_definition():
+    def runner(command, _timeout):
+        sql = command[command.index("--sql") + 1]
+        assert "ALL_VIEWS" in sql
+        return CommandResult(
+            0,
+            json.dumps(
+                [
+                    {
+                        "OWNER": "TITANS_DM",
+                        "VIEW_NAME": "V_EVENT",
+                        "TEXT": "SELECT ID FROM T_EVENT",
+                    }
+                ]
+            ),
+            "",
+        )
+
+    scope = ScopeConfig(
+        scope_id="tradeflow",
+        source_label="testdb",
+        schemas=("TITANS_DM",),
+        object_types=("VIEW",),
+        excluded_schema_suffixes=(),
+        excluded_schemas=(),
+    )
+    provider = GfDerivativeDbProvider(
+        python_executable="python",
+        query_script="query.py",
+        database="testdb",
+        definition_mode="all",
+        runner=runner,
+    )
+
+    view_sql = provider._fetch_view_sql(scope)
+    definition = provider._definition_for_object(
+        "TITANS_DM",
+        "V_EVENT",
+        "VIEW",
+        view_sql,
+        None,
+    )
+
+    assert definition.definition_type == "VIEW_SQL"
+    assert definition.definition_text == "SELECT ID FROM T_EVENT"
+    assert definition.extraction_status == "SUCCESS"

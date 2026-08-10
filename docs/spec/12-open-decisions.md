@@ -21,7 +21,7 @@
 ## D-003 DDL与View SQL权限
 
 - **问题**：当前账号可以通过哪些方式读取完整DDL和View SQL？
-- **当前状态**：表字段、注释、约束、索引和样例表DDL已实测可读；View SQL能力仍需在首次Extract按对象记录。
+- **当前状态**：已接入 `definition_mode=all`：表DDL通过只读适配器逐对象读取，View SQL通过 `ALL_VIEWS.TEXT` 批量读取；默认 `record-only` 仍只记录能力缺口。首次全量Extract仍需按对象统计成功、缺失、无权限和失败分布。
 - **阻塞**：是否阻塞由[11 安全与运行的能力降级矩阵](11-security-and-operations.md)逐任务决定，不再笼统阻塞整个V1B。
 - **降级方案**：保留MISSING/NO_PERMISSION；受影响任务标记NOT_EVALUABLE，不伪造Lineage，也不把未运行计作Unknown。
 

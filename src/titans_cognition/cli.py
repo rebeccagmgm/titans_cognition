@@ -83,6 +83,12 @@ def _build_parser() -> argparse.ArgumentParser:
     source.add_argument("--db")
     extract.add_argument("--adapter-python", default="python")
     extract.add_argument("--adapter-script", type=Path)
+    extract.add_argument(
+        "--definition-mode",
+        choices=("record-only", "all"),
+        default="record-only",
+        help="record capability gaps or retrieve DDL/View SQL",
+    )
     extract.add_argument("--output", required=True, type=Path)
     extract.add_argument("--run-id", required=True)
     extract.add_argument(
@@ -120,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
             python_executable=args.adapter_python,
             query_script=args.adapter_script,
             database=args.db,
+            definition_mode=args.definition_mode,
         )
         metadata = provider.iter_objects(scope)
     facts = extract_facts(
