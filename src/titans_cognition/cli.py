@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .derive import derive_observations
 from .extract import (
     ColumnMetadata,
     ConstraintMetadata,
@@ -14,7 +15,13 @@ from .extract import (
     ObjectMetadata,
     extract_facts,
 )
-from .io import write_json_facts, write_parquet_facts
+from .io import (
+    read_json_facts,
+    write_json_derived,
+    write_json_facts,
+    write_parquet_derived,
+    write_parquet_facts,
+)
 from .provider import GfDerivativeDbProvider
 from .scope import load_scope
 
@@ -96,6 +103,14 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("json", "parquet", "both"),
         default="json",
     )
+    derive = subparsers.add_parser("derive")
+    derive.add_argument("--input-dir", required=True, type=Path)
+    derive.add_argument("--output", required=True, type=Path)
+    derive.add_argument(
+        "--format",
+        choices=("json", "parquet", "both"),
+        default="json",
+    )
     return parser
 
 
@@ -110,6 +125,28 @@ def main(argv: list[str] | None = None) -> int:
                     "source_label": scope.source_label,
                     "schema_count": len(scope.schemas),
                     "object_types": list(scope.object_types),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "derive":
+        facts = read_json_facts(args.input_dir)
+        derived = derive_observations(facts)
+        written: dict[str, Path] = {}
+        if args.format in ("json", "both"):
+            written.update(write_json_derived(args.output, derived))
+        if args.format in ("parquet", "both"):
+            written.update(write_parquet_derived(args.output, derived))
+        print(
+            json.dumps(
+                {
+                    "schema_count": len(derived.schema_summary),
+                    "object_profile_count": len(derived.object_inventory_profiles),
+                    "dependency_summary_count": len(derived.dependency_summary),
+                    "failure_count": len(derived.extraction_failures),
+                    "outputs": {name: str(path) for name, path in written.items()},
                 },
                 ensure_ascii=False,
             )

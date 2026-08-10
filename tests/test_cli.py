@@ -59,3 +59,26 @@ exclude: {}
     output = json.loads(capsys.readouterr().out)
     assert output["object_count"] == 1
     assert (tmp_path / "output" / "panorama" / "facts" / "objects.json").exists()
+
+    assert (
+        main(
+            [
+                "derive",
+                "--input-dir",
+                str(tmp_path / "output"),
+                "--output",
+                str(tmp_path / "derived-output"),
+            ]
+        )
+        == 0
+    )
+
+    derived_output = json.loads(capsys.readouterr().out)
+    assert derived_output["schema_count"] == 1
+    assert (
+        tmp_path
+        / "derived-output"
+        / "panorama"
+        / "derived"
+        / "schema_summary.json"
+    ).exists()
