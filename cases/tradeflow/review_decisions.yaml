@@ -1,10 +1,9 @@
 version: v1
 case_id: tradeflow
-review_status: REWORK_REQUIRED
-prior_review_status: ADJUDICATED_CORE_AND_HOLDOUT
+review_status: ADJUDICATED_CORE_AND_HOLDOUT
+prior_review_status: REWORK_REQUIRED
 rework:
-  status: PENDING_REVIEW
-  reason: "After restoring Chinese table/column comments, the role holdout produced a weak SNAPSHOT candidate from the table comment; the prior name-only UNKNOWN decision must not be reused without re-adjudication."
+  status: ADJUDICATED
   affected_case_ids:
     - holdout_role_and_counterevidence_001
 decisions:
@@ -79,9 +78,19 @@ decisions:
   - review_id: review-20260810-holdout-role-unknown
     target_type: INFERENCE_RESULT
     target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:ffd526b3782b
+    decision: REFINED
+    reviewer_label: user-confirmed
+    reason: "Superseded after restoring the table comment; accept a weak SNAPSHOT candidate while retaining the limitation that business role is not confirmed."
+    replacement_value:
+      outcome: SINGLE_CANDIDATE
+      candidate_values: [SNAPSHOT]
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-holdout-role-comment-snapshot
+    target_type: INFERENCE_RESULT
+    target_id: titans-tradeflow-comments-20260810:RESULT:ffd526b3782b
     decision: ACCEPTED
     reviewer_label: user-confirmed
-    reason: "Accept Unknown; current-position naming is not enough to publish an Object Role."
+    reason: "Accept weak SNAPSHOT from the explicit current-holdings table comment; do not promote it to a confirmed business role."
     replacement_value: null
     reviewed_at: 2026-08-10
   - review_id: review-20260810-holdout-relation-unknown

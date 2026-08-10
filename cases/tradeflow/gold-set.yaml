@@ -159,17 +159,17 @@ cases:
     subject_ref: testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_CURRENT_POS
     annotation_status: ADJUDICATED
     holdout: true
-    polarity: UNKNOWN
+    polarity: POSITIVE
     expected:
-      outcome: UNKNOWN
-      accepted_values: []
-      required_evidence_types: [OBJECT, CONSTRAINT, FEATURE]
+      outcome: SINGLE_CANDIDATE
+      accepted_values: [SNAPSHOT]
+      required_evidence_types: [COMMENT]
       required_source_refs:
-        - testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_CURRENT_POS
+        - testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_CURRENT_POS:COMMENT:OBJECT
     ambiguity: true
     annotation:
       reviewer_label: user-confirmed
-      rationale: "Accept Unknown; current-position naming is not enough to publish an Object Role."
+      rationale: "Accept a weak SNAPSHOT candidate because the table comment explicitly says current holdings; do not treat it as a confirmed business role."
       adjudicated_at: 2026-08-10
 
   - case_id: holdout_relation_layer_direction_001
