@@ -1,0 +1,61 @@
+import json
+
+from titans_cognition.cli import main
+
+
+def test_extract_command_writes_json_facts(tmp_path, capsys):
+    metadata_path = tmp_path / "metadata.json"
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "objects": [
+                    {
+                        "schema_name": "TITANS_TRADEFLOW",
+                        "object_name": "T_EVENT",
+                        "object_type": "TABLE",
+                        "columns": [
+                            {
+                                "column_name": "ID",
+                                "ordinal_position": 1,
+                                "data_type": "NUMBER",
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    scope_path = tmp_path / "scope.yaml"
+    scope_path.write_text(
+        """
+scope_id: test-scope
+source_label: testdb
+include:
+  schemas: [TITANS_TRADEFLOW]
+  object_types: [TABLE]
+exclude: {}
+""",
+        encoding="utf-8",
+    )
+
+    assert (
+        main(
+            [
+                "extract",
+                "--scope",
+                str(scope_path),
+                "--input-json",
+                str(metadata_path),
+                "--output",
+                str(tmp_path / "output"),
+                "--run-id",
+                "run-001",
+            ]
+        )
+        == 0
+    )
+
+    output = json.loads(capsys.readouterr().out)
+    assert output["object_count"] == 1
+    assert (tmp_path / "output" / "panorama" / "facts" / "objects.json").exists()

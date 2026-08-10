@@ -55,3 +55,14 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 - 不建设长期 Catalog、历史 Edition、多用户评审或权限平台。
 - 不建设正式本体、图数据库、向量数据库或复杂 Web 应用。
 - 不让 Agent 或 LLM 自主访问 Oracle。
+
+## 当前实现进度
+
+- 阶段 0：已确认初始 Panorama allowlist，已建立 `cases/titans-panorama/scope.yaml` 和 `cases/tradeflow/scope.yaml`。
+- V1A 核心切片：已实现 scope 校验、Provider-neutral 元数据记录、物理对象/字段/约束/索引/定义/依赖的规范化，以及 JSON 结果写出；Parquet 写出需要安装项目依赖。
+- 当前 Extract 命令接收 Provider-neutral JSON 快照；现有只读数据库适配器的正式接入仍是下一步。
+
+```text
+python -m pytest -q
+python -m titans_cognition.cli validate-scope --scope cases/titans-panorama/scope.yaml
+```
