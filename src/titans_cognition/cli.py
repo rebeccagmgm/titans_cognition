@@ -16,6 +16,11 @@ from .deep import (
     write_sample,
 )
 from .inference import infer_tradeflow
+from .evaluation import (
+    evaluate_tradeflow,
+    load_inference_directory,
+    load_yaml_mapping,
+)
 from .extract import (
     ColumnMetadata,
     ConstraintMetadata,
@@ -157,6 +162,11 @@ def _build_parser() -> argparse.ArgumentParser:
     deep_infer.add_argument("--facts-dir", required=True, type=Path)
     deep_infer.add_argument("--sample", required=True, type=Path)
     deep_infer.add_argument("--output", required=True, type=Path)
+    deep_evaluate = subparsers.add_parser("deep-evaluate")
+    deep_evaluate.add_argument("--inference-dir", required=True, type=Path)
+    deep_evaluate.add_argument("--gold-set", required=True, type=Path)
+    deep_evaluate.add_argument("--reviews", required=True, type=Path)
+    deep_evaluate.add_argument("--output", required=True, type=Path)
     return parser
 
 
@@ -330,6 +340,30 @@ def main(argv: list[str] | None = None) -> int:
                     "evidence_item_count": len(inference.evidence_items),
                     "candidate_evidence_count": len(inference.candidate_evidence),
                     "outputs": {name: str(path) for name, path in paths.items()},
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "deep-evaluate":
+        inference = load_inference_directory(args.inference_dir)
+        gold_set = load_yaml_mapping(args.gold_set)
+        reviews = load_yaml_mapping(args.reviews)
+        report = evaluate_tradeflow(inference, gold_set, reviews)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        print(
+            json.dumps(
+                {
+                    "gate_b_status": report["gate_b"]["status"],
+                    "gold_set_status": report["gold_set_status"],
+                    "adjudicated_case_count": report["adjudicated_case_count"],
+                    "unknown_result_count": report["evidence_quality"]["unknown_result_count"],
+                    "output": str(args.output),
                 },
                 ensure_ascii=False,
             )

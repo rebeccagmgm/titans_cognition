@@ -1,0 +1,7 @@
+version: v1
+case_id: tradeflow
+review_status: NOT_STARTED
+decisions: []
+gate_b:
+  efficiency_evidence_confirmed: false
+  user_value_confirmed: false

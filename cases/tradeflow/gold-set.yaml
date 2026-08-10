@@ -1,0 +1,142 @@
+version: v2
+status: DRAFT
+scope_id: tradeflow-deep-v1
+case_id: tradeflow
+annotation_policy: "Draft hypotheses only; no case enters formal Gate B until ADJUDICATED by a reviewer."
+cases:
+  - case_id: identity_declared_pk_technical_001
+    task: IDENTITY
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:TRD_OPTION_EVENT
+    annotation_status: DRAFT
+    polarity: POSITIVE
+    expected:
+      outcome: SINGLE_CANDIDATE
+      accepted_values:
+        - - testdb:TITANS_TRADEFLOW:TABLE:TRD_OPTION_EVENT:COLUMN:KEY_OPTION_EVENT_ID
+          - testdb:TITANS_TRADEFLOW:TABLE:TRD_OPTION_EVENT:COLUMN:KEY_OPTION_DEAL_ID
+          - testdb:TITANS_TRADEFLOW:TABLE:TRD_OPTION_EVENT:COLUMN:EVENT_TYPE
+      required_evidence_types: [CONSTRAINT]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:TRD_OPTION_EVENT:CONSTRAINT:PK_TRD_OPTION_EVENT
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "Draft checks technical PK recognition while keeping business Identity unproven."
+
+  - case_id: grain_declared_uk_001
+    task: GRAIN
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY
+    annotation_status: DRAFT
+    polarity: POSITIVE
+    expected:
+      outcome: SINGLE_CANDIDATE
+      accepted_values:
+        - - testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY:COLUMN:KEY_OTC_TRADE_ID
+          - testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY:COLUMN:KEY_EVENT_ID
+          - testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY:COLUMN:EVENT_DATE
+          - testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY:COLUMN:EXIST_KEY_EVENT_ID
+      required_evidence_types: [CONSTRAINT]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY:CONSTRAINT:EVENT_OPEN_QTY
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "Draft checks declared UK handling; row-level uniqueness remains NOT_PERFORMED."
+
+  - case_id: identity_no_declared_key_unknown_001
+    task: IDENTITY
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_20250527
+    annotation_status: DRAFT
+    polarity: UNKNOWN
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      required_evidence_types: [OBJECT, CONSTRAINT, INDEX]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_20250527
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "No declared PK/UK is not evidence of a business identity."
+
+  - case_id: field_role_name_only_negative_001
+    task: FIELD_ROLE
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_20250527:COLUMN:CONTRACT_CODE
+    annotation_status: DRAFT
+    polarity: NEGATIVE
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      unacceptable_values: [IDENTIFIER]
+      required_evidence_types: [COLUMN]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_20250527:COLUMN:CONTRACT_CODE
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "A code-like name alone must not be upgraded to an identifier role."
+
+  - case_id: object_role_name_ambiguity_001
+    task: OBJECT_ROLE
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY
+    annotation_status: DRAFT
+    polarity: AMBIGUOUS
+    expected:
+      outcome: COMPETING
+      accepted_values: [EVENT_TRANSACTION, STATE_HISTORY]
+      required_evidence_types: [OBJECT]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY
+    ambiguity: true
+    annotation:
+      reviewer_label: pending
+      rationale: "EVENT/POS naming cues support competing structural readings, not a settled business role."
+
+  - case_id: relation_structural_similarity_false_positive_001
+    task: RELATION
+    subject_ref: tradeflow
+    annotation_status: DRAFT
+    polarity: NEGATIVE
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      unacceptable_values:
+        - source_id: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_1
+          predicate: STRUCTURALLY_SIMILAR_TO
+          target_id: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_2
+      required_evidence_types: [FEATURE]
+      required_source_refs: []
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "Matching structure is an investigation lead; no FK/dependency proves a business relation."
+
+  - case_id: grain_no_declared_key_unknown_001
+    task: GRAIN
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_1
+    annotation_status: DRAFT
+    polarity: UNKNOWN
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      required_evidence_types: [CONSTRAINT, INDEX]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_1
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "No declared key and no row validation require an explicit Unknown grain result."
+
+holdout_tasks:
+  - task_id: holdout_technical_vs_business_identity
+    task_type: IDENTITY
+    annotation_status: DRAFT
+  - task_id: holdout_role_and_counterevidence
+    task_type: OBJECT_ROLE
+    annotation_status: DRAFT
+  - task_id: holdout_relation_layer_and_direction
+    task_type: RELATION
+    annotation_status: DRAFT
+  - task_id: holdout_unknown_or_not_evaluable
+    task_type: GRAIN
+    annotation_status: DRAFT
