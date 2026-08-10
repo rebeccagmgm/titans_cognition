@@ -159,3 +159,22 @@ def test_gate_b_measurements_require_real_values_and_three_efficiency_wins():
     assert measured["efficiency_status"] == "PASS"
     assert measured["efficiency_win_count"] == 3
     assert measured["user_value_status"] == "CONFIRMED"
+
+
+def test_measurement_pack_keeps_all_four_holdouts_and_both_materials():
+    from titans_cognition.measurements import render_measurement_pack
+
+    text = render_measurement_pack(
+        {
+            "protocol": {"baseline_material": "baseline", "cognition_material": "map"},
+            "tasks": [
+                {"task_id": "holdout_technical_vs_business_identity_001"},
+                {"task_id": "holdout_role_and_counterevidence_001"},
+                {"task_id": "holdout_relation_layer_direction_001"},
+                {"task_id": "holdout_unknown_no_key_001"},
+            ],
+        }
+    )
+    assert text.count("| `holdout_") == 8
+    assert "Unsupported high-confidence claims" in text
+    assert "At least three tasks" in text

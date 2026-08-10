@@ -106,6 +106,54 @@ def evaluate_gate_b_measurements(
     }
 
 
+def render_measurement_pack(measurements: Mapping[str, Any]) -> str:
+    """Render a human-fillable worksheet from the measurement contract."""
+
+    protocol = measurements.get("protocol", {})
+    lines = [
+        "# TRADEFLOW V1B Gate B Measurement Pack",
+        "",
+        "- Status: `PENDING_USER` until observed values are recorded.",
+        "- Record the same task once with baseline material and once with the cognition map.",
+        "- Do not replace missing values with zero or estimates.",
+        "",
+        "## Protocol",
+        "",
+        f"- Baseline: {protocol.get('baseline_material', 'not specified')}",
+        f"- Cognition map: {protocol.get('cognition_material', 'not specified')}",
+        f"- Order control: {protocol.get('order', 'not specified')}",
+        "",
+        "## Required measurements",
+        "",
+        "| Holdout | Material | Completed | Correct | Unsupported high-confidence claims | Seconds | Objects opened | Navigation steps | Misdirection points |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for task in measurements.get("tasks", []):
+        if not isinstance(task, Mapping):
+            continue
+        task_id = task.get("task_id", "unknown")
+        for material in ("baseline", "cognition_map"):
+            lines.append(
+                f"| `{task_id}` | `{material}` |  |  |  |  |  |  |  |"
+            )
+    lines.extend(
+        [
+            "",
+            "## User value confirmation",
+            "",
+            "- Did the map reduce undirected browsing or expose evidence boundaries beyond the raw metadata list? `PENDING`",
+            "- Reviewer rationale: ________________________________",
+            "",
+            "## Gate B rule",
+            "",
+            "- All four tasks must be completed or correctly return Unknown/Not Evaluable.",
+            "- No Unsupported High-Confidence Claim is allowed.",
+            "- At least three tasks must reduce elapsed time or opened-object count without reducing correctness.",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _pending(reason: str) -> dict[str, Any]:
     return {
         "status": "PENDING",

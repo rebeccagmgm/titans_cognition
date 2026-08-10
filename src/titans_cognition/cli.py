@@ -22,6 +22,7 @@ from .evaluation import (
     load_yaml_mapping,
     render_review_pack,
 )
+from .measurements import render_measurement_pack
 from .extract import (
     ColumnMetadata,
     ConstraintMetadata,
@@ -174,6 +175,9 @@ def _build_parser() -> argparse.ArgumentParser:
     deep_evaluate.add_argument("--reviews", required=True, type=Path)
     deep_evaluate.add_argument("--measurements", type=Path)
     deep_evaluate.add_argument("--output", required=True, type=Path)
+    measurement_pack = subparsers.add_parser("deep-measure-pack")
+    measurement_pack.add_argument("--measurements", required=True, type=Path)
+    measurement_pack.add_argument("--output", required=True, type=Path)
     review_pack = subparsers.add_parser("deep-review-pack")
     review_pack.add_argument("--evaluation-report", required=True, type=Path)
     review_pack.add_argument("--output", required=True, type=Path)
@@ -402,6 +406,15 @@ def main(argv: list[str] | None = None) -> int:
                 ensure_ascii=False,
             )
         )
+        return 0
+
+    if args.command == "deep-measure-pack":
+        measurements = load_yaml_mapping(args.measurements)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            render_measurement_pack(measurements), encoding="utf-8"
+        )
+        print(json.dumps({"output": str(args.output)}, ensure_ascii=False))
         return 0
 
     scope = load_scope(args.scope)
