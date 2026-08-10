@@ -66,7 +66,7 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 - V1A `baseline` 命令已生成独立对象名/字段数量基线；静态 Panorama、Schema 页面、物理 Object Card 和 Manifest 已可由 facts 生成。
 - V1B 物理准备切片已实现：`select-sample` 从 Gate A 通过的 TRADEFLOW facts 按 PK/UK/索引/无声明键分层选样，并保留结构相似对照；按用户指定，数字结尾的测试/快照类命名对象只在 V1B sample 中排除，Panorama 物理事实仍完整保留；`deep-derive` 生成样本对象、字段特征、对象特征和结构相似度。该切片不生成业务 Identity、Grain、Role 或 Relation 结论，下一步才进入带 Evidence 的候选推断。
 - V1B 第一版候选闭环已实现：`deep-infer` 生成技术 Identity、声明 Grain、保守 Field Role、Inference Result、Evidence Item 和 Candidate-Evidence Link；Object Role 的名称信号和结构相似度只保留为观察，不直接发布候选 Relation/Object Role。无声明键、无关系证据和未确定语义均保留为 `UNKNOWN`。核心案例和 4 个 Holdout 已完成用户确认，11/11 Gold 案例评估无错误；效率证据、用户价值确认和 Gate B 尚未完成。
-- V1B Gold Set/Review/Evaluation 已建立为显式 `DRAFT`：`deep-evaluate` 只统计 `ADJUDICATED` 案例，自动检查候选证据覆盖、Unknown、错误模式和 Gate B 条件；当前无人工审定，Gate B 保持 `BLOCKED`，不授权 V1C。
+- V1B Gold Set/Review/Evaluation 已完成核心与 4 个 Holdout 的人工裁定：当前 11/11 `ADJUDICATED` 且自动评估无错误；`deep-evaluate` 继续检查候选证据覆盖、Unknown、错误模式和 Gate B 条件。效率测量模板与可执行测量单已建立，但尚无真实测量和用户价值确认，Gate B 保持 `BLOCKED`，不授权 V1C。
 - 全量 Panorama 运行共记录 2,636 个对象、68,458 个字段，表 DDL 和 View SQL 定义均成功；批量定义入口按块落盘并读取，避免一次性保留全部定义文本。
 - DDL/View SQL 已接入 Provider 的 `--definition-mode all` 路径；默认 `record-only` 仍只记录能力缺口，避免全景扫描隐式执行大量 DDL 子命令。Parquet 实际写出仍需安装项目依赖。
 
