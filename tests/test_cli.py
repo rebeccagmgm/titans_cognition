@@ -119,3 +119,46 @@ exclude: {}
     reconciliation = json.loads(capsys.readouterr().out)
     assert reconciliation["data_reconciliation_status"] == "PASS"
     assert reconciliation["gate_a_status"] == "BLOCKED"
+
+    assert (
+        main(
+            [
+                "render",
+                "--scope",
+                str(scope_path),
+                "--facts-dir",
+                str(tmp_path / "output"),
+                "--output",
+                str(tmp_path / "rendered"),
+                "--code-version",
+                "test-commit",
+            ]
+        )
+        == 0
+    )
+
+    rendered = json.loads(capsys.readouterr().out)
+    assert rendered["schema_page_count"] == 1
+    assert rendered["object_card_count"] == 1
+    assert (tmp_path / "rendered" / "panorama" / "index.html").exists()
+    assert (tmp_path / "rendered" / "manifest.json").exists()
+
+    assert (
+        main(
+            [
+                "reconcile",
+                "--scope",
+                str(scope_path),
+                "--facts-dir",
+                str(tmp_path / "output"),
+                "--baseline-json",
+                str(baseline_path),
+                "--render-dir",
+                str(tmp_path / "rendered"),
+            ]
+        )
+        == 0
+    )
+    delivered_reconciliation = json.loads(capsys.readouterr().out)
+    assert delivered_reconciliation["data_reconciliation_status"] == "PASS"
+    assert delivered_reconciliation["gate_a_status"] == "PASS"

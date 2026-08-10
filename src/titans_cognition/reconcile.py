@@ -1,10 +1,29 @@
 """Independent baseline reconciliation and Gate A decision support."""
 
 from collections import Counter, defaultdict
+from pathlib import Path
 from typing import Any, Mapping
 
 from .extract import PhysicalFacts
 from .scope import ScopeConfig
+
+
+def panorama_delivery_ready(render_dir: str | Path) -> bool:
+    """Return whether the minimum V1A static delivery artifacts exist."""
+
+    root = Path(render_dir)
+    manifest = root / "manifest.json"
+    index = root / "panorama" / "index.html"
+    schemas = root / "panorama" / "schemas"
+    objects = root / "panorama" / "objects"
+    return (
+        manifest.is_file()
+        and index.is_file()
+        and schemas.is_dir()
+        and any(schemas.glob("*.html"))
+        and objects.is_dir()
+        and any(objects.glob("*.html"))
+    )
 
 
 def reconcile_facts(

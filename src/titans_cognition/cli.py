@@ -1,10 +1,13 @@
 """Command-line entry points for the deterministic V1A core."""
 
 import argparse
+import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
+from .baseline import build_independent_baseline
 from .derive import derive_observations
 from .extract import (
     ColumnMetadata,
@@ -23,7 +26,8 @@ from .io import (
     write_parquet_facts,
 )
 from .provider import GfDerivativeDbProvider
-from .reconcile import reconcile_facts
+from .reconcile import panorama_delivery_ready, reconcile_facts
+from .render import render_panorama
 from .scope import load_scope
 
 
@@ -117,6 +121,21 @@ def _build_parser() -> argparse.ArgumentParser:
     reconcile.add_argument("--facts-dir", required=True, type=Path)
     reconcile.add_argument("--baseline-json", required=True, type=Path)
     reconcile.add_argument("--output", type=Path)
+    reconcile.add_argument("--render-dir", type=Path)
+    render = subparsers.add_parser("render")
+    render.add_argument("--scope", required=True, type=Path)
+    render.add_argument("--facts-dir", required=True, type=Path)
+    render.add_argument("--output", required=True, type=Path)
+    render.add_argument(
+        "--code-version",
+        default=os.environ.get("TITANS_COGNITION_CODE_VERSION", "working-tree"),
+    )
+    baseline = subparsers.add_parser("baseline")
+    baseline.add_argument("--scope", required=True, type=Path)
+    baseline.add_argument("--db", required=True)
+    baseline.add_argument("--adapter-python", default="python")
+    baseline.add_argument("--adapter-script", required=True, type=Path)
+    baseline.add_argument("--output", required=True, type=Path)
     return parser
 
 
@@ -165,7 +184,16 @@ def main(argv: list[str] | None = None) -> int:
         baseline = json.loads(args.baseline_json.read_text(encoding="utf-8"))
         if not isinstance(baseline, dict):
             raise ValueError("baseline JSON must be an object")
-        report = reconcile_facts(scope, facts, baseline)
+        report = reconcile_facts(
+            scope,
+            facts,
+            baseline,
+            delivery_ready=(
+                panorama_delivery_ready(args.render_dir)
+                if args.render_dir
+                else False
+            ),
+        )
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(
@@ -174,6 +202,58 @@ def main(argv: list[str] | None = None) -> int:
                 encoding="utf-8",
             )
         print(json.dumps(report, ensure_ascii=False))
+        return 0
+
+    if args.command == "render":
+        scope = load_scope(args.scope)
+        facts = read_json_facts(args.facts_dir)
+        derived = derive_observations(facts)
+        paths = render_panorama(
+            scope,
+            facts,
+            derived,
+            args.output,
+            scope_config_sha256=hashlib.sha256(args.scope.read_bytes()).hexdigest(),
+            code_version=args.code_version,
+        )
+        print(
+            json.dumps(
+                {
+                    "schema_page_count": len(paths["schema_pages"]),
+                    "object_card_count": len(paths["object_cards"]),
+                    "index": str(paths["index"]),
+                    "manifest": str(paths["manifest"]),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "baseline":
+        scope = load_scope(args.scope)
+        baseline = build_independent_baseline(
+            scope,
+            python_executable=args.adapter_python,
+            query_script=args.adapter_script,
+            database=args.db,
+        )
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(
+            json.dumps(baseline, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n",
+            encoding="utf-8",
+        )
+        print(
+            json.dumps(
+                {
+                    "baseline_kind": baseline["baseline_kind"],
+                    "object_count": len(baseline["objects"]),
+                    "schema_count": len(baseline["columns"]),
+                    "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
         return 0
 
     scope = load_scope(args.scope)

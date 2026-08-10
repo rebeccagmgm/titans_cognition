@@ -63,7 +63,9 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 - 当前 Extract 命令支持 Provider-neutral JSON 快照和现有只读数据库适配器；真实 Panorama smoke 已完成对象、字段、约束、索引、依赖和边界对象的结果完整性核验。
 - V1A `derive` 命令已可从 canonical facts 重建 Schema 汇总、对象结构轮廓、依赖汇总和失败清单；派生结果不生成 Identity、Grain 或业务语义结论。
 - V1A `reconcile` 命令已支持与独立 SQL 基线对账；真实 smoke 的对象数和字段数均对齐，但因对象名基线、Panorama 地图和 Object Card 尚未具备，Gate A 仍为 `BLOCKED`。
-- DDL/View SQL 已接入 Provider 的 `--definition-mode all` 路径；默认 `record-only` 仍只记录能力缺口，避免全景扫描隐式执行大量 DDL 子命令。Parquet 实际写出仍需安装项目依赖；当前仍不能宣称 Gate A 通过。
+- V1A `baseline` 命令已生成独立对象名/字段数量基线；静态 Panorama、Schema 页面、物理 Object Card 和 Manifest 已可由 facts 生成。
+- 真实 smoke 的对象数、字段数、对象名覆盖、Boundary 和失败记录覆盖均通过；当前 Gate A 为 `DEGRADED`，原因是本次运行使用 `record-only`，定义抽取尚未全量尝试。
+- DDL/View SQL 已接入 Provider 的 `--definition-mode all` 路径；默认 `record-only` 仍只记录能力缺口，避免全景扫描隐式执行大量 DDL 子命令。Parquet 实际写出仍需安装项目依赖。
 
 ```text
 python -m pytest -q
