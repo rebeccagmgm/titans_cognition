@@ -1,4 +1,4 @@
-"""Command-line entry points for the deterministic V1A core."""
+"""Command-line entry points for the deterministic cognition core."""
 
 import argparse
 import hashlib
@@ -9,6 +9,12 @@ from typing import Any
 
 from .baseline import build_independent_baseline
 from .derive import derive_observations
+from .deep import (
+    derive_tradeflow_features,
+    load_sample,
+    select_tradeflow_sample,
+    write_sample,
+)
 from .extract import (
     ColumnMetadata,
     ConstraintMetadata,
@@ -24,6 +30,7 @@ from .io import (
     write_json_facts,
     write_parquet_derived,
     write_parquet_facts,
+    write_json_tradeflow_derived,
 )
 from .provider import GfDerivativeDbProvider
 from .reconcile import panorama_delivery_ready, reconcile_facts
@@ -136,6 +143,14 @@ def _build_parser() -> argparse.ArgumentParser:
     baseline.add_argument("--adapter-python", default="python")
     baseline.add_argument("--adapter-script", required=True, type=Path)
     baseline.add_argument("--output", required=True, type=Path)
+    sample = subparsers.add_parser("select-sample")
+    sample.add_argument("--facts-dir", required=True, type=Path)
+    sample.add_argument("--output", required=True, type=Path)
+    sample.add_argument("--max-objects", type=int, default=8)
+    deep_derive = subparsers.add_parser("deep-derive")
+    deep_derive.add_argument("--facts-dir", required=True, type=Path)
+    deep_derive.add_argument("--sample", required=True, type=Path)
+    deep_derive.add_argument("--output", required=True, type=Path)
     return parser
 
 
@@ -250,6 +265,41 @@ def main(argv: list[str] | None = None) -> int:
                     "object_count": len(baseline["objects"]),
                     "schema_count": len(baseline["columns"]),
                     "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "select-sample":
+        facts = read_json_facts(args.facts_dir)
+        sample = select_tradeflow_sample(facts, max_objects=args.max_objects)
+        write_sample(str(args.output), sample)
+        print(
+            json.dumps(
+                {
+                    "sample_id": sample["sample_id"],
+                    "selected_object_count": len(sample["selected_objects"]),
+                    "output": str(args.output),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "deep-derive":
+        facts = read_json_facts(args.facts_dir)
+        sample = load_sample(str(args.sample))
+        derived = derive_tradeflow_features(facts, sample)
+        paths = write_json_tradeflow_derived(args.output, derived)
+        print(
+            json.dumps(
+                {
+                    "sample_object_count": len(derived.sample_objects),
+                    "column_feature_count": len(derived.column_features),
+                    "object_feature_count": len(derived.object_features),
+                    "similarity_count": len(derived.structure_similarity),
+                    "outputs": {name: str(path) for name, path in paths.items()},
                 },
                 ensure_ascii=False,
             )

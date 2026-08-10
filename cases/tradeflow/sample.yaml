@@ -1,0 +1,70 @@
+version: v1
+sample_id: tradeflow-v1b-physical-stratified
+case_id: tradeflow
+source_label: testdb
+schema: TITANS_TRADEFLOW
+selection_method:
+  method_id: sample.tradeflow.physical_stratified
+  method_version: v1
+  input: canonical panorama physical facts
+  boundary: one object per key/index stratum plus one structural contrast pair
+  semantic_labels_enabled: false
+selected_objects:
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:OTC_OPTION_PARAMETER
+  object_name: OTC_OPTION_PARAMETER
+  stratum: PK_SINGLE
+  column_count: 196
+  constraint_count: 2
+  index_count: 1
+  structure_fingerprint: dae10d6bd122bdfd
+  selection_reason: widest eligible object in PK_SINGLE; physical facts only
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY
+  object_name: POS_MAIN_CONTR_EVENT_OPEN_QTY
+  stratum: UK_ONLY
+  column_count: 11
+  constraint_count: 5
+  index_count: 1
+  structure_fingerprint: bd6c2f75de8979ce
+  selection_reason: widest eligible object in UK_ONLY; physical facts only
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_20250527
+  object_name: REF_OTC_OPTION_DEAL_20250527
+  stratum: NO_DECLARED_KEY
+  column_count: 91
+  constraint_count: 2
+  index_count: 0
+  structure_fingerprint: 1b4f7dfb32806220
+  selection_reason: widest eligible object in NO_DECLARED_KEY; physical facts only
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_1
+  object_name: REF_TRS_20250228_1
+  stratum: NO_DECLARED_KEY
+  column_count: 89
+  constraint_count: 1
+  index_count: 0
+  structure_fingerprint: 11fe8ab674f5884b
+  selection_reason: same physical structure fingerprint as a sample peer; contrast
+    only, not a business-family claim
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_2
+  object_name: REF_TRS_20250228_2
+  stratum: NO_DECLARED_KEY
+  column_count: 89
+  constraint_count: 1
+  index_count: 0
+  structure_fingerprint: 11fe8ab674f5884b
+  selection_reason: same physical structure fingerprint as a sample peer; contrast
+    only, not a business-family claim
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:TRANS_CSO_HA_TZXX
+  object_name: TRANS_CSO_HA_TZXX
+  stratum: NO_KEY_WITH_INDEX
+  column_count: 32
+  constraint_count: 0
+  index_count: 1
+  structure_fingerprint: 6c63156475d6d904
+  selection_reason: widest eligible object in NO_KEY_WITH_INDEX; physical facts only
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:TRD_OPTION_EVENT
+  object_name: TRD_OPTION_EVENT
+  stratum: PK_COMPOSITE
+  column_count: 90
+  constraint_count: 3
+  index_count: 1
+  structure_fingerprint: 643607dfd16049cd
+  selection_reason: widest eligible object in PK_COMPOSITE; physical facts only

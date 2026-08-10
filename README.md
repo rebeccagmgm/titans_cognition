@@ -64,6 +64,7 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 - V1A `derive` 命令已可从 canonical facts 重建 Schema 汇总、对象结构轮廓、依赖汇总和失败清单；派生结果不生成 Identity、Grain 或业务语义结论。
 - V1A `reconcile` 命令已支持与独立 SQL 基线对账；真实 Panorama 的对象数、字段数、对象名覆盖、Boundary、失败记录覆盖均通过，且全量定义抽取成功，Gate A 为 `PASS`。
 - V1A `baseline` 命令已生成独立对象名/字段数量基线；静态 Panorama、Schema 页面、物理 Object Card 和 Manifest 已可由 facts 生成。
+- V1B 物理准备切片已实现：`select-sample` 从 Gate A 通过的 TRADEFLOW facts 按 PK/UK/索引/无声明键分层选样，并保留结构相似对照；`deep-derive` 生成样本对象、字段特征、对象特征和结构相似度。该切片不生成业务 Identity、Grain、Role 或 Relation 结论，下一步才进入带 Evidence 的候选推断。
 - 全量 Panorama 运行共记录 2,636 个对象、68,458 个字段，表 DDL 和 View SQL 定义均成功；批量定义入口按块落盘并读取，避免一次性保留全部定义文本。
 - DDL/View SQL 已接入 Provider 的 `--definition-mode all` 路径；默认 `record-only` 仍只记录能力缺口，避免全景扫描隐式执行大量 DDL 子命令。Parquet 实际写出仍需安装项目依赖。
 

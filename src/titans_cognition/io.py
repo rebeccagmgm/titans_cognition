@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from .derive import DerivedObservations
+from .deep import TradeflowDerived
 from .extract import PhysicalFacts
 
 
@@ -150,5 +151,26 @@ def write_parquet_derived(
         path = root / "panorama" / "derived" / f"{name}.parquet"
         path.parent.mkdir(parents=True, exist_ok=True)
         pq.write_table(pa.Table.from_pylist(rows), path)
+        paths[name] = path
+    return paths
+
+
+def write_json_tradeflow_derived(
+    output_dir: str | Path,
+    derived: TradeflowDerived,
+) -> dict[str, Path]:
+    """Write bounded V1B physical features below the Deep Case namespace."""
+
+    root = Path(output_dir) / "deep-cases" / "tradeflow" / "derived"
+    rows_by_name = {
+        "sample_objects": derived.sample_objects,
+        "column_features": derived.column_features,
+        "object_features": derived.object_features,
+        "structure_similarity": derived.structure_similarity,
+    }
+    paths: dict[str, Path] = {}
+    for name, rows in rows_by_name.items():
+        path = root / f"{name}.json"
+        _write_json(path, rows)
         paths[name] = path
     return paths
