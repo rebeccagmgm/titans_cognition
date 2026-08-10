@@ -109,6 +109,8 @@ class ObjectMetadata:
     indexes: tuple[IndexMetadata, ...] = ()
     definitions: tuple[DefinitionMetadata, ...] = ()
     dependencies: tuple[DependencyMetadata, ...] = ()
+    is_boundary: bool = False
+    boundary_for_case_ids: tuple[str, ...] = ()
     extraction_status: str = "SUCCESS"
     error_category: str | None = None
 
@@ -149,7 +151,9 @@ def extract_facts(
 
     result = PhysicalFacts()
     for raw_object in objects:
-        if not scope.accepts_object(raw_object.schema_name, raw_object.object_type):
+        if not raw_object.is_boundary and not scope.accepts_object(
+            raw_object.schema_name, raw_object.object_type
+        ):
             continue
 
         normalized_schema = normalize_identifier(raw_object.schema_name)
@@ -169,10 +173,10 @@ def extract_facts(
             "schema_name": normalized_schema,
             "object_name": normalized_name,
             "object_type": normalized_type,
-            "in_panorama_scope": True,
+            "in_panorama_scope": not raw_object.is_boundary,
             "deep_case_ids": [],
-            "is_boundary": False,
-            "boundary_for_case_ids": [],
+            "is_boundary": raw_object.is_boundary,
+            "boundary_for_case_ids": list(raw_object.boundary_for_case_ids),
             "object_comment": raw_object.object_comment,
             "extraction_status": status,
         }
@@ -254,18 +258,27 @@ def extract_facts(
             )
 
         for raw_definition in raw_object.definitions:
+            definition_status = normalize_identifier(raw_definition.extraction_status)
             result.object_definitions.append(
                 {
                     "definition_id": f"{current_asset_id}:DEFINITION:{normalize_identifier(raw_definition.definition_type)}",
                     "asset_id": current_asset_id,
                     "definition_type": normalize_identifier(raw_definition.definition_type),
                     "definition_text": raw_definition.definition_text,
-                    "extraction_status": normalize_identifier(
-                        raw_definition.extraction_status
-                    ),
+                    "extraction_status": definition_status,
                     "error_category": raw_definition.error_category,
                 }
             )
+            if definition_status != "SUCCESS":
+                result.failures.append(
+                    {
+                        "run_id": run_id,
+                        "stage": "panorama-extract",
+                        "target_id": current_asset_id,
+                        "failure_status": definition_status,
+                        "error_category": raw_definition.error_category or "UNKNOWN",
+                    }
+                )
 
         for raw_dependency in raw_object.dependencies:
             target_asset_id = asset_id(

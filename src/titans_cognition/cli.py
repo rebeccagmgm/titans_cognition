@@ -15,6 +15,7 @@ from .extract import (
     extract_facts,
 )
 from .io import write_json_facts, write_parquet_facts
+from .provider import GfDerivativeDbProvider
 from .scope import load_scope
 
 
@@ -53,6 +54,8 @@ def _object_metadata_from_mapping(data: dict[str, Any]) -> ObjectMetadata:
         dependencies=tuple(
             DependencyMetadata(**item) for item in data.get("dependencies", [])
         ),
+        is_boundary=data.get("is_boundary", False),
+        boundary_for_case_ids=tuple(data.get("boundary_for_case_ids", [])),
         extraction_status=data.get("extraction_status", "SUCCESS"),
         error_category=data.get("error_category"),
     )
@@ -75,7 +78,11 @@ def _build_parser() -> argparse.ArgumentParser:
 
     extract = subparsers.add_parser("extract")
     extract.add_argument("--scope", required=True, type=Path)
-    extract.add_argument("--input-json", required=True, type=Path)
+    source = extract.add_mutually_exclusive_group(required=True)
+    source.add_argument("--input-json", type=Path)
+    source.add_argument("--db")
+    extract.add_argument("--adapter-python", default="python")
+    extract.add_argument("--adapter-script", type=Path)
     extract.add_argument("--output", required=True, type=Path)
     extract.add_argument("--run-id", required=True)
     extract.add_argument(
@@ -104,9 +111,20 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     scope = load_scope(args.scope)
+    if args.input_json:
+        metadata = _load_metadata_json(args.input_json)
+    else:
+        if not args.adapter_script:
+            raise ValueError("--adapter-script is required when --db is used")
+        provider = GfDerivativeDbProvider(
+            python_executable=args.adapter_python,
+            query_script=args.adapter_script,
+            database=args.db,
+        )
+        metadata = provider.iter_objects(scope)
     facts = extract_facts(
         scope,
-        _load_metadata_json(args.input_json),
+        metadata,
         run_id=args.run_id,
     )
     written: dict[str, Path] = {}
@@ -120,6 +138,9 @@ def main(argv: list[str] | None = None) -> int:
                 "run_id": args.run_id,
                 "object_count": len(facts.objects),
                 "column_count": len(facts.columns),
+                "constraint_count": len(facts.constraints),
+                "index_count": len(facts.indexes),
+                "dependency_count": len(facts.dependencies),
                 "failure_count": len(facts.failures),
                 "outputs": {name: str(path) for name, path in written.items()},
             },

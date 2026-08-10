@@ -60,7 +60,8 @@ TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的
 
 - 阶段 0：已确认初始 Panorama allowlist，已建立 `cases/titans-panorama/scope.yaml` 和 `cases/tradeflow/scope.yaml`。
 - V1A 核心切片：已实现 scope 校验、Provider-neutral 元数据记录、物理对象/字段/约束/索引/定义/依赖的规范化，以及 JSON 结果写出；Parquet 写出需要安装项目依赖。
-- 当前 Extract 命令接收 Provider-neutral JSON 快照；现有只读数据库适配器的正式接入仍是下一步。
+- 当前 Extract 命令支持 Provider-neutral JSON 快照和现有只读数据库适配器；真实 Panorama smoke 已完成对象、字段、约束、索引、依赖和边界对象的结果完整性核验。
+- DDL/View SQL 获取和Parquet实际写出仍未完成；对应缺口必须显式记录，完成前不能宣称 Gate A 通过。
 
 ```text
 python -m pytest -q

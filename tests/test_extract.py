@@ -77,3 +77,27 @@ def test_extract_preserves_object_failure_as_a_failure_record():
             "error_category": "COLUMN_METADATA",
         }
     ]
+
+
+def test_extract_keeps_boundary_object_records_for_out_of_scope_dependencies():
+    scope = ScopeConfig(
+        scope_id="test-scope",
+        source_label="testdb",
+        schemas=("TITANS_TRADEFLOW",),
+        object_types=("TABLE",),
+        excluded_schema_suffixes=(),
+        excluded_schemas=(),
+    )
+    boundary = ObjectMetadata(
+        schema_name="PUBLIC",
+        object_name="DUAL",
+        object_type="SYNONYM",
+        is_boundary=True,
+        boundary_for_case_ids=("test-scope",),
+    )
+
+    result = extract_facts(scope, [boundary], run_id="run-003")
+
+    assert result.objects[0]["in_panorama_scope"] is False
+    assert result.objects[0]["is_boundary"] is True
+    assert result.objects[0]["boundary_for_case_ids"] == ["test-scope"]
