@@ -1,0 +1,57 @@
+# TITANS Cognition
+
+TITANS Cognition 用于从测试库的物理元数据中逆向发现可检查的结构认知和业务语义候选。V1 同时交付两条互补结果：以当前纳入的 TITANS Schema 建立可下钻的 `TITANS Panorama`，并以 `TITANS_TRADEFLOW`（当前已知基线 477 张表，运行时复核）作为首个 `Deep Case` 验证 Identity、Grain、Role、Relation 等深度认知方法。目标不是建设元数据目录或正式业务本体。
+
+## 当前状态
+
+- 当前阶段：V1 Spec 已规划，尚未开始实现。
+- 数据环境：测试库，只读元数据盘点；不扫描业务数据行。
+- 核心路线：一次 Oracle 元数据提取 → TITANS 全貌与粗结构地图 → TRADEFLOW 深度结构分析 → 类型化候选结果 → 受证据约束的 LLM 语义辅助 → Gold Set 评测 → 最小可浏览地图。
+- V1 存储：Parquet/JSON/YAML + DuckDB 分析，不引入 PostgreSQL、Neo4j、DataHub 或 OpenMetadata。
+
+## V1三阶段
+
+| 阶段 | 目标 | 完成后回答 |
+|---|---|---|
+| V1A Panorama | 完整盘点当前纳入的 TITANS Schema，生成物理对象卡和全貌地图 | 数据库里有什么 |
+| V1B Deep Sample | 在 TRADEFLOW 分层样本上验证 Identity → Grain → Role → Relation → Evidence | 这套认知方法是否真的有效 |
+| V1C Deep Scale | 方法过门后扩展至 TRADEFLOW 全量，并条件引入 Family、Field Concept、Wiki/LLM | 如何规模化形成深度认知地图 |
+
+三个阶段使用同一工程和同一套物理事实。V1C 是条件触发阶段，不得与 V1A/V1B 同时铺开。
+
+## Spec 导航
+
+完整规范入口：[docs/spec/README.md](docs/spec/README.md)。
+
+| 模块 | 内容 |
+|---|---|
+| [01 需求](docs/spec/01-requirements.md) | 目标、用户任务、范围、非目标、验收边界 |
+| [02 领域模型](docs/spec/02-domain-model.md) | 事实、结构认知、语义候选、证据和评审的概念关系 |
+| [03 总体架构](docs/spec/03-architecture.md) | 组件、数据流、技术选型和阶段边界 |
+| [04 结果数据契约](docs/spec/04-result-contracts.md) | Parquet/JSON/YAML 结果集及字段定义 |
+| [05 推断方法](docs/spec/05-inference-method.md) | Identity、Grain、Role、Family、Relation 的规则和失败边界 |
+| [06 LLM 集成](docs/spec/06-llm-integration.md) | SDK、Evidence Pack、结构化输出、安全和缓存 |
+| [07 证据与评审](docs/spec/07-evidence-and-review.md) | 支持/反证、证据等级、人工决策和 Unknown |
+| [08 评测](docs/spec/08-evaluation.md) | Gold Set、分任务指标、错误分类和质量门槛 |
+| [09 地图交付](docs/spec/09-map-delivery.md) | 总览、对象卡、字段概念、关系和未知地图 |
+| [10 实施计划](docs/spec/10-implementation-plan.md) | 分阶段落地、依赖、里程碑和停止条件 |
+| [11 安全与运行](docs/spec/11-security-and-operations.md) | 只读边界、敏感信息、外发审批和运行记录 |
+| [12 待决事项](docs/spec/12-open-decisions.md) | 实现前必须确认的问题和升级触发条件 |
+
+## V1 核心原则
+
+1. 从数据库声明事实出发，不把机器推断写成事实。
+2. 以 Identity、Grain、Role、Relation 为结构认知主线，但允许相互校正。
+3. Panorama 范围内物理盘点必须完整；Deep Case 的语义不确定必须显式保留为 Unknown。
+4. 类型化候选结果是底层契约，统一 Claim 只作为派生视图。
+5. LLM 只读取有限 Evidence Pack，只能产生候选，不能直接修改事实或形成策展结论。
+6. 全貌覆盖不等于深度方法已泛化；在第二个 Deep Case 验证前，不抽象成通用框架。
+
+## V1 不做
+
+- 不写测试库，不运行生产或调度任务。
+- 不扫描表内业务数据，不验证实际唯一率或关联命中率。
+- 不要求 Panorama 中所有对象都完成 Identity、Grain 或业务语义推断，也不要求 TRADEFLOW 477/477 表全部业务分类成功。
+- 不建设长期 Catalog、历史 Edition、多用户评审或权限平台。
+- 不建设正式本体、图数据库、向量数据库或复杂 Web 应用。
+- 不让 Agent 或 LLM 自主访问 Oracle。

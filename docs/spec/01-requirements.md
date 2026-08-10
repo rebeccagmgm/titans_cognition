@@ -1,0 +1,197 @@
+# 01 需求规范
+
+## 1. 决策问题
+
+如何利用测试库中当前纳入的 TITANS Schema、表、视图、字段、约束、索引、注释、DDL、依赖及有限 Wiki 证据，先形成完整、清晰、可下钻的 TITANS 全貌；再以 `TITANS_TRADEFLOW` 为首个深度案例，逆向发现 Identity、Grain、Role、Relation 和业务语义候选，并沉淀可在后续 Schema 验证的方法。
+
+## 2. 用户目标
+
+### G-01 快速建立全貌
+
+用户能够从一个总览入口理解：
+
+- 当前纳入了哪些 TITANS Schema，各自有哪些表、视图、字段、注释和依赖概况。
+- 各 Schema 有哪些命名簇、结构轮廓、关系枢纽、边界对象和信息缺口。
+- TRADEFLOW 对象如何形成结构区域和对象族。
+- TRADEFLOW 的主要 Identity、Grain 和 Object Role 模式是什么。
+- 哪些深度认知区域已有较强解释，哪些仍是 Unknown。
+
+### G-02 逐层理解资产
+
+用户能够沿以下路径下钻，并在每层返回上层：
+
+```text
+TITANS Panorama
+→ Schema / 粗结构区域
+→ TRADEFLOW Deep Case
+→ 对象族 / 对象
+→ 字段和约束
+→ Identity/Grain/Role/Relation候选
+→ 证据与反证
+```
+
+### G-03 支持后续业务调查
+
+V1不承诺“输入自然语言业务需求自动准确推荐表”。它必须提供足够的模块、对象族、字段概念和关系导航，使用户面对陌生业务问题时能缩小调查范围，并知道下一步应核查哪些表和证据。
+
+### G-04 方法可检查、可重复
+
+相同输入事实、代码、规则、Prompt和模型配置应产生内容等价的结构化结果；所有失败、Unknown和人工决定必须可见。
+
+## 3. 用户与职责
+
+| 角色 | 主要任务 | 权限边界 |
+|---|---|---|
+| 业务调查者 | 浏览全貌、下钻对象、检查候选和证据 | 不修改源库 |
+| 方法开发者 | 实现提取、特征、推断、LLM和渲染 | 只能读取批准范围的元数据 |
+| 评审者 | 维护Gold Set，接受/否定/修订候选 | 人工决定不覆盖原始机器输出 |
+| 实现Agent | 按Spec开发和验证 | 不得自行扩展到平台化能力 |
+
+## 4. V1范围
+
+### 4.1 阶段边界
+
+| 阶段 | 强制范围 | 条件 |
+|---|---|---|
+| V1A | Panorama 全量物理盘点、Schema/对象页面、物理 Object Card | 开工后首先完成 |
+| V1B | TRADEFLOW 分层样本的 Identity、Grain、Role、Relation、Evidence、Unknown 和小型 Gold Set | V1A 通过后进入 |
+| V1C | TRADEFLOW 全量深度推断、Object Family、Field Concept、Wiki/LLM语义辅助和完整深度地图 | V1B 质量门通过且用户确认后进入 |
+
+V1A/V1B 是第一轮工程承诺。V1C 的合同字段用于约束未来实现，不构成当前并行建设授权。
+
+### 4.2 Panorama Scope
+
+- 范围：配置中明确列出的 TITANS Schema；准确 allowlist 在首次 Extract 前确认，不能以当前会话中的估计替代。
+- 对象：范围内表、视图、物化视图及批准纳入的其他对象，并提取字段、注释、约束、索引、定义和数据库依赖；具体可见能力允许降级，但必须记录。
+- 结果深度：完整物理盘点、Schema 级统计、注释覆盖、命名簇、结构轮廓、依赖概况和能力缺口/失败分布。
+- 非目标：不要求对 Panorama 中每个对象推断业务 Identity、Grain、Object Family 或业务语义。
+
+### 4.3 Deep Case Scope
+
+- 首个案例：`TITANS_TRADEFLOW`。
+- 当前已知基线：477 张表；仅作为规划基线，首次提取时必须重新核验表、视图和其他对象数量。
+- 分析：V1B只对分层样本运行Identity、Grain、Field/Object Role和Relation；V1C才扩展案例全量并增加Object Family、Field Concept和Semantic Candidate。
+- 上下文：与案例内对象存在一跳直接依赖、但不在 Panorama 主范围内的对象作为 Boundary Node。
+- Wiki：用户后续提供的基础目录和少量相关正文，仅作为 Deep Case 的辅助证据。
+
+### 4.4 数据边界
+
+- 只读取Oracle系统元数据和对象定义。
+- 不读取或抽样业务数据行。
+- 不以测试数据推导生产业务结论。
+- 当前账号不可见的对象不声称已盘点；必须记录可见边界。
+
+### 4.5 语义边界
+
+- V1输出业务语义候选，不输出正式业务本体。
+- Schema、对象族、业务模块和语义概念不要求一一对应。
+- `_PROD`映射不是V1主问题，不驱动数据模型。
+- `GF_OTC`、`GF_FICC`不属于第一版 Panorama 或 Deep Case 范围。
+
+## 5. 功能需求
+
+### FR-001 物理盘点
+
+系统必须对 Panorama allowlist 提取对象、字段、注释、约束、索引、定义和依赖，并为每类提取提供成功、缺失、无权限和失败状态。
+
+### FR-002 结构特征
+
+系统必须为 Panorama 生成名称特征、结构轮廓、粗粒度相似分组及 SQL 解析状态；字段角色、Identity、Grain 等深度特征只要求在 Deep Case 生成。
+
+### FR-003 Identity候选
+
+V1B 分层样本必须区分数据库声明键、技术身份、业务身份和父对象身份；不得将PK自动等同于业务Identity。V1C才要求扩展到全量。
+
+### FR-004 Grain候选
+
+V1B 分层样本必须形成Inference Result并引用零到多个粒度候选；证据不足时输出Unknown，能力缺失时输出Not Evaluable。所有Identity/Grain结果必须声明未经过数据行验证。V1C才要求扩展到全量。
+
+### FR-005 Role候选
+
+V1B 分层样本必须支持多Field Role和多Object Role，不强制单标签。
+
+### FR-006 Object Family候选
+
+V1C 才必须结合名称、结构、Identity、Grain和关系形成对象族候选，并保留成员级解释；Panorama 中仅按名称或结构形成的粗分组不得冒充 Object Family。
+
+### FR-007 Field Concept候选
+
+V1C 才必须识别可能表达同一身份或属性的字段集合，并显式记录同名异义、同义异名和类型冲突。
+
+### FR-008 Relation候选
+
+系统必须将关系分层：声明FK和Oracle Dependency属于Physical Fact，SQL Lineage属于Derived Observation，只有Structural/Semantic Relation进入Candidate；地图通过Projection统一浏览并保留方向、层级、证据和歧义。
+
+### FR-009 业务语义候选
+
+V1C 可以使用规则、Wiki和LLM为稳定结构候选提出业务名称、用途和关系解释，但结果只能进入Candidate层。该能力不阻塞V1A/V1B。
+
+### FR-010 证据追溯
+
+每个候选必须能追溯到方法、支持证据和反证；规则命中只属于Method Trace，不能成为自身唯一证据；证据不足不得伪造解释。
+
+### FR-011 Gold Set评测
+
+V1B 必须先评测Inference Outcome，再分别评测Identity、Grain、Role、Relation、Unknown和证据质量；Not Evaluable单列且不计作Unknown，不得只报告一个总体准确率。V1C复用同一评测后才能全量扩展。
+
+### FR-012 最小地图
+
+系统必须生成无需服务端运行的最小可浏览结果。V1A包括TITANS全貌、Schema页面和物理Object Card；V1B增加TRADEFLOW样本关系和Unknown；对象族、字段概念及全量深度页面属于V1C。
+
+## 6. 非功能需求
+
+### NFR-001 可重复
+
+每个阶段生成Manifest，记录范围、源捕获一致性、输入Artifact、代码/规则/Prompt/模型版本，以及每个输出Artifact的路径、Schema版本、记录数、状态和SHA-256。
+
+### NFR-002 可恢复
+
+各阶段结果落盘并可独立重跑；LLM失败不应阻止物理事实和结构分析交付。
+
+### NFR-003 可解释
+
+所有候选必须暴露方法、关键特征、证据和限制。仅有模型文本不得构成有效候选。
+
+### NFR-004 安全
+
+源库只读；密钥不落库、不入Git、不输出到日志；外部模型数据外发默认禁用。
+
+### NFR-005 克制
+
+系统必须支持Unknown、歧义和部分解析，不能以分类覆盖率为唯一优化目标。
+
+### NFR-006 可演化
+
+结果契约必须允许未来导入PostgreSQL或投影为知识图谱，但V1不得为这些未来场景增加运行依赖。
+
+## 7. V1非目标
+
+- 长期元数据同步和历史Edition管理。
+- 多用户协作、权限、审批、Owner和治理工作流。
+- 正式本体编辑、RDF存储或知识图谱产品。
+- 全库行级数据剖析和业务数据质量监控。
+- 自然语言业务需求到相关表的自动推荐产品。
+- 对 Panorama 全部对象执行 Deep Case 级认知分析。
+- 对 TRADEFLOW 当前规划基线 477 张表强制生成确定业务用途。
+- 生产环境真实性或业务正确性证明。
+
+## 8. 需求级验收
+
+### V1A验收
+
+- Panorama allowlist内每个可见对象均有物理Object Card，事实缺失有明确原因。
+- 地图能按Schema显示对象类型、字段、注释覆盖、约束、依赖和失败情况。
+- 用户能够由全貌进入任一Schema和对象，而不再依赖原始数据字典逐表浏览。
+
+### V1B验收
+
+- 用户可以从任一样本候选回到支持与反对证据。
+- 用户可以识别至少一组有意义的Identity/Grain模式和关系链；具体数量由真实结果决定，不预设产量指标。
+- 地图能区分物理覆盖、候选覆盖和Unknown，三者不得混为一体。
+- Gold Set评审能够暴露方法失效而不是被总体指标掩盖。
+
+### V1C验收
+
+- 只有Gate B通过并获用户确认后才适用。
+- TRADEFLOW全量深度运行保留失败和Unknown，不强制业务分类。
+- 用户能够检查有意义的Object Family、Field Concept和语义候选，并回溯成员级证据与冲突。
