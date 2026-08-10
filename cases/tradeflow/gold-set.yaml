@@ -135,16 +135,88 @@ cases:
       rationale: "No declared key and no row validation require an explicit Unknown Grain result."
       adjudicated_at: 2026-08-10
 
+  - case_id: holdout_technical_vs_business_identity_001
+    task: IDENTITY
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:OTC_OPTION_PARAMETER
+    annotation_status: DRAFT
+    holdout: true
+    polarity: AMBIGUOUS
+    expected:
+      outcome: SINGLE_CANDIDATE
+      accepted_values:
+        - - testdb:TITANS_TRADEFLOW:TABLE:OTC_OPTION_PARAMETER:COLUMN:ID
+      required_evidence_types: [CONSTRAINT]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:OTC_OPTION_PARAMETER:CONSTRAINT:PK_OTC_OPTION_PARAMETER_1
+    ambiguity: true
+    annotation:
+      reviewer_label: pending
+      rationale: "Holdout: distinguish declared technical PK from unverified business Identity."
+
+  - case_id: holdout_role_and_counterevidence_001
+    task: OBJECT_ROLE
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_CURRENT_POS
+    annotation_status: DRAFT
+    holdout: true
+    polarity: UNKNOWN
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      required_evidence_types: [OBJECT, CONSTRAINT, FEATURE]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_CURRENT_POS
+    ambiguity: true
+    annotation:
+      reviewer_label: pending
+      rationale: "Holdout: current-position naming is not enough to publish an Object Role; inspect counterevidence."
+
+  - case_id: holdout_relation_layer_direction_001
+    task: RELATION
+    subject_ref: tradeflow
+    annotation_status: DRAFT
+    holdout: true
+    polarity: UNKNOWN
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      required_evidence_types: [FEATURE, ORACLE_DEPENDENCY]
+      required_source_refs: []
+    ambiguity: true
+    annotation:
+      reviewer_label: pending
+      rationale: "Holdout: distinguish structure similarity observation from FK, Dependency, SQL Lineage, or a directed business Relation."
+
+  - case_id: holdout_unknown_no_key_001
+    task: IDENTITY
+    subject_ref: testdb:TITANS_TRADEFLOW:TABLE:TRANS_CSO_HA_TZXX
+    annotation_status: DRAFT
+    holdout: true
+    polarity: UNKNOWN
+    expected:
+      outcome: UNKNOWN
+      accepted_values: []
+      required_evidence_types: [OBJECT, INDEX]
+      required_source_refs:
+        - testdb:TITANS_TRADEFLOW:TABLE:TRANS_CSO_HA_TZXX
+    ambiguity: false
+    annotation:
+      reviewer_label: pending
+      rationale: "Holdout: an ordinary index without PK/UK must not become an Identity candidate."
+
 holdout_tasks:
   - task_id: holdout_technical_vs_business_identity
     task_type: IDENTITY
+    case_id: holdout_technical_vs_business_identity_001
     annotation_status: DRAFT
   - task_id: holdout_role_and_counterevidence
     task_type: OBJECT_ROLE
+    case_id: holdout_role_and_counterevidence_001
     annotation_status: DRAFT
   - task_id: holdout_relation_layer_and_direction
     task_type: RELATION
+    case_id: holdout_relation_layer_direction_001
     annotation_status: DRAFT
   - task_id: holdout_unknown_or_not_evaluable
-    task_type: GRAIN
+    task_type: IDENTITY
+    case_id: holdout_unknown_no_key_001
     annotation_status: DRAFT
