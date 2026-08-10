@@ -155,6 +155,11 @@ def _build_parser() -> argparse.ArgumentParser:
     sample.add_argument("--facts-dir", required=True, type=Path)
     sample.add_argument("--output", required=True, type=Path)
     sample.add_argument("--max-objects", type=int, default=8)
+    sample.add_argument(
+        "--include-numeric-suffix",
+        action="store_true",
+        help="include numeric-suffixed objects in the V1B sample",
+    )
     deep_derive = subparsers.add_parser("deep-derive")
     deep_derive.add_argument("--facts-dir", required=True, type=Path)
     deep_derive.add_argument("--sample", required=True, type=Path)
@@ -293,7 +298,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "select-sample":
         facts = read_json_facts(args.facts_dir)
-        sample = select_tradeflow_sample(facts, max_objects=args.max_objects)
+        sample = select_tradeflow_sample(
+            facts,
+            max_objects=args.max_objects,
+            exclude_numeric_suffix=not args.include_numeric_suffix,
+        )
         write_sample(str(args.output), sample)
         print(
             json.dumps(

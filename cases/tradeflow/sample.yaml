@@ -9,6 +9,11 @@ selection_method:
   input: canonical panorama physical facts
   boundary: one object per key/index stratum plus one structural contrast pair
   semantic_labels_enabled: false
+  exclusions:
+  - rule_id: numeric_suffix
+    scope: V1B_SAMPLE_ONLY
+    reason: user-directed exclusion of test/snapshot-like names; Panorama facts remain
+      retained
 selected_objects:
 - asset_id: testdb:TITANS_TRADEFLOW:TABLE:OTC_OPTION_PARAMETER
   object_name: OTC_OPTION_PARAMETER
@@ -18,6 +23,24 @@ selected_objects:
   index_count: 1
   structure_fingerprint: dae10d6bd122bdfd
   selection_reason: widest eligible object in PK_SINGLE; physical facts only
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_CURRENT_POS
+  object_name: POS_FAST_TRS_LEG_CURRENT_POS
+  stratum: PK_SINGLE
+  column_count: 42
+  constraint_count: 3
+  index_count: 3
+  structure_fingerprint: 29b75006cfd56095
+  selection_reason: same physical structure fingerprint as a sample peer; contrast
+    only, not a business-family claim
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:POS_FAST_TRS_LEG_HIS_POS
+  object_name: POS_FAST_TRS_LEG_HIS_POS
+  stratum: PK_SINGLE
+  column_count: 42
+  constraint_count: 2
+  index_count: 3
+  structure_fingerprint: 29b75006cfd56095
+  selection_reason: same physical structure fingerprint as a sample peer; contrast
+    only, not a business-family claim
 - asset_id: testdb:TITANS_TRADEFLOW:TABLE:POS_MAIN_CONTR_EVENT_OPEN_QTY
   object_name: POS_MAIN_CONTR_EVENT_OPEN_QTY
   stratum: UK_ONLY
@@ -26,32 +49,14 @@ selected_objects:
   index_count: 1
   structure_fingerprint: bd6c2f75de8979ce
   selection_reason: widest eligible object in UK_ONLY; physical facts only
-- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_20250527
-  object_name: REF_OTC_OPTION_DEAL_20250527
+- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_OTC_OPTION_DEAL_BAK
+  object_name: REF_OTC_OPTION_DEAL_BAK
   stratum: NO_DECLARED_KEY
-  column_count: 91
+  column_count: 61
   constraint_count: 2
   index_count: 0
-  structure_fingerprint: 1b4f7dfb32806220
+  structure_fingerprint: 4e7bab3215199a55
   selection_reason: widest eligible object in NO_DECLARED_KEY; physical facts only
-- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_1
-  object_name: REF_TRS_20250228_1
-  stratum: NO_DECLARED_KEY
-  column_count: 89
-  constraint_count: 1
-  index_count: 0
-  structure_fingerprint: 11fe8ab674f5884b
-  selection_reason: same physical structure fingerprint as a sample peer; contrast
-    only, not a business-family claim
-- asset_id: testdb:TITANS_TRADEFLOW:TABLE:REF_TRS_20250228_2
-  object_name: REF_TRS_20250228_2
-  stratum: NO_DECLARED_KEY
-  column_count: 89
-  constraint_count: 1
-  index_count: 0
-  structure_fingerprint: 11fe8ab674f5884b
-  selection_reason: same physical structure fingerprint as a sample peer; contrast
-    only, not a business-family claim
 - asset_id: testdb:TITANS_TRADEFLOW:TABLE:TRANS_CSO_HA_TZXX
   object_name: TRANS_CSO_HA_TZXX
   stratum: NO_KEY_WITH_INDEX

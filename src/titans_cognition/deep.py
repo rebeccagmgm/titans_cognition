@@ -27,6 +27,7 @@ SIMILARITY_METHOD_ID = "similarity.tradeflow.structure_jaccard"
 SIMILARITY_METHOD_VERSION = "v1"
 
 _TOKEN_PATTERN = re.compile(r"[A-Z0-9]+")
+_NUMERIC_SUFFIX_PATTERN = re.compile(r"\d+$")
 _STRATA = (
     "PK_COMPOSITE",
     "PK_SINGLE",
@@ -77,6 +78,7 @@ def select_tradeflow_sample(
     *,
     case_id: str = CASE_ID,
     max_objects: int = 8,
+    exclude_numeric_suffix: bool = True,
 ) -> dict[str, object]:
     """Select a small deterministic sample from physical facts only.
 
@@ -93,6 +95,10 @@ def select_tradeflow_sample(
         if row.get("schema_name") == "TITANS_TRADEFLOW"
         and not row.get("is_boundary")
         and row.get("extraction_status") == "SUCCESS"
+        and (
+            not exclude_numeric_suffix
+            or not _NUMERIC_SUFFIX_PATTERN.search(str(row.get("object_name", "")))
+        )
     ]
     columns_by_asset = _group(facts.columns, "asset_id")
     constraints_by_asset = _group(facts.constraints, "asset_id")
@@ -161,6 +167,17 @@ def select_tradeflow_sample(
             "input": "canonical panorama physical facts",
             "boundary": "one object per key/index stratum plus one structural contrast pair",
             "semantic_labels_enabled": False,
+            "exclusions": (
+                [
+                    {
+                        "rule_id": "numeric_suffix",
+                        "scope": "V1B_SAMPLE_ONLY",
+                        "reason": "user-directed exclusion of test/snapshot-like names; Panorama facts remain retained",
+                    }
+                ]
+                if exclude_numeric_suffix
+                else []
+            ),
         },
         "selected_objects": [
             {

@@ -99,6 +99,44 @@ def test_tradeflow_sample_is_stratified_and_deterministic():
     assert composite["object_name"] == "A_COMPOSITE"
 
 
+def test_tradeflow_sample_can_exclude_numeric_suffix_objects():
+    facts = _facts()
+    facts.objects.append(
+        {
+            "run_id": "run-1",
+            "asset_id": "testdb:TITANS_TRADEFLOW:TABLE:Z_NONE_20250101",
+            "schema_name": "TITANS_TRADEFLOW",
+            "object_name": "Z_NONE_20250101",
+            "object_type": "TABLE",
+            "extraction_status": "SUCCESS",
+            "is_boundary": False,
+        }
+    )
+    facts.columns.append(
+        {
+            "asset_id": "testdb:TITANS_TRADEFLOW:TABLE:Z_NONE_20250101",
+            "column_id": "testdb:TITANS_TRADEFLOW:TABLE:Z_NONE_20250101:COLUMN:ID",
+            "column_name": "ID",
+            "ordinal_position": 1,
+            "data_type": "NUMBER",
+        }
+    )
+    facts.columns.append(
+        {
+            "asset_id": "testdb:TITANS_TRADEFLOW:TABLE:Z_NONE_20250101",
+            "column_id": "testdb:TITANS_TRADEFLOW:TABLE:Z_NONE_20250101:COLUMN:ID2",
+            "column_name": "ID2",
+            "ordinal_position": 2,
+            "data_type": "NUMBER",
+        }
+    )
+    sample = select_tradeflow_sample(facts)
+    assert all(
+        not str(row["object_name"]).endswith(tuple(str(value) for value in range(10)))
+        for row in sample["selected_objects"]
+    )
+
+
 def test_tradeflow_features_keep_unknown_business_meaning_out():
     sample = select_tradeflow_sample(_facts())
     derived = derive_tradeflow_features(_facts(), sample)
