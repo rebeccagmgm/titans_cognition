@@ -170,6 +170,10 @@ def _evaluate_case(
         _value_key(_normalize_gold_value(task, value))
         for value in expected.get("accepted_values", [])
     ]
+    unacceptable = [
+        _value_key(_normalize_gold_value(task, value))
+        for value in expected.get("unacceptable_values", [])
+    ]
     actual_values = []
     candidate_rows = {str(row.get("candidate_id")): row for row in candidates_by_task.get(task, [])}
     if result:
@@ -191,7 +195,12 @@ def _evaluate_case(
                 }
             )
     elif expected_outcome in ("SINGLE_CANDIDATE", "COMPETING"):
-        correct = actual_outcome == expected_outcome and bool(actual_keys & set(accepted))
+        accepted_match = (
+            bool(actual_keys & set(accepted))
+            if expected_outcome == "SINGLE_CANDIDATE"
+            else set(accepted) <= actual_keys
+        )
+        correct = actual_outcome == expected_outcome and accepted_match
         if not correct:
             errors.append(
                 {
@@ -200,6 +209,15 @@ def _evaluate_case(
                     "message": "Actual outcome or accepted candidate value does not match the adjudicated expectation.",
                 }
             )
+    if actual_keys & set(unacceptable):
+        correct = False
+        errors.append(
+            {
+                "case_id": case.get("case_id"),
+                "error_category": _overclaim_category(task),
+                "message": "The run published a value explicitly marked unacceptable by the Gold Set.",
+            }
+        )
     else:
         errors.append(
             {
