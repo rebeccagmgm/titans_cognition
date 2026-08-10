@@ -325,39 +325,12 @@ def _object_role_candidates(
     object_row: dict[str, object],
     evidence_by_source: dict[str, dict[str, object]],
 ) -> list[str]:
-    tokens = set(str(object_row.get("object_name", "")).upper().split("_"))
-    cues = (
-        ("EVENT_TRANSACTION", {"EVENT", "TRADE", "DEAL"}),
-        ("STATE_HISTORY", {"HIS", "HISTORY", "CURRENT", "POSITION", "POS"}),
-        ("RELATION_MAPPING", {"MAPPING", "MAP"}),
-        ("REFERENCE_CONFIG", {"CONFIG", "CFG", "PARAMETER"}),
-        ("LOG_AUDIT", {"LOG", "AUDIT"}),
-    )
-    ids: list[str] = []
-    for role, role_tokens in cues:
-        if not tokens & role_tokens:
-            continue
-        candidate_id = _candidate_id(run_id, "OBJECT_ROLE", f"{asset}|{role}")
-        ids.append(candidate_id)
-        result.object_role_candidates.append(
-            _envelope(
-                candidate_id,
-                run_id,
-                case_id,
-                asset,
-                "WEAK",
-                None,
-                f"Candidate object role {role}; name-only signal, not a business conclusion.",
-                ["requires comment/DDL or human review"],
-                asset_id=asset,
-                object_role=role,
-                role_qualifier="NAME_ONLY_SIGNAL",
-                method_id="rule.object_role.name_signal",
-                method_version="v1",
-            )
-        )
-        _link(result, candidate_id, evidence_by_source, asset, "SUPPORTS", "WEAK", "Object name token is an exploratory structural signal only.")
-    return ids
+    # Name tokens remain available in derived features and the review pack, but
+    # V1B does not publish an Object Role Candidate from names alone.  Without
+    # comments, DDL, field distribution, or reviewed business evidence, the
+    # task must remain UNKNOWN rather than becoming a weak semantic label.
+    del result, run_id, case_id, asset, object_row, evidence_by_source
+    return []
 
 
 def _relation_candidates(
@@ -403,38 +376,9 @@ def _relation_candidates(
         )
         _link(result, candidate_id, evidence_by_source, str(constraint["constraint_id"]), "SUPPORTS", "STRONG", "Declared foreign key fixes the structural direction.")
 
-    for row in derived.structure_similarity:
-        if float(row.get("column_score", 0)) < 0.8:
-            continue
-        left = str(row["left_asset_id"])
-        right = str(row["right_asset_id"])
-        candidate_id = _candidate_id(run_id, "RELATION", f"SIMILAR|{left}|{right}")
-        ids.append(candidate_id)
-        result.relation_candidates.append(
-            _envelope(
-                candidate_id,
-                run_id,
-                case_id,
-                left,
-                "WEAK",
-                float(row.get("combined_score", 0)),
-                "Structural similarity candidate; it does not assert a business relation or direction.",
-                ["name/column overlap can be a false positive"],
-                source_id=left,
-                predicate="STRUCTURALLY_SIMILAR_TO",
-                target_id=right,
-                relation_level="OBJECT",
-                epistemic_kind="STRUCTURAL",
-                generation_origin="STATISTICAL",
-                direction_is_resolved=False,
-                relation_qualifiers=json.dumps({"column_score": row.get("column_score")}, sort_keys=True),
-                method_id=SIMILARITY_METHOD_ID,
-                method_version=SIMILARITY_METHOD_VERSION,
-            )
-        )
-        feature_id = _feature_source_id(left, right)
-        if feature_id in evidence_by_source:
-            _link(result, candidate_id, evidence_by_source, feature_id, "SUPPORTS", "WEAK", "Structure similarity is an exploratory signal only.")
+    # Structure similarity remains a derived observation for review and sample
+    # selection.  V1B does not promote it to a Relation Candidate without an
+    # explicit FK, Oracle dependency, SQL lineage, or human proposal.
     return ids
 
 

@@ -170,6 +170,8 @@ def test_tradeflow_inference_links_candidates_to_evidence_and_keeps_unknown():
     linked_ids = {row["candidate_id"] for row in inference.candidate_evidence}
     assert candidate_ids
     assert candidate_ids <= linked_ids
+    assert inference.relation_candidates == []
+    assert inference.object_role_candidates == []
     assert any(
         row["task_type"] == "IDENTITY"
         and row["outcome"] == "UNKNOWN"

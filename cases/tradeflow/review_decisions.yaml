@@ -1,7 +1,67 @@
 version: v1
 case_id: tradeflow
-review_status: NOT_STARTED
-decisions: []
+review_status: PARTIAL
+decisions:
+  - review_id: review-20260810-identity-trd-option-event
+    target_type: CANDIDATE
+    target_id: titans-panorama-full-def-batch-stream-20260810:IDENTITY:33b27eba2b1f
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept as technical Identity from the declared composite PK; do not promote to business Identity."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-grain-pos-main
+    target_type: CANDIDATE
+    target_id: titans-panorama-full-def-batch-stream-20260810:GRAIN:228cab2acc4a
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept as declared structural Grain; row-level validation remains NOT_PERFORMED."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-object-role-pos-main
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:51002e0c27aa
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept UNKNOWN because name cues do not establish EVENT_TRANSACTION or STATE_HISTORY."
+    replacement_value:
+      outcome: UNKNOWN
+      candidate_ids: []
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-relation-tradeflow
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:1177b46f6eb0
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept UNKNOWN; structure similarity remains a derived observation, not a Relation Candidate."
+    replacement_value:
+      outcome: UNKNOWN
+      candidate_ids: []
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-identity-ref-bak
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:7a3475d5c290
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept UNKNOWN because no declared PK/UK supports an Identity candidate."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-field-role-contract-code
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:804db6a7469c
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept UNKNOWN; CONTRACT_CODE name alone is insufficient for Identifier role."
+    replacement_value: null
+    reviewed_at: 2026-08-10
+  - review_id: review-20260810-grain-ref-bak
+    target_type: INFERENCE_RESULT
+    target_id: titans-panorama-full-def-batch-stream-20260810:RESULT:15a634a21683
+    decision: ACCEPTED
+    reviewer_label: user-confirmed
+    reason: "Accept UNKNOWN because no declared key or row validation supports Grain."
+    replacement_value: null
+    reviewed_at: 2026-08-10
 gate_b:
   efficiency_evidence_confirmed: false
   user_value_confirmed: false
