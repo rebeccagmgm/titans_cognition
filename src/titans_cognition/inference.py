@@ -396,6 +396,7 @@ _COMMENT_OBJECT_ROLE_SIGNALS = (
     ("EVENT_TRANSACTION", ("事件", "交易", "event", "transaction")),
     ("STATE_HISTORY", ("历史", "history")),
     ("SNAPSHOT", ("当前", "快照", "snapshot", "current")),
+    ("REFERENCE_CONFIG", ("参数", "配置", "parameter", "config")),
 )
 
 _COMMENT_FIELD_ROLE_SIGNALS = (

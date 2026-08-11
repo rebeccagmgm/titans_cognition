@@ -212,3 +212,16 @@ def test_comment_signals_create_weak_role_candidates_with_comment_evidence():
         row["evidence_type"] == "COMMENT" and row["summary"] in {"历史持仓表", "数量"}
         for row in inference.evidence_items
     )
+
+
+def test_parameter_comment_maps_to_reference_config_role():
+    facts = _facts()
+    facts.objects[1]["object_comment"] = "期权参数配置表"
+    sample = select_tradeflow_sample(facts)
+    inference = infer_tradeflow(facts, derive_tradeflow_features(facts, sample))
+
+    assert any(
+        row.get("object_role") == "REFERENCE_CONFIG"
+        and row.get("evidence_grade") == "WEAK"
+        for row in inference.object_role_candidates
+    )
