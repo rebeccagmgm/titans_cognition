@@ -1,0 +1,74 @@
+version: v1
+
+scope:
+  schemas: [TITANS_TRADEFLOW]
+  object_types: [TABLE]
+  exclude_numeric_suffix: true
+  expected_object_count: 233
+  expected_excluded_count: 244
+
+limits:
+  top_k: 12
+  max_candidates_per_field: 500
+  max_candidate_pairs: 250000
+  max_feature_frequency: 220
+
+similarity:
+  min_similarity: 0.22
+  base_cluster_threshold: 0.42
+  qualified_cluster_threshold: 0.66
+  weights:
+    name: 1.0
+    comment: 1.35
+    context: 0.18
+    type: 0.12
+
+abbreviations:
+  AMT: AMOUNT
+  AMTS: AMOUNT
+  CURR: CURRENT
+  INIT: INITIAL
+  ORG: ORIGINAL
+  CCY: CURRENCY
+  QTY: QUANTITY
+  DT: DATE
+  "NO": NUMBER
+
+broad_categories:
+  日期时间:
+    terms: [DATE, TIME, DATETIME, 日期, 时间, 日, 时点]
+  状态:
+    terms: [STATUS, STATE, FLAG, 状态, 标志, 是否]
+  代码:
+    terms: [CURRENCY, CCY, CODE, TYPE, 币种, 代码, 类型]
+  标识符:
+    terms: [ID, IDENTIFIER, NUMBER, NO, 编号, 标识, 序号]
+  比率:
+    terms: [RATE, RATIO, PCT, PERCENT, YIELD, 比率, 比例, 利率, 税率, 收益率]
+  数量:
+    terms: [QUANTITY, QTY, VOLUME, COUNT, LOT, LOTS, MULTIPLIER, 数量, 股数, 份额, 手数, 乘数]
+  金额:
+    terms: [AMOUNT, AMT, NOTIONAL, PRINCIPAL, PRICE, VALUE, BALANCE, 金额, 本金, 费用, 保证金, 价格, 市值, 余额]
+  数值:
+    terms: [NUMERIC, NUMBER, VALUE_NUMBER, 数值]
+  名称:
+    terms: [NAME, LABEL, TITLE, 名称, 简称]
+  文本:
+    terms: [DESC, DESCRIPTION, MEMO, REMARK, NOTE, 说明, 描述, 备注]
+
+base_concepts:
+  名义本金:
+    terms: [NOTIONAL, NOTIONAL_PRINCIPAL, 名义本金, 名本]
+    broad_category: 金额
+  保证金:
+    terms: [MARGIN, COLLATERAL, 保证金, 履约保障]
+    broad_category: 金额
+  费用:
+    terms: [FEE, COST, EXPENSE, 费用, 成本]
+    broad_category: 金额
+  成交金额:
+    terms: [DEAL_AMOUNT, EXECUTED_AMOUNT, 成交金额]
+    broad_category: 金额
+  价格:
+    terms: [PRICE, 价格]
+    broad_category: 金额

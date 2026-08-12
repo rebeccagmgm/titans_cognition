@@ -2,7 +2,7 @@
 
 ## 1. Spec目标
 
-本Spec定义如何在一次只读元数据采集中，同时建立当前纳入 TITANS Schema 的全貌地图，并对 `TITANS_TRADEFLOW` 执行首个深度业务语义逆向案例，交付一套可检查的 Cognition Result Bundle。它面向后续实现Agent、评审人和业务使用者，不是实现代码或长期平台蓝图。
+本 Spec 定义只读元数据提取、结构候选、证据、评测和地图 Projection 的技术契约。项目唯一交付目标是可从业务区域、业务对象和生命周期下钻到表、粒度、键、关系、证据与 Unknown 的 TITANS 业务全貌；当前技术结果只是支撑资产，不能单独构成业务交付或验收。
 
 ## 2. 模块和依赖
 
@@ -51,10 +51,11 @@
 ## 4. 规范优先级
 
 1. `AGENTS.md`中的安全和范围硬边界。
-2. `01-requirements.md`中的用户目标、范围和非目标。
-3. `04-result-contracts.md`中的数据不变量。
-4. 对应专项Spec。
-5. ADR记录的已接受架构决策。
+2. OpenSpec `cognition-delivery-governance` 中的产品目标、完成声明和授权规则。
+3. `01-requirements.md`中的用户目标、范围和非目标。
+4. `04-result-contracts.md`中的数据不变量。
+5. 对应专项Spec。
+6. ADR记录的已接受架构决策。
 
 如模块间出现冲突，停止实现并修改Spec，不得用代码行为隐式决定。
 
@@ -67,27 +68,14 @@
 - [ADR-0005：认知方法先样本验证再全量扩展](../adr/0005-validate-before-scale.md)
 - [ADR-0006：推断结果与关系认识论分层](../adr/0006-inference-results-and-relation-layers.md)
 
-## 6. V1完成定义
+## 6. 完成状态与工程阶段
 
-V1采用强制阶段门：
+项目分别报告 `physical_extraction`、`structural_cognition`、`reader_delivery`、`business_acceptance` 和 `scale_authorization`。任一状态的成功不得自动提升其他状态；当前基线见 [当前状态基线](../current-status-baseline.md)。
 
-```text
-V1A Panorama
-    ↓ 物理覆盖与全貌地图验收
-V1B TRADEFLOW Deep Sample
-    ↓ 认知闭环与Gold Set验收
-V1C TRADEFLOW Deep Scale
-```
+V1A、V1B、V1C 继续作为历史工程范围标签：
 
-现阶段工程承诺是先完成 V1A 和 V1B。V1C 的目标契约保留在 Spec 中，但只有 V1B 质量门通过并由用户确认后才启动。
+- V1A Gate A 检查物理提取、对账和物理页面，不验收业务全貌。
+- V1B Gate B 检查样本结构规则、Evidence、Unknown 和测量材料，不证明独立方法有效，也不授权 V1C。
+- V1C 当前冻结。后续只有在读者交付存在、业务验收通过且用户对具体范围作出独立授权后，才能由新的 Change 启动。
 
-以下是完整V1（含V1C）的最终完成定义；第一轮开工以Gate A和Gate B为完成边界：
-
-- Panorama Schema allowlist 内全部可见物理对象已纳入，提取失败和权限缺口显式列出，并可按 Schema 查看对象类型、字段、注释和依赖概况。
-- TRADEFLOW 当前目标表数已现场复核；其中每个目标表均可生成物理事实完整的 Object Card。深度推断证据不足时允许输出Unknown，V1A物理Card不强制业务解释。
-- Identity、Grain、Role、Family、Field Concept和Relation候选均使用类型化结果契约。
-- 每个认知候选均可追溯到方法和证据，支持与反证分开。
-- LLM只产生通过结构校验且引用有效证据ID的候选。
-- Gold Set分任务评测完成，错误案例和无法判断案例被保留。
-- 最小静态地图能够从 TITANS 全貌下钻到 Schema；对 TRADEFLOW 可继续下钻到对象族、对象、字段概念、关系和原始证据。
-- 未引入V1非目标中的平台能力。
+因此，第一轮 Gate A/Gate B 通过只表示相应工程检查完成；完整产品完成只由 TITANS 业务全貌的实际交付与业务验收定义。

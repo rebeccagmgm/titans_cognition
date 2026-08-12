@@ -144,7 +144,7 @@ Schema统计 / 粗结构 / 依赖地图       TRADEFLOW Deep Case过滤
 
 - V1A不得为了未来候选类型预先实现空的推断框架。
 - V1B只实现支撑 `Identity → Grain → Role → Relation → Evidence` 纵向闭环所需的最小代码和契约。
-- V1C不得在V1B Gold Set、Unknown行为和用户效用验收通过前启动。
+- V1C不得在V1B Gold Set、Unknown行为和工程效用检查通过前启动；这些条件即使全部满足也不产生授权。读者交付、业务验收和用户对具体扩展范围的独立授权仍是额外必要条件。
 - Evidence Pack、SQLGlot列级Lineage、Object Family、Field Concept、Wiki和LLM均不是V1A/V1B关键路径；Canonical Evidence与样本深度地图是V1B必需结果。
 
 ## 6. 最小运行Manifest

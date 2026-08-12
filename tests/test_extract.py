@@ -2,6 +2,7 @@ from titans_cognition.extract import (
     ColumnMetadata,
     ObjectMetadata,
     extract_facts,
+    iter_fact_batches,
 )
 from titans_cognition.scope import ScopeConfig
 
@@ -101,3 +102,37 @@ def test_extract_keeps_boundary_object_records_for_out_of_scope_dependencies():
     assert result.objects[0]["in_panorama_scope"] is False
     assert result.objects[0]["is_boundary"] is True
     assert result.objects[0]["boundary_for_case_ids"] == ["test-scope"]
+
+
+def test_iter_fact_batches_bounds_objects_and_preserves_rows():
+    scope = ScopeConfig(
+        scope_id="test-scope",
+        source_label="testdb",
+        schemas=("TITANS_TRADEFLOW",),
+        object_types=("TABLE",),
+        excluded_schema_suffixes=(),
+        excluded_schemas=(),
+    )
+    objects = [
+        ObjectMetadata(
+            schema_name="TITANS_TRADEFLOW",
+            object_name="T_EVENT_A",
+            object_type="TABLE",
+            columns=(ColumnMetadata("ID", 1, "NUMBER"),),
+        ),
+        ObjectMetadata(
+            schema_name="TITANS_TRADEFLOW",
+            object_name="T_EVENT_B",
+            object_type="TABLE",
+            columns=(ColumnMetadata("ID", 1, "NUMBER"),),
+        ),
+    ]
+
+    batches = list(iter_fact_batches(scope, objects, run_id="run-004", batch_size=1))
+
+    assert [len(batch.objects) for batch in batches] == [1, 1]
+    assert [row["object_name"] for batch in batches for row in batch.objects] == [
+        "T_EVENT_A",
+        "T_EVENT_B",
+    ]
+    assert sum(len(batch.columns) for batch in batches) == 2

@@ -1,11 +1,12 @@
 version: v1
 scope_id: tradeflow
 status: PENDING_USER
+governance_scope: STRUCTURAL_REGRESSION_ONLY
 protocol:
   baseline_material: "Oracle metadata/DDL list without generated cognition map"
   cognition_material: "TRADEFLOW V1B cognition map, candidate evidence, and Unknown boundaries"
   order: "Use a different but same-difficulty object for a single reviewer, or swap tool order for multiple reviewers."
-  rule: "Record observed values only. Do not estimate missing timings or object counts."
+  rule: "Record observed values only. Do not estimate missing timings or object counts. A PASS is engineering utility evidence only and never authorizes V1C."
 tasks:
   - task_id: holdout_technical_vs_business_identity_001
     category: technical_pk_business_identity_grain

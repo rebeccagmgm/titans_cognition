@@ -2,7 +2,7 @@
 
 ## 1. 地图定位
 
-地图是Cognition Result Bundle的可浏览Projection，用于帮助用户快速建立全貌和下钻证据。V1不建设正式Web产品，但不能只交付Parquet文件和算法日志。
+地图是Cognition Result Bundle的可浏览Projection。物理 Panorama 和样本认知页用于下钻工程事实与证据；最终业务全貌必须另外以业务区域、业务对象和生命周期组织入口。V1不建设正式Web产品，但不能只交付Parquet文件和算法日志。
 
 ## 2. 交付形态
 
@@ -11,7 +11,7 @@
 - 不需要服务端、数据库、登录、权限和在线编辑。
 - 页面数据由Canonical结果生成，不手工维护。
 
-地图分阶段交付：V1A交付Panorama和物理Object Card；V1B为TRADEFLOW分层样本增加核心认知卡；V1C才交付全量对象族、字段概念、语义候选和LLM解释页面。
+地图按已启用能力生成：V1A交付物理 Panorama 和 Object Card；V1B为TRADEFLOW分层样本增加结构认知卡。它们当前均定级为工程 Projection，不代表业务全貌已经交付。V1C全量页面当前未授权。
 
 ## 3. 地图不是单一树
 
@@ -195,7 +195,7 @@ V1不要求自然语言搜索、向量检索或复杂图交互。
 
 输出目录和分享边界见[11 安全与运行](11-security-and-operations.md)。
 
-## 8. 地图验收
+## 8. 地图工程验收与业务交付
 
 - 任何Panorama范围对象可在三次以内的层级导航中打开物理Object Card。
 - V1B样本对象可继续打开Identity、Grain、Role、Relation及其Evidence；V1C全量对象同样满足。
@@ -203,4 +203,5 @@ V1不要求自然语言搜索、向量检索或复杂图交互。
 - 用户能区分数据库声明、程序推断、LLM建议和人工决定。
 - Unknown和失败可以被搜索和汇总。
 - 页面中不存在只在展示层维护、无法回溯Canonical结果的业务属性。
-- 地图确实帮助用户完成[08 评测](08-evaluation.md)中的效用任务。
+- 样本地图是否帮助用户完成[08 评测](08-evaluation.md)中的结构调查任务，只记录为工程效用证据。
+- 只有业务区域、业务对象和生命周期入口实际存在，并由用户确认可用于理解 TITANS 业务及其数据承载，`reader_delivery` 和 `business_acceptance` 才能分别通过。

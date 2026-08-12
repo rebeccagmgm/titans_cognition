@@ -9,7 +9,7 @@ from typing import Any
 
 import yaml
 
-from .measurements import evaluate_gate_b_measurements
+from .measurements import REQUIRED_TASK_IDS, evaluate_gate_b_measurements
 
 
 def load_yaml_mapping(path: str | Path) -> dict[str, Any]:
@@ -92,25 +92,60 @@ def evaluate_tradeflow(
     }
     linked_candidate_ids = set(links_by_candidate)
     unsupported_candidates = sorted(all_candidate_ids - linked_candidate_ids)
-    holdout_tasks = gold_set.get("holdout_tasks", [])
-    holdout_complete = bool(holdout_tasks) and all(
-        isinstance(task, dict) and task.get("annotation_status") == "ADJUDICATED"
-        for task in holdout_tasks
+    holdout_tasks_value = gold_set.get("holdout_tasks", [])
+    holdout_tasks = (
+        holdout_tasks_value if isinstance(holdout_tasks_value, list) else []
     )
+    holdout_entries_valid = (
+        len(holdout_tasks) == len(REQUIRED_TASK_IDS)
+        and all(
+            isinstance(task, dict) and bool(task.get("case_id"))
+            for task in holdout_tasks
+        )
+    )
+    holdout_case_ids = [
+        str(task.get("case_id"))
+        for task in holdout_tasks
+        if isinstance(task, dict) and task.get("case_id")
+    ]
+    holdout_complete = (
+        holdout_entries_valid
+        and set(holdout_case_ids) == REQUIRED_TASK_IDS
+        and all(
+            isinstance(task, dict)
+            and task.get("annotation_status") == "ADJUDICATED"
+            for task in holdout_tasks
+        )
+    )
+    structural_regression_pass = (
+        bool(adjudicated_reports)
+        and not errors
+        and not unsupported_candidates
+        and holdout_complete
+    )
+    structural_reasons: list[str] = []
+    if not adjudicated_reports:
+        structural_reasons.append("no ADJUDICATED Gold Set cases")
+    if errors:
+        structural_reasons.append("adjudicated cases contain errors")
+    if unsupported_candidates:
+        structural_reasons.append("candidate evidence coverage is incomplete")
+    if not holdout_complete:
+        structural_reasons.append(
+            "four required holdout cases are not uniquely adjudicated"
+        )
     measurement_report = evaluate_gate_b_measurements(measurements)
     gate_b = {
         "status": "PASS"
         if (
-            bool(adjudicated_reports)
-            and not errors
-            and not unsupported_candidates
-            and holdout_complete
+            structural_regression_pass
             and bool(reviews.get("gate_b", {}).get("efficiency_evidence_confirmed"))
             and bool(reviews.get("gate_b", {}).get("user_value_confirmed"))
             and measurement_report["efficiency_status"] == "PASS"
             and measurement_report["user_value_status"] == "CONFIRMED"
         )
         else "BLOCKED",
+        "scope": "STRUCTURAL_REGRESSION_ONLY",
         "reasons": [],
     }
     if not adjudicated_reports:
@@ -120,7 +155,9 @@ def evaluate_tradeflow(
     if unsupported_candidates:
         gate_b["reasons"].append("candidate evidence coverage is incomplete")
     if not holdout_complete:
-        gate_b["reasons"].append("four holdout tasks are not adjudicated")
+        gate_b["reasons"].append(
+            "four required holdout cases are not uniquely adjudicated"
+        )
     if not reviews.get("gate_b", {}).get("efficiency_evidence_confirmed"):
         gate_b["reasons"].append("efficiency evidence is not confirmed")
     if measurement_report["efficiency_status"] != "PASS":
@@ -133,6 +170,19 @@ def evaluate_tradeflow(
     counted_outcomes = Counter(
         str(report.get("actual_outcome")) for report in adjudicated_reports
     )
+    structural_status = (
+        "PROTOTYPE_REGRESSION_PASS"
+        if structural_regression_pass
+        else "PROTOTYPE_REGRESSION_BLOCKED"
+    )
+    business_acceptance = {
+        "status": "NOT_ACCEPTED",
+        "reason": "Gate B and Gold Set results are engineering evidence, not business acceptance.",
+    }
+    scale_authorization = {
+        "status": "PROHIBITED",
+        "reason": "V1C requires reader delivery, business acceptance, and explicit independent authorization.",
+    }
     return {
         "version": "v1",
         "case_id": gold_set.get("scope_id", "tradeflow-deep-v1"),
@@ -159,7 +209,21 @@ def evaluate_tradeflow(
         "gate_a_status": "PASS",
         "gate_b": gate_b,
         "gate_b_measurements": measurement_report,
-        "v1c_authorized": gate_b["status"] == "PASS",
+        "structural_regression": {
+            "status": "PASS" if structural_regression_pass else "BLOCKED",
+            "scope": "CURRENT_RULE_AND_GOLD_CONSISTENCY",
+            "reasons": structural_reasons,
+        },
+        "delivery_status": {
+            "physical_extraction": "NOT_EVALUATED_BY_THIS_REPORT",
+            "structural_cognition": structural_status,
+            "reader_delivery": "NOT_EVALUATED_BY_THIS_REPORT",
+            "business_acceptance": business_acceptance["status"],
+            "scale_authorization": scale_authorization["status"],
+        },
+        "business_acceptance": business_acceptance,
+        "scale_authorization": scale_authorization,
+        "v1c_authorized": False,
     }
 
 
@@ -173,9 +237,11 @@ def render_review_pack(report: dict[str, object]) -> str:
         f"- Gold Set status: `{report.get('gold_set_status')}`",
         f"- Cases: `{report.get('gold_set_case_count')}`",
         f"- Adjudicated: `{report.get('adjudicated_case_count')}`",
-        f"- Gate B: `{gate_b.get('status')}`",
+        f"- Gate B (structural regression only): `{gate_b.get('status')}`",
+        f"- Business acceptance: `{report.get('business_acceptance', {}).get('status', 'NOT_ACCEPTED')}`",
+        f"- Scale authorization: `{report.get('scale_authorization', {}).get('status', 'PROHIBITED')}`",
         "",
-        "This pack is a review aid. It does not create review decisions or authorize V1C.",
+        "This pack is a structural regression review aid. It does not create review decisions, establish business acceptance, or authorize V1C.",
         "",
         "## Cases",
         "",

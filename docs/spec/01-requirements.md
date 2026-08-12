@@ -2,7 +2,7 @@
 
 ## 1. 决策问题
 
-如何利用测试库中当前纳入的 TITANS Schema、表、视图、字段、约束、索引、注释、DDL、依赖及有限 Wiki 证据，先形成完整、清晰、可下钻的 TITANS 全貌；再以 `TITANS_TRADEFLOW` 为首个深度案例，逆向发现 Identity、Grain、Role、Relation 和业务语义候选，并沉淀可在后续 Schema 验证的方法。
+如何将测试库物理元数据与后续获批的多源证据组合成可检查的 TITANS 业务全貌，使用户能够从业务区域、业务对象和生命周期下钻到表、粒度、键、关系、证据与 Unknown。`TITANS_TRADEFLOW` 的现有样本结果只作为结构规则原型和回归资产，不承担代表全貌或证明通用方法的职责。
 
 ## 2. 用户目标
 
@@ -10,23 +10,21 @@
 
 用户能够从一个总览入口理解：
 
-- 当前纳入了哪些 TITANS Schema，各自有哪些表、视图、字段、注释和依赖概况。
-- 各 Schema 有哪些命名簇、结构轮廓、关系枢纽、边界对象和信息缺口。
-- TRADEFLOW 对象如何形成结构区域和对象族。
-- TRADEFLOW 的主要 Identity、Grain 和 Object Role 模式是什么。
-- 哪些深度认知区域已有较强解释，哪些仍是 Unknown。
+- TITANS 包含哪些可由证据支持的业务区域、业务对象和生命周期环节。
+- 每个业务对象由哪些表承载，各表的一行代表什么、如何标识、如何关联。
+- 物理 Schema、结构簇与业务区域之间哪些关系已确认、哪些只是候选。
+- 每项解释依据什么证据、有哪些反证或限制、哪些仍是 Unknown。
 
 ### G-02 逐层理解资产
 
 用户能够沿以下路径下钻，并在每层返回上层：
 
 ```text
-TITANS Panorama
-→ Schema / 粗结构区域
-→ TRADEFLOW Deep Case
-→ 对象族 / 对象
-→ 字段和约束
-→ Identity/Grain/Role/Relation候选
+TITANS 业务全貌
+→ 业务区域 / 业务对象 / 生命周期
+→ 承载对象与关系
+→ 表 / 字段 / 约束
+→ Identity / Grain / Role / Relation
 → 证据与反证
 ```
 
@@ -49,15 +47,15 @@ V1不承诺“输入自然语言业务需求自动准确推荐表”。它必须
 
 ## 4. V1范围
 
-### 4.1 阶段边界
+### 4.1 工程范围与授权边界
 
-| 阶段 | 强制范围 | 条件 |
+| 阶段 | 工程范围 | 当前授权解释 |
 |---|---|---|
-| V1A | Panorama 全量物理盘点、Schema/对象页面、物理 Object Card | 开工后首先完成 |
-| V1B | TRADEFLOW 分层样本的 Identity、Grain、Role、Relation、Evidence、Unknown 和小型 Gold Set | V1A 通过后进入 |
-| V1C | TRADEFLOW 全量深度推断、Object Family、Field Concept、Wiki/LLM语义辅助和完整深度地图 | V1B 质量门通过且用户确认后进入 |
+| V1A | Panorama 全量物理盘点、Schema/对象页面、物理 Object Card | 作为物理提取资产保留；Gate A 不验收业务全貌 |
+| V1B | TRADEFLOW 分层样本的 Identity、Grain、Role、Relation、Evidence、Unknown 和小型 Gold Set | 作为结构原型和规则回归资产保留；Gate B 不证明方法有效 |
+| V1C | TRADEFLOW 全量深度推断、Object Family、Field Concept、Wiki/LLM语义辅助和完整深度地图 | 当前禁止启动；工程 Gate 不产生授权 |
 
-V1A/V1B 是第一轮工程承诺。V1C 的合同字段用于约束未来实现，不构成当前并行建设授权。
+已有 V1C 合同字段只记录历史目标边界，不构成当前或自动建设授权。后续扩展必须先存在读者交付、通过业务验收，再获得用户对具体范围的独立授权。
 
 ### 4.2 Panorama Scope
 
@@ -132,11 +130,11 @@ V1C 可以使用规则、Wiki和LLM为稳定结构候选提出业务名称、用
 
 ### FR-011 Gold Set评测
 
-V1B 必须先评测Inference Outcome，再分别评测Identity、Grain、Role、Relation、Unknown和证据质量；Not Evaluable单列且不计作Unknown，不得只报告一个总体准确率。V1C复用同一评测后才能全量扩展。
+V1B 必须先评测Inference Outcome，再分别评测Identity、Grain、Role、Relation、Unknown和证据质量；Not Evaluable单列且不计作Unknown，不得只报告一个总体准确率。Gold Set通过只表示当前规则回归一致，不能自动触发全量扩展。
 
 ### FR-012 最小地图
 
-系统必须生成无需服务端运行的最小可浏览结果。V1A包括TITANS全貌、Schema页面和物理Object Card；V1B增加TRADEFLOW样本关系和Unknown；对象族、字段概念及全量深度页面属于V1C。
+系统必须生成无需服务端运行的最小可浏览结果。V1A包括物理 Panorama、Schema页面和物理Object Card；V1B增加TRADEFLOW样本关系和Unknown。上述页面均为工程 Projection；只有以业务区域、业务对象和生命周期组织并经用户验收的结果才能称为业务全貌交付。
 
 ## 6. 非功能需求
 
@@ -177,21 +175,22 @@ V1B 必须先评测Inference Outcome，再分别评测Identity、Grain、Role、
 
 ## 8. 需求级验收
 
-### V1A验收
+### V1A工程验收
 
 - Panorama allowlist内每个可见对象均有物理Object Card，事实缺失有明确原因。
 - 地图能按Schema显示对象类型、字段、注释覆盖、约束、依赖和失败情况。
 - 用户能够由全貌进入任一Schema和对象，而不再依赖原始数据字典逐表浏览。
 
-### V1B验收
+### V1B工程验收
 
 - 用户可以从任一样本候选回到支持与反对证据。
 - 用户可以识别至少一组有意义的Identity/Grain模式和关系链；具体数量由真实结果决定，不预设产量指标。
 - 地图能区分物理覆盖、候选覆盖和Unknown，三者不得混为一体。
-- Gold Set评审能够暴露方法失效而不是被总体指标掩盖。
+- Gold Set评审能够暴露当前规则失效而不是被总体指标掩盖；其通过不构成独立方法验证。
 
-### V1C验收
+### V1C授权与验收
 
-- 只有Gate B通过并获用户确认后才适用。
+- 当前不适用并保持禁止。Gate B 通过和一般性用户确认均不足以启动。
+- 必须先有实际读者交付、业务验收和用户对具体扩展范围的独立授权。
 - TRADEFLOW全量深度运行保留失败和Unknown，不强制业务分类。
 - 用户能够检查有意义的Object Family、Field Concept和语义候选，并回溯成员级证据与冲突。

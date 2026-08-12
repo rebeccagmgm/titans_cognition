@@ -2,6 +2,18 @@
 
 本上下文描述从 TITANS 测试库元数据中逆向发现结构认知和业务语义候选时使用的统一语言。
 
+## 交付治理
+
+**Business Panorama（业务全貌）**：
+项目的唯一最终交付目标；从业务区域、业务对象和生命周期组织认知，并可下钻到表、粒度、键、关系、证据与 Unknown。
+_Avoid_: Schema 目录、物理 Panorama、规则评测报告
+
+**Delivery Status（交付状态）**：
+分别报告 `physical_extraction`、`structural_cognition`、`reader_delivery`、`business_acceptance` 和 `scale_authorization`。任一维度成功都不能自动提升其他维度。
+_Avoid_: 单一 V1A/V1B/V1C 进度百分比、测试通过即整体完成
+
+当前状态与证据边界见 [docs/current-status-baseline.md](docs/current-status-baseline.md)。
+
 ## 物理事实
 
 **Physical Asset（物理资产）**：
@@ -21,12 +33,12 @@ _Avoid_: 范围内资产、完整外部资产
 _Avoid_: 全数据库、所有对象已理解
 
 **Deep Case（深度案例）**：
-从 Panorama 中选择、执行完整 Identity、Grain、Role、Relation、Family、Field Concept 和语义候选流水线的范围。V1 首个 Deep Case 为 `TITANS_TRADEFLOW`。
-_Avoid_: Panorama 的同义词、通用方法已验证
+从物理 Panorama 中明确选择、执行有界深度分析的范围。当前 `TITANS_TRADEFLOW` 只完成了分层样本上的 Identity、Grain、Role、Relation、Evidence 与 Unknown 结构原型；Family、Field Concept 和语义候选尚未授权。
+_Avoid_: Panorama 的同义词、完整业务纵向案例、通用方法已验证
 
 **Stage Gate（阶段门）**：
-进入下一阶段前必须满足的结果和质量条件。V1A 建全貌，V1B 在分层样本验证认知闭环，V1C 才将已验证方法扩展到全量并启用增强能力。
-_Avoid_: 时间排期、可随意并行的任务列表
+检查某一工程阶段定义的结果和质量条件。Gate A/B 只能说明对应工程检查状态，不能替代读者交付、业务验收或规模化授权。
+_Avoid_: 时间排期、自动扩展授权、整体完成状态
 
 ## 结构认知
 
@@ -108,8 +120,9 @@ _Avoid_: Unknown、Deferred、模型失败
 
 **Gold Set（黄金样本集）**：
 由人工选择并裁定的代表性正例、反例、歧义和 Unknown 案例，用稳定Source Ref描述期望Inference Outcome、候选值和证据要求，用于分别评测 Identity、Grain、Role、Relation 和证据质量。
-_Avoid_: 随机样本、训练集准确率
+当前 Gold Set 与规则由同一建设过程形成，因此其全量通过只表示结构规则回归一致；除非建立独立业务真值与评审权威，不得用来证明方法有效或业务价值。
+_Avoid_: 随机样本、训练集准确率、业务验收
 
 **Cognition Result Bundle（认知结果包）**：
-一次 V1 运行产生的 Panorama 物理事实与粗结构结果，以及一个或多个 Deep Case 的派生观察、认知候选、证据、评测和可浏览地图的完整交付集合。
-_Avoid_: Catalog、Edition、正式本体
+一次运行产生的 Panorama 物理事实与粗结构结果，以及已启用 Deep Case 的派生观察、认知候选、证据、评测和可浏览 Projection。结果包是工程 Artifact，不自动构成业务全貌交付或业务验收。
+_Avoid_: Catalog、Edition、正式本体、业务全貌完成证明

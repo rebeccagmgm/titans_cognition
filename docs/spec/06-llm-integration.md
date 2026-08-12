@@ -163,6 +163,16 @@ Prompt文件版本通过内容哈希进入Manifest和LLM运行记录。
 
 未获批准时，可以使用本地模型或仅运行无LLM路线，但不能自行改变安全边界。
 
+### 10.1 有界当前会话导入
+
+`build-bounded-evidence-foundation` 可在用户逐次明确授权后，由当前GPT会话离线填写已生成的候选族Evidence Pack，再由确定性导入器校验并落盘。该路径不是SDK Provider，不持有密钥，不允许模型调用工具；Manifest必须记录模型标识、Prompt哈希、响应文件哈希、Respond/Abstain计数，并保持`independent_evidence_increment=0`。该授权不扩展到其他Schema或后续自动调用。
+
+### 10.2 字段概念疑难簇审阅
+
+已固定的字段概念运行可以增加独立 LLM 候选旁路，但不得修改 `concepts.jsonl`、`field_concept_links.jsonl` 或 Physical Facts。待审阅簇必须由统一、可重放的疑难度信号选择，并受 `max_packs`、单 Pack 上限和整次 Token 预算约束；不能依赖字段名或概念名特例。
+
+当前 GPT 离线响应只允许 `KEEP`、`RENAME`、`SPLIT`、`PARENT_CHILD`、`FACET` 和 `ABSTAIN`。导入器必须验证 Pack 哈希、动作载荷和 Evidence ID 白名单，将有效结果保存为 `CANDIDATE`，并逐行保留无效、失败和 Abstain。字段类型仅是非权威提示，中文注释缺失不等于字段不可用。Provider SDK 仍受 D-005 独立授权控制。
+
 ## 11. LLM质量评测
 
 - 在Gold Set上分别评测命名、消歧、证据引用、反证发现和Abstain。

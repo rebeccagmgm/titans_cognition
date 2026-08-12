@@ -1,0 +1,47 @@
+version: v1
+
+selection:
+  min_members: 3
+  low_cohesion_threshold: 0.28
+  outlier_similarity_threshold: 0.08
+  outlier_ratio_threshold: 0.30
+  weak_label_support_threshold: 0.30
+  ambiguity_ratio_threshold: 0.20
+  mixed_qualifier_count: 2
+
+limits:
+  max_packs: 8
+  max_fields_per_pack: 30
+  max_pack_tokens: 3500
+  token_budget: 24000
+  chars_per_token: 2.0
+
+sampling:
+  representative_count: 6
+  boundary_count: 5
+  outlier_count: 5
+
+qualifier_dimensions:
+  stage:
+    initial: [INITIAL, INIT, ORIGINAL, ORG, 初始, 原始]
+    current: [CURRENT, CURR, 当前]
+    dynamic: [DYNAMIC, 动态]
+    before: [BEFORE, 调整前]
+    after: [AFTER, 调整后]
+  direction:
+    long: [LONG, 多头]
+    short: [SHORT, 空头]
+    receive: [RECEIVE, RECEIVABLE, 应收]
+    pay: [PAY, PAYABLE, 应付]
+  currency:
+    local: [LOCAL, 本币]
+    foreign: [FOREIGN, 外币]
+    settlement: [SETTLE_CCY, 结算币]
+  measure:
+    gross: [GROSS, 总额]
+    net: [NET, 净额]
+    available: [AVAILABLE, 可用]
+    frozen: [FROZEN, 冻结]
+
+provider_sdk:
+  d005_approved: false

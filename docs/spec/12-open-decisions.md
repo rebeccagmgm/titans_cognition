@@ -35,7 +35,9 @@
 ## D-005 LLM Provider与数据外发
 
 - **问题**：使用哪个Provider/模型；哪些内部元数据允许发送？
-- **当前状态**：未授权，默认禁用。
+- **当前状态**：通用SDK调用仍未授权、默认禁用。2026-08-11 用户仅批准本次 Codex 当前GPT会话处理 `TITANS_TRADEFLOW` 固定Evidence Pack；允许内容限表名、字段名、表/字段注释、声明结构摘要及Wiki `175428801` 固定来源标识，不含业务数据行、连接信息、凭证、完整DDL或自主工具访问。
+- **本次记录**：模型标识 `current-gpt-session-20260811`；响应经Evidence ID白名单校验后落盘并缓存，作为弱标签提案，独立证据增量固定为0，不触发第二轮建图或传播。
+- **字段概念记录**：同一当前会话授权已用于 8 个由算法选择的 TRADEFLOW 字段概念疑难 Pack；输入仅含允许的表/字段名称、注释、类型提示、结构候选和 Evidence ID，导入结果保持独立 `CANDIDATE`，未修改确定性 V1。
 - **阻塞**：`llm-enrich`阶段。
 - **不阻塞**：Extract、Derive、Infer、无LLM Evaluate和基础Render。
 
@@ -43,7 +45,7 @@
 
 - **问题**：谁负责将Identity、Grain、Role、Relation和Unknown案例从DRAFT裁定为ADJUDICATED；争议如何标记DISPUTED？
 - **当前状态**：待定。
-- **阻塞**：方法质量正式判断和全量扩展门槛。
+- **阻塞**：独立方法质量判断；当前 Gold Set 只可作为结构规则回归，不构成全量扩展授权。
 - **建议**：至少有一名熟悉TRADEFLOW结构的人；争议项保留多意见，不强制共识。
 
 ## D-007 纵向样本选择
@@ -79,5 +81,6 @@
 - V1使用Parquet/JSON/YAML和DuckDB，不使用PostgreSQL或Neo4j。
 - V1的LLM通过基础SDK受Evidence Pack约束，不使用Agent自治主流程。
 - V1必须提供最小可浏览地图和Gold Set评测。
-- V1采用V1A Panorama、V1B TRADEFLOW Deep Sample、V1C TRADEFLOW Deep Scale三道阶段门；V1C必须在Gate B通过并获用户确认后启动。
+- V1A/V1B Gate 只报告对应工程检查，不替代读者交付和业务验收。
+- V1C当前冻结；Gate B通过和一般性用户确认都不能自动授权，未来必须通过独立 Change 和用户明确授权启动。
 - 正式本体、长期Edition和Catalog平台延后到真实需求触发。

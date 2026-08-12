@@ -1,0 +1,136 @@
+version: v1
+scope_id: titans-panorama-v1
+
+wiki_source:
+  page_id: "175428801"
+  title: 研发分工
+  cache_metadata: E:/03_resource/wiki-cache/pages/175428801/metadata.json
+  purpose: classification_seed
+  excluded_content: [people, partners, staffing]
+
+object_filter:
+  exclude_numeric_suffix: true
+
+limits:
+  top_k: 8
+  max_candidate_pairs: 250000
+  max_edges: 30000
+  rare_token_max_frequency: 120
+  propagation_max_iterations: 30
+  max_candidates_per_dimension: 3
+  llm_max_families: 50
+  llm_max_pack_chars: 12000
+  llm_max_retries: 1
+
+matching:
+  min_edge_score: 0.24
+  cross_schema_min_signals: 2
+  weights:
+    physical_name: 0.25
+    physical_comment: 0.10
+    column_structure: 0.35
+    type_structure: 0.10
+    declared_key: 0.15
+    declared_dependency: 0.05
+
+families:
+  random_seed: 42
+  resolution: 1.0
+  min_size: 2
+  min_multi_view_edges: 1
+
+propagation:
+  alpha: 0.75
+  tolerance: 0.000005
+  candidate_threshold: 0.32
+  competition_margin: 0.08
+  max_candidates_per_dimension: 3
+
+taxonomy:
+  business_line:
+    OPTION:
+      terms: [OPTION, OPT, 期权]
+    SWAP:
+      terms: [SWAP, TRS, SBL, 互换, 借券]
+    PRICING:
+      terms: [PRICING, PRICE_ENGINE, VALUATION, 定价, 估值, 波动率]
+    OTC_OPERATIONS:
+      terms: [KYC, AML, OTC_OPERATION, 运营, 准入, 反洗钱, 收益凭证]
+    SHARED_SERVICES:
+      terms: [MARGIN, MARKETDATA, REFDATA, STATICDATA, WORKFLOW, 公共服务]
+    DATA_OPERATIONS:
+      terms: [ETL, DM, REPORT, REGULATORY, 报表, 监管报备]
+
+  business_capability:
+    CONTRACT_BOOKING:
+      terms: [BOOKING, DEAL, TRADE, CONTRACT, 簿记, 合约导入]
+    CONTRACT_LIFECYCLE:
+      terms: [LIFECYCLE, EVENT, TRANSFER, 生命周期, 存续期, 事件]
+    CLEARING:
+      terms: [CLEARING, SETTLE, 清算, 结算]
+    VALUATION:
+      terms: [VALUATION, VALUE, 估值]
+    PRICING:
+      terms: [PRICING, PRICE, VOL, 定价, 波动率]
+    RISK:
+      terms: [RISK, LIMIT, VAR, 风险, 限额]
+    POSITION_REPORTING:
+      terms: [POSITION, POS, 持仓, 实时报表, 日终报表]
+    STOCK_BANK:
+      terms: [STOCKBANK, STOCK_BANK, SECURITY_SOURCE, 券源, 股票银行, 约券]
+    MARKET_DATA:
+      terms: [MARKETDATA, MARKET_DATA, QUOTE, 行情, 市场数据]
+    REFERENCE_DATA:
+      terms: [REFDATA, REFERENCE, SECURITY_DEF, 参考数据, 证券定义]
+    WORKFLOW:
+      terms: [WORKFLOW, APPROVAL, 流程, 审批]
+    KYC_AML:
+      terms: [KYC, AML, 适当性, 反洗钱, 黑名单]
+    REPORTING:
+      terms: [REPORT, STATEMENT, 报表, 报告, 确认书]
+    REGULATORY:
+      terms: [REGULATORY, REPORTING, 监管, 报备]
+
+  system_module:
+    TRADEFLOW:
+      terms: [TRADEFLOW]
+    OTCCLEARING:
+      terms: [OTCCLEARING]
+    TRADING:
+      terms: [TRADING, TRADECAPTURE]
+    GOATS:
+      terms: [GOATS]
+    CALCSERVICE:
+      terms: [CALCSERVICE, CALC_SERVICE]
+    PRICING_ENGINE:
+      terms: [PRICINGENGINE, PRICINGSERVICE, PRICINGPROXY]
+    REFDATA:
+      terms: [REFDATA]
+    MARKETDATA:
+      terms: [MARKETDATA]
+    MARGIN:
+      terms: [MARGIN]
+    RISK:
+      terms: [RISK]
+    OPERATION:
+      terms: [OPERATION]
+    WORKFLOW:
+      terms: [WORKFLOW]
+    ADMIN:
+      terms: [ADMIN]
+    DM:
+      terms: [TITANS_DM]
+    ETL:
+      terms: [TITANS_ETL]
+
+  technical_role:
+    VIEW_PROJECTION:
+      object_types: [VIEW, MATERIALIZED_VIEW]
+    REFERENCE_CONFIG:
+      terms: [REF, CONFIG, CFG, PARAM, DICT]
+    HISTORY_SNAPSHOT:
+      terms: [HIS, HISTORY, SNAPSHOT, BAK]
+    LOG_AUDIT:
+      terms: [LOG, AUDIT, TRACE]
+    REPORT_RESULT:
+      terms: [REPORT, RPT, RESULT, SUMMARY]

@@ -1,7 +1,10 @@
 """Writing canonical V1A fact datasets without mutating source facts."""
 
 import json
+import os
 from pathlib import Path
+import tempfile
+from collections.abc import Iterable
 from typing import Any
 
 from .derive import DerivedObservations
@@ -22,11 +25,9 @@ def _write_json(path: Path, rows: list[dict[str, Any]]) -> None:
     )
 
 
-def write_json_facts(output_dir: str | Path, facts: PhysicalFacts) -> dict[str, Path]:
-    """Write a portable JSON representation of all current physical fact rows."""
-
+def _json_fact_paths(output_dir: str | Path) -> dict[str, Path]:
     root = Path(output_dir)
-    paths = {
+    return {
         "objects": root / "panorama" / "facts" / "objects.json",
         "columns": root / "panorama" / "facts" / "columns.json",
         "constraints": root / "panorama" / "facts" / "constraints.json",
@@ -35,13 +36,100 @@ def write_json_facts(output_dir: str | Path, facts: PhysicalFacts) -> dict[str, 
         "dependencies": root / "panorama" / "facts" / "dependencies.json",
         "failures": root / "panorama" / "derived" / "extraction_failures.json",
     }
-    _write_json(paths["objects"], facts.objects)
-    _write_json(paths["columns"], facts.columns)
-    _write_json(paths["constraints"], facts.constraints)
-    _write_json(paths["indexes"], facts.indexes)
-    _write_json(paths["object_definitions"], facts.object_definitions)
-    _write_json(paths["dependencies"], facts.dependencies)
-    _write_json(paths["failures"], facts.failures)
+
+
+def write_json_fact_batches(
+    output_dir: str | Path,
+    batches: Iterable[PhysicalFacts],
+) -> dict[str, Path]:
+    """Write fact batches without retaining the complete bundle in memory.
+
+    All datasets are first written to temporary files. Existing canonical files are
+    replaced only after every batch has been consumed successfully.
+    """
+
+    root = Path(output_dir)
+    paths = _json_fact_paths(root)
+    for path in paths.values():
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    rows_by_name = {
+        "objects": "objects",
+        "columns": "columns",
+        "constraints": "constraints",
+        "indexes": "indexes",
+        "object_definitions": "object_definitions",
+        "dependencies": "dependencies",
+        "failures": "failures",
+    }
+    temp_root = Path(tempfile.mkdtemp(prefix=".facts-", dir=root))
+    handles: dict[str, Any] = {}
+    first_row: dict[str, bool] = {}
+    temp_paths: dict[str, Path] = {}
+    backups: dict[str, Path] = {}
+    committed: list[str] = []
+    try:
+        for name in rows_by_name:
+            temp_path = temp_root / f"{name}.json"
+            temp_paths[name] = temp_path
+            handle = temp_path.open("w", encoding="utf-8", newline="\n")
+            handle.write("[\n")
+            handles[name] = handle
+            first_row[name] = True
+
+        for batch in batches:
+            for name, attribute in rows_by_name.items():
+                for row in getattr(batch, attribute):
+                    if not first_row[name]:
+                        handles[name].write(",\n")
+                    json.dump(
+                        row,
+                        handles[name],
+                        ensure_ascii=False,
+                        sort_keys=True,
+                    )
+                    first_row[name] = False
+
+        for name, handle in handles.items():
+            handle.write("\n]\n")
+            handle.close()
+        handles.clear()
+        for name, temp_path in temp_paths.items():
+            target = paths[name]
+            if target.exists():
+                backup = temp_root / f".backup-{name}.json"
+                os.replace(target, backup)
+                backups[name] = backup
+            os.replace(temp_path, paths[name])
+            committed.append(name)
+    except Exception:
+        for name in reversed(committed):
+            paths[name].unlink(missing_ok=True)
+            backup = backups.get(name)
+            if backup and backup.exists():
+                os.replace(backup, paths[name])
+        for name, backup in backups.items():
+            if name not in committed and backup.exists():
+                os.replace(backup, paths[name])
+        for handle in handles.values():
+            handle.close()
+        raise
+    finally:
+        for handle in handles.values():
+            handle.close()
+        for temp_path in temp_paths.values():
+            temp_path.unlink(missing_ok=True)
+        for backup in backups.values():
+            backup.unlink(missing_ok=True)
+        temp_root.rmdir()
+    return paths
+
+
+def write_json_facts(output_dir: str | Path, facts: PhysicalFacts) -> dict[str, Path]:
+    """Write a portable JSON representation of all current physical fact rows."""
+
+    write_json_fact_batches(output_dir, [facts])
+    paths = _json_fact_paths(output_dir)
     return paths
 
 

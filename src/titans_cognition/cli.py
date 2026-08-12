@@ -8,6 +8,23 @@ from pathlib import Path
 from typing import Any
 
 from .baseline import build_independent_baseline
+from .classification import (
+    import_llm_responses,
+    load_classification_config,
+    run_classification,
+    write_classification_results,
+)
+from .field_concepts import (
+    load_field_concept_config,
+    run_field_concepts,
+    write_field_concept_results,
+)
+from .llm_field_review import (
+    import_review_responses,
+    load_review_config,
+    prepare_review,
+    render_review as render_field_concept_llm_review,
+)
 from .derive import derive_observations
 from .deep import (
     derive_tradeflow_features,
@@ -30,11 +47,14 @@ from .extract import (
     DependencyMetadata,
     IndexMetadata,
     ObjectMetadata,
+    PhysicalFacts,
     extract_facts,
+    iter_fact_batches,
 )
 from .io import (
     read_json_facts,
     write_json_derived,
+    write_json_fact_batches,
     write_json_facts,
     write_parquet_derived,
     write_parquet_facts,
@@ -45,6 +65,35 @@ from .provider import GfDerivativeDbProvider
 from .reconcile import panorama_delivery_ready, reconcile_facts
 from .render import render_panorama
 from .scope import load_scope
+
+
+def _filter_facts_by_schema(facts: PhysicalFacts, schema_name: str) -> PhysicalFacts:
+    """Return a bounded schema slice while retaining its declared dependencies."""
+
+    normalized = schema_name.strip().upper()
+    objects = [
+        row for row in facts.objects if str(row.get("schema_name", "")).upper() == normalized
+    ]
+    asset_ids = {str(row["asset_id"]) for row in objects}
+
+    def owned(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+        return [row for row in rows if str(row.get("asset_id", "")) in asset_ids]
+
+    return PhysicalFacts(
+        objects=objects,
+        columns=owned(facts.columns),
+        constraints=owned(facts.constraints),
+        indexes=owned(facts.indexes),
+        object_definitions=owned(facts.object_definitions),
+        dependencies=[
+            row
+            for row in facts.dependencies
+            if str(row.get("source_asset_id", "")) in asset_ids
+        ],
+        failures=[
+            row for row in facts.failures if str(row.get("asset_id", "")) in asset_ids
+        ],
+    )
 
 
 def _object_metadata_from_mapping(data: dict[str, Any]) -> ObjectMetadata:
@@ -124,6 +173,12 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("json", "parquet", "both"),
         default="json",
     )
+    extract.add_argument(
+        "--batch-size",
+        type=int,
+        default=100,
+        help="number of objects normalized before a JSON fact batch is flushed",
+    )
     derive = subparsers.add_parser("derive")
     derive.add_argument("--input-dir", required=True, type=Path)
     derive.add_argument("--output", required=True, type=Path)
@@ -132,6 +187,53 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("json", "parquet", "both"),
         default="json",
     )
+    classify = subparsers.add_parser("classify-panorama")
+    classify.add_argument("--facts-dir", required=True, type=Path)
+    classify.add_argument("--config", required=True, type=Path)
+    classify.add_argument("--wiki-metadata", required=True, type=Path)
+    classify.add_argument("--output", required=True, type=Path)
+    classify.add_argument("--schema")
+    classify.add_argument("--source-panorama-root", type=Path)
+    classify.add_argument(
+        "--format",
+        choices=("json", "parquet", "both"),
+        default="both",
+    )
+    import_llm = subparsers.add_parser("import-classification-llm")
+    import_llm.add_argument("--classification-dir", required=True, type=Path)
+    import_llm.add_argument("--responses", required=True, type=Path)
+    import_llm.add_argument("--model-id", required=True)
+    field_concepts = subparsers.add_parser("discover-field-concepts")
+    field_concepts.add_argument("--facts-dir", required=True, type=Path)
+    field_concepts.add_argument("--config", required=True, type=Path)
+    field_concepts.add_argument("--output", required=True, type=Path)
+    field_concepts.add_argument(
+        "--write-diagnostics",
+        action="store_true",
+        help="write run-local nearest-neighbor diagnostics",
+    )
+    prepare_field_review = subparsers.add_parser(
+        "prepare-field-concept-llm-review"
+    )
+    prepare_field_review.add_argument(
+        "--field-concepts-dir", required=True, type=Path
+    )
+    prepare_field_review.add_argument("--config", required=True, type=Path)
+    prepare_field_review.add_argument("--output", required=True, type=Path)
+    prepare_field_review.add_argument("--max-packs", type=int)
+    prepare_field_review.add_argument("--token-budget", type=int)
+    import_field_review = subparsers.add_parser(
+        "import-field-concept-llm-review"
+    )
+    import_field_review.add_argument("--review-dir", required=True, type=Path)
+    import_field_review.add_argument("--responses", required=True, type=Path)
+    import_field_review.add_argument("--model-id", required=True)
+    import_field_review.add_argument("--cache-dir", type=Path)
+    render_field_review = subparsers.add_parser(
+        "render-field-concept-llm-review"
+    )
+    render_field_review.add_argument("--review-dir", required=True, type=Path)
+    render_field_review.add_argument("--source-panorama-root", type=Path)
     reconcile = subparsers.add_parser("reconcile")
     reconcile.add_argument("--scope", required=True, type=Path)
     reconcile.add_argument("--facts-dir", required=True, type=Path)
@@ -221,6 +323,108 @@ def main(argv: list[str] | None = None) -> int:
                 ensure_ascii=False,
             )
         )
+        return 0
+
+    if args.command == "classify-panorama":
+        facts = read_json_facts(args.facts_dir)
+        if args.schema:
+            facts = _filter_facts_by_schema(facts, args.schema)
+        if not facts.objects:
+            raise ValueError("classification scope contains no objects")
+        config = load_classification_config(args.config)
+        wiki_metadata = json.loads(args.wiki_metadata.read_text(encoding="utf-8"))
+        if not isinstance(wiki_metadata, dict):
+            raise ValueError("Wiki metadata JSON must be an object")
+        result = run_classification(facts, config, wiki_metadata)
+        formats = ("json", "parquet") if args.format == "both" else (args.format,)
+        paths = write_classification_results(
+            args.output,
+            result,
+            formats=formats,
+            source_panorama_root=args.source_panorama_root,
+        )
+        print(
+            json.dumps(
+                {
+                    "schema": args.schema,
+                    **result.stats,
+                    "graph_run_id": result.graph_run_id,
+                    "review_index": str(paths["review_index"]),
+                    "manifest": str(paths["manifest"]),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "import-classification-llm":
+        stats = import_llm_responses(
+            args.classification_dir,
+            args.responses,
+            model_id=args.model_id,
+        )
+        print(json.dumps(stats, ensure_ascii=False))
+        return 0
+
+    if args.command == "discover-field-concepts":
+        facts = read_json_facts(args.facts_dir)
+        config = load_field_concept_config(args.config)
+        result = run_field_concepts(facts, config)
+        paths = write_field_concept_results(
+            args.output,
+            result,
+            write_diagnostics=args.write_diagnostics,
+            source_panorama_root=Path(args.facts_dir) / "panorama",
+        )
+        print(
+            json.dumps(
+                {
+                    **result.stats,
+                    "review_index": str(paths["review_index"]),
+                    "manifest": str(paths["manifest"]),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "prepare-field-concept-llm-review":
+        config = load_review_config(args.config).with_run_limits(
+            max_packs=args.max_packs,
+            token_budget=args.token_budget,
+        )
+        paths = prepare_review(args.field_concepts_dir, config, args.output)
+        manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+        print(
+            json.dumps(
+                {
+                    "root": str(paths["root"]),
+                    "packs": str(paths["packs"]),
+                    "batch": str(paths["batch"]),
+                    "manifest": str(paths["manifest"]),
+                    **manifest["stats"],
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "import-field-concept-llm-review":
+        stats = import_review_responses(
+            args.review_dir,
+            args.responses,
+            model_id=args.model_id,
+            cache_dir=args.cache_dir,
+        )
+        print(json.dumps(stats, ensure_ascii=False))
+        return 0
+
+    if args.command == "render-field-concept-llm-review":
+        path = render_field_concept_llm_review(
+            args.review_dir,
+            source_panorama_root=args.source_panorama_root,
+        )
+        print(json.dumps({"review_index": str(path)}, ensure_ascii=False))
         return 0
 
     if args.command == "reconcile":
@@ -381,9 +585,13 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 {
                     "gate_b_status": report["gate_b"]["status"],
+                    "gate_b_scope": report["gate_b"]["scope"],
                     "gold_set_status": report["gold_set_status"],
                     "adjudicated_case_count": report["adjudicated_case_count"],
                     "unknown_result_count": report["evidence_quality"]["unknown_result_count"],
+                    "business_acceptance_status": report["business_acceptance"]["status"],
+                    "scale_authorization_status": report["scale_authorization"]["status"],
+                    "v1c_authorized": report["v1c_authorized"],
                     "output": str(args.output),
                 },
                 ensure_ascii=False,
@@ -401,6 +609,16 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(
                 {
                     "gate_b_status": report.get("gate_b", {}).get("status"),
+                    "gate_b_scope": report.get("gate_b", {}).get(
+                        "scope", "STRUCTURAL_REGRESSION_ONLY"
+                    ),
+                    "business_acceptance_status": report.get(
+                        "business_acceptance", {}
+                    ).get("status", "NOT_ACCEPTED"),
+                    "scale_authorization_status": report.get(
+                        "scale_authorization", {}
+                    ).get("status", "PROHIBITED"),
+                    "v1c_authorized": False,
                     "output": str(args.output),
                 },
                 ensure_ascii=False,
@@ -430,26 +648,58 @@ def main(argv: list[str] | None = None) -> int:
             definition_mode=args.definition_mode,
         )
         metadata = provider.iter_objects(scope)
-    facts = extract_facts(
-        scope,
-        metadata,
-        run_id=args.run_id,
-    )
     written: dict[str, Path] = {}
-    if args.format in ("json", "both"):
-        written.update(write_json_facts(args.output, facts))
-    if args.format in ("parquet", "both"):
+    if args.format == "json":
+        counts = {
+            "object_count": 0,
+            "column_count": 0,
+            "constraint_count": 0,
+            "index_count": 0,
+            "definition_count": 0,
+            "dependency_count": 0,
+            "failure_count": 0,
+        }
+
+        def counted_batches():
+            for batch in iter_fact_batches(
+                scope,
+                metadata,
+                run_id=args.run_id,
+                batch_size=args.batch_size,
+            ):
+                counts["object_count"] += len(batch.objects)
+                counts["column_count"] += len(batch.columns)
+                counts["constraint_count"] += len(batch.constraints)
+                counts["index_count"] += len(batch.indexes)
+                counts["definition_count"] += len(batch.object_definitions)
+                counts["dependency_count"] += len(batch.dependencies)
+                counts["failure_count"] += len(batch.failures)
+                yield batch
+
+        written.update(write_json_fact_batches(args.output, counted_batches()))
+    else:
+        facts = extract_facts(
+            scope,
+            metadata,
+            run_id=args.run_id,
+        )
+        counts = {
+            "object_count": len(facts.objects),
+            "column_count": len(facts.columns),
+            "constraint_count": len(facts.constraints),
+            "index_count": len(facts.indexes),
+            "definition_count": len(facts.object_definitions),
+            "dependency_count": len(facts.dependencies),
+            "failure_count": len(facts.failures),
+        }
+        if args.format == "both":
+            written.update(write_json_facts(args.output, facts))
         written.update(write_parquet_facts(args.output, facts))
     print(
         json.dumps(
             {
                 "run_id": args.run_id,
-                "object_count": len(facts.objects),
-                "column_count": len(facts.columns),
-                "constraint_count": len(facts.constraints),
-                "index_count": len(facts.indexes),
-                "dependency_count": len(facts.dependencies),
-                "failure_count": len(facts.failures),
+                **counts,
                 "outputs": {name: str(path) for name, path in written.items()},
             },
             ensure_ascii=False,

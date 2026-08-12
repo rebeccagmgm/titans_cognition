@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from numbers import Real
 from typing import Any, Mapping
 
@@ -25,6 +26,22 @@ def evaluate_gate_b_measurements(
     tasks = measurements.get("tasks")
     if not isinstance(tasks, list):
         return _pending("measurement artifact has no task list")
+
+    if any(
+        not isinstance(task, Mapping) or not task.get("task_id") for task in tasks
+    ):
+        return _pending("measurement artifact contains an invalid holdout task")
+
+    task_ids = [str(task["task_id"]) for task in tasks]
+    duplicates = sorted(
+        task_id for task_id, count in Counter(task_ids).items() if count > 1
+    )
+    if duplicates:
+        return _pending(f"duplicate holdout measurements: {', '.join(duplicates)}")
+
+    unexpected = sorted(set(task_ids) - REQUIRED_TASK_IDS)
+    if unexpected:
+        return _pending(f"unexpected holdout measurements: {', '.join(unexpected)}")
 
     by_id = {
         str(task.get("task_id")): task
