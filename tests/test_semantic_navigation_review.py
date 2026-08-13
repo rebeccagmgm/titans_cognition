@@ -257,6 +257,11 @@ def test_target_page_consumes_real_projection_and_preserves_old_page(tmp_path: P
     assert "CONFIGURATION_SEED｜非证据" in html
     assert "属性表达矩阵" in html
     assert ".technical-name{text-transform:lowercase}" in html
+    assert "function physicalGroup(g)" in html
+    assert all(label in html for label in ("表注释", "字段注释", "表详情", "目标缺失"))
+    assert "e.physical.slice" not in html
+    assert '"physicalGroups"' in shard
+    assert '"physical":' not in shard
     assert "变化方式" in shard
     assert "持仓方向" in shard
     assert "币种基准" not in shard
@@ -275,6 +280,8 @@ def test_target_page_consumes_real_projection_and_preserves_old_page(tmp_path: P
     assert "document.createElement('script')" not in html
     manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
     assert manifest["config_sha256"]
+    assert manifest["panorama_root"].endswith("panorama")
+    assert manifest["panorama_objects_sha256"]
     assert len([row for row in manifest["outputs"] if "/concepts/" in row["relative_path"]]) == 5
 
 

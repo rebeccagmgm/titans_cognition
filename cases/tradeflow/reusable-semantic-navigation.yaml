@@ -1,6 +1,7 @@
 schema_version: reusable-semantic-navigation-v1
 business_skeleton_version: otc-derivatives-navigation-v1
 attribute_axes_version: reusable-field-attributes-v1
+panorama_root: output/stage0-panorama-comments-refresh-20260811/panorama
 reader_concepts:
   - id: reader:notional
     label: 名义本金
