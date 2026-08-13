@@ -20,7 +20,7 @@ artifacts:
     sha256: 98fb504349b7c0570b4317439f8698c7d9972a5459988c7fbe318b2137f1218b
   - role: TABLE_MANIFEST
     path: output/stage4-tradeflow-table-semantic-map-v1-rework-20260812/table-semantic-map/manifest.json
-    sha256: 3b4ba8e216b8a131a65f53ffbd2cf9419c869ded98893d7ed9b1052b77f3b948
+    sha256: d61099631d3444c6c52cf629d44e1de7d9673b682ca4926e96784e99c73dc072
   - role: SURROGATE_REVIEW
     path: openspec/changes/establish-reusable-semantic-navigation/review/surrogate-review-v2.md
     sha256: 224cef5323b3bc1ef738d0da6219d8cf87a052012f8507a3010e051424c7b7fa

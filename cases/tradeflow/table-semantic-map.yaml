@@ -23,7 +23,7 @@ inputs:
   field_context:
     path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map
     manifest: manifest.json
-    manifest_sha256: 16c9820685152a5ff3aaa66069fb54930bbfa2358b0b0cb4eb720f31196f5920
+    manifest_sha256: 98fb504349b7c0570b4317439f8698c7d9972a5459988c7fbe318b2137f1218b
     required: false
   wiki_tree:
     path: E:/03_resource/wiki-cache/trees/70218986/20260811T065812302Z-8e8a2076
