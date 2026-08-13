@@ -73,8 +73,9 @@ def _source(tmp_path: Path) -> Path:
                 "field_count": 1,
                 "object_count": 1,
                 "qualifier_signature": [
-                    {"dimension": "value_dynamics", "value": "DYNAMIC"},
-                    {"dimension": "currency_basis", "value": "LOCAL"},
+                    {"dimension": "variability", "value": "DYNAMIC"},
+                    {"dimension": "position_side", "value": "LONG"},
+                    {"dimension": "currency_basis", "value": "LOCAL_CURRENCY"},
                 ],
                 "status": "CANDIDATE",
                 "support_status": "SUPPORTED",
@@ -254,6 +255,12 @@ def test_target_page_consumes_real_projection_and_preserves_old_page(tmp_path: P
     assert "动态名义本金（本币）" in shard
     assert "正式业务定义仍需业务审阅" in shard
     assert "CONFIGURATION_SEED｜非证据" in html
+    assert "属性表达矩阵" in html
+    assert ".technical-name{text-transform:lowercase}" in html
+    assert "变化方式" in shard
+    assert "持仓方向" in shard
+    assert "币种基准" not in shard
+    assert "变化形态" not in shard
     assert hashlib.sha256((source / "review/index.html").read_bytes()).hexdigest() == old_hash
     by_label = {row["label"]: row for row in catalog}
     assert set(by_label) == {"名义本金", "交易对手", "交易 / 订单", "持仓", "保证金"}
@@ -263,6 +270,9 @@ def test_target_page_consumes_real_projection_and_preserves_old_page(tmp_path: P
     assert by_label["保证金"]["stageIds"] == ["valuation-risk"]
     shards = sorted((paths["review_index"].parent / "data/concepts").glob("*.js"))
     assert len(shards) == 5
+    for row in catalog:
+        assert f'<script src="data/concepts/{row["shard"]}"></script>' in html
+    assert "document.createElement('script')" not in html
     manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
     assert manifest["config_sha256"]
     assert len([row for row in manifest["outputs"] if "/concepts/" in row["relative_path"]]) == 5
