@@ -13,6 +13,8 @@ REQUIRED_CONFIG_KEYS = {
     "schema_version",
     "business_skeleton_version",
     "attribute_axes_version",
+    "reader_concepts",
+    "lifecycle_stages",
     "business_areas",
     "attribute_axes",
     "extension_policy",
@@ -220,10 +222,15 @@ def map_observed_concepts_to_business_areas(
     results: list[dict[str, Any]] = []
     for concept in concepts:
         label = str(concept.get("label", "")).strip().lower()
+        scored = {
+            area_id: _business_area_match_score(label, terms)
+            for area_id, terms in terms_by_area.items()
+        }
+        best_score = max(scored.values(), default=0)
         matches = [
             area_id
-            for area_id, terms in terms_by_area.items()
-            if any(str(term).lower() in label for term in terms)
+            for area_id, score in scored.items()
+            if score and score == best_score
         ]
         if len(matches) == 1:
             results.append(
@@ -268,7 +275,28 @@ def _validate_config(config: dict[str, Any]) -> None:
     if config["schema_version"] != "reusable-semantic-navigation-v1":
         raise ValueError("unsupported navigation schema version")
     _validate_unique_ids(config["business_areas"], "business area")
+    _validate_unique_ids(config["lifecycle_stages"], "lifecycle stage")
     _validate_unique_ids(config["attribute_axes"], "attribute axis")
+    _validate_unique_ids(config["reader_concepts"], "reader concept")
+    if len(config["lifecycle_stages"]) != 6:
+        raise ValueError("semantic navigation requires exactly six lifecycle stages")
+    for stage in config["lifecycle_stages"]:
+        if not isinstance(stage.get("concept_terms"), list) or not stage["concept_terms"]:
+            raise ValueError("each lifecycle stage requires open concept terms")
+        for key in ("core_object_terms", "business_event_terms", "cross_stage_terms"):
+            if not isinstance(stage.get(key), list):
+                raise ValueError(f"each lifecycle stage requires {key}")
+    stage_ids = {stage["id"] for stage in config["lifecycle_stages"]}
+    for concept in config["reader_concepts"]:
+        if not concept.get("source_labels") or not concept.get("lifecycle_entries"):
+            raise ValueError("reader concepts require sources and lifecycle entries")
+        for entry in concept["lifecycle_entries"]:
+            if entry.get("stage_id") not in stage_ids:
+                raise ValueError("reader concept references an unknown lifecycle stage")
+            if entry.get("role") not in {"CORE_OBJECT", "BUSINESS_EVENT", "CROSS_STAGE"}:
+                raise ValueError("reader concept has an invalid lifecycle role")
+            if not entry.get("seed_reason"):
+                raise ValueError("reader concept lifecycle entry requires a configuration seed reason")
     if config["publication"].get("canonical_write_back") is not False:
         raise ValueError("navigation projection cannot write canonical facts")
     if config["publication"].get("business_rows_read") is not False:
@@ -290,3 +318,19 @@ def _candidate_tail(label: str) -> str | None:
     if re.search(r"[\u4e00-\u9fff]", label):
         return label[-2:] if len(label) >= 2 else None
     return None
+
+
+def _business_area_match_score(label: str, terms: Iterable[str]) -> int:
+    """Prefer the most specific Chinese phrase; keep English token ties open."""
+
+    score = 0
+    for raw_term in terms:
+        term = str(raw_term).strip().lower()
+        if not term:
+            continue
+        if re.search(r"[\u4e00-\u9fff]", term):
+            if term in label:
+                score = max(score, len(term))
+        elif re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", label):
+            score = max(score, 1)
+    return score

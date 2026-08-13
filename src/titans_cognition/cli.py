@@ -82,6 +82,7 @@ from .reconcile import panorama_delivery_ready, reconcile_facts
 from .render import render_panorama
 from .scope import load_scope
 from .semantic_cleaning import import_review_decisions
+from .semantic_navigation_review import build_semantic_navigation_review
 
 
 def _filter_facts_by_schema(facts: PhysicalFacts, schema_name: str) -> PhysicalFacts:
@@ -246,6 +247,10 @@ def _build_parser() -> argparse.ArgumentParser:
     context_map = subparsers.add_parser("build-context-semantic-map")
     context_map.add_argument("--config", required=True, type=Path)
     context_map.add_argument("--output", required=True, type=Path)
+    semantic_navigation = subparsers.add_parser("build-semantic-navigation-review")
+    semantic_navigation.add_argument("--source", required=True, type=Path)
+    semantic_navigation.add_argument("--config", required=True, type=Path)
+    semantic_navigation.add_argument("--output", required=True, type=Path)
     indicator_catalog = subparsers.add_parser("build-indicator-catalog-review")
     indicator_catalog.add_argument("--snapshot-dir", required=True, type=Path)
     indicator_catalog.add_argument("--output", required=True, type=Path)
@@ -461,6 +466,25 @@ def main(argv: list[str] | None = None) -> int:
                     "root": str(paths["manifest"].parent),
                     "manifest": str(paths["manifest"]),
                     "investigation_card": str(paths["investigation_card"]),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "build-semantic-navigation-review":
+        paths = build_semantic_navigation_review(
+            args.source,
+            args.config,
+            args.output,
+        )
+        manifest = json.loads(paths["manifest"].read_text(encoding="utf-8"))
+        print(
+            json.dumps(
+                {
+                    **manifest["stats"],
+                    "review_index": str(paths["review_index"]),
+                    "manifest": str(paths["manifest"]),
                 },
                 ensure_ascii=False,
             )

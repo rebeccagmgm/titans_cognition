@@ -1,6 +1,72 @@
 schema_version: reusable-semantic-navigation-v1
 business_skeleton_version: otc-derivatives-navigation-v1
 attribute_axes_version: reusable-field-attributes-v1
+reader_concepts:
+  - id: reader:notional
+    label: 名义本金
+    source_labels: [名义本金]
+    lifecycle_entries:
+      - {stage_id: contract-lifecycle, role: CORE_OBJECT, seed_reason: 合同经济条款中的基准金额}
+      - {stage_id: valuation-risk, role: CROSS_STAGE, seed_reason: 估值与对账使用的金额基准}
+  - id: reader:counterparty
+    label: 交易对手
+    source_labels: [交易对手, 交易对手主键, 交易对手名称缩写, 交易对手备注, 交易对手所属部门, 交易对手短名, 交易对手简称, 交易对手缩写, 交易对手长名, 原交易对手类型, 原始交易对手, 源侧交易对手, 目标交易对手, 背靠背交易对手, 背靠背交易对手缩写]
+    lifecycle_entries:
+      - {stage_id: trade-preparation, role: CORE_OBJECT, seed_reason: 交易参与主体及其标识属性}
+  - id: reader:trade-order
+    label: 交易 / 订单
+    source_labels: [交易, 交易ID, 交易内部编号, 交易状态, 交易日期, 交易时间, 订单编号, 交易台订单编号, 内部订单编号, 用户子订单, 用户订单, 系统内部订单, 系统算法订单编号, 订单业务主键, 订单唯一, 订单日期, 订单时间]
+    excluded_expression_labels: [NET_TOTAL_VALUE_TRADE]
+    lifecycle_entries:
+      - {stage_id: trade-agreement, role: CORE_OBJECT, seed_reason: 订单标识与交易达成记录}
+  - id: reader:position
+    label: 持仓
+    source_labels: [持仓, 持仓数量, 持仓日期, 持仓来源, 持仓类型]
+    lifecycle_entries:
+      - {stage_id: contract-lifecycle, role: CORE_OBJECT, seed_reason: 合同存续期间的持仓身份与属性}
+      - {stage_id: valuation-risk, role: CROSS_STAGE, seed_reason: 风险与估值使用持仓口径}
+  - id: reader:margin
+    label: 保证金
+    source_labels: [保证金, 保证金余额, 保证金初始线, 保证金提取线, 保证金提取维持线, 保证金方向, 保证金比例, 保证金追保线, 保证金追保维持线, 保证金金额, 保证金预警线, 基础保证金率]
+    lifecycle_entries:
+      - {stage_id: valuation-risk, role: CORE_OBJECT, seed_reason: 履约保障及风险管理度量}
+lifecycle_stages:
+  - id: trade-preparation
+    label: 交易准备
+    concept_terms: [客户, 交易对手, 产品, 标的, 准入, 限额, 参数, counterparty, product, underlying, limit, parameter]
+    core_object_terms: [客户, 交易对手, 产品, 标的, 准入, 限额]
+    business_event_terms: []
+    cross_stage_terms: [参数]
+  - id: trade-agreement
+    label: 交易达成
+    concept_terms: [询价, 报价, 订单, 成交, 交易, inquiry, quote, order, trade, deal]
+    core_object_terms: [询价, 报价, 订单, 交易]
+    business_event_terms: [询价, 报价, 成交]
+    cross_stage_terms: [合约]
+  - id: contract-lifecycle
+    label: 合同存续
+    concept_terms: [合约, 合同, 合约腿, 名义本金, 持仓, 生效, 重置, 平仓, 终止, contract, leg, notional, position, reset, unwind, terminate]
+    core_object_terms: [合约, 合约腿, 经济条款, 名义本金, 持仓]
+    business_event_terms: [建立, 生效, 重置, 平仓, 终止]
+    cross_stage_terms: [估值, 风险, 结算]
+  - id: valuation-risk
+    label: 估值风控
+    concept_terms: [估值, 市值, 价格, 风险, 敞口, 保证金, 抵押品, 对冲, valuation, price, risk, exposure, margin, collateral, hedge]
+    core_object_terms: [估值, 风险敞口, 保证金, 抵押品, 对冲]
+    business_event_terms: []
+    cross_stage_terms: [名义本金, 持仓, 结算]
+  - id: clearing-settlement
+    label: 清算结算
+    concept_terms: [清算, 结算, 交割, 支付, 现金流, clearing, settlement, delivery, payment, cashflow]
+    core_object_terms: [现金流, 清算, 交割, 结算结果]
+    business_event_terms: [清算, 交割, 结算]
+    cross_stage_terms: [合约, 持仓]
+  - id: operations-governance
+    label: 运营治理
+    concept_terms: [对账, 报表, 报送, 批处理, 数据加工, 审计, reconciliation, report, batch, process, audit]
+    core_object_terms: [对账, 报表, 报送, 参考数据, 数据加工]
+    business_event_terms: [批处理]
+    cross_stage_terms: [交易, 合约, 结算]
 business_areas:
   - id: participants
     label: 参与主体
@@ -23,16 +89,16 @@ business_areas:
   - id: operations-reporting-data
     label: 运营、报表与数据加工
 business_area_terms:
-  participants: [client, customer, counterparty, buyer, seller, trader, institution, department, party]
-  products-underlyings: [product, underlying, instrument, asset, stock, index, rate]
-  inquiry-order-trade: [inquiry, quote, quotation, order, trade, deal, execution]
-  contract-structure: [contract, structure, strategy, portfolio, basket, leg]
-  lifecycle: [effective, activation, reset, unwind, close, terminate, maturity, lifecycle]
-  position-risk: [position, holding, exposure, hedge, limit, risk, margin]
-  valuation-collateral-cashflow: [notional, valuation, price, premium, fee, interest, collateral, cashflow, amount]
-  execution-clearing-settlement: [settlement, clearing, delivery, payment, cash]
-  reference-configuration: [currency, exchange, market, type, rule, parameter, configuration]
-  operations-reporting-data: [report, batch, process, job, source, target, audit, created, updated]
+  participants: [客户, 交易对手, 买方, 卖方, 交易员, 机构, 部门, client, customer, counterparty, buyer, seller, trader, institution, department, party]
+  products-underlyings: [产品, 标的, 品种, 股票, 指数, product, underlying, instrument, asset, stock, index]
+  inquiry-order-trade: [询价, 报价, 订单, 成交, 交易, inquiry, quote, quotation, order, trade, deal, execution]
+  contract-structure: [合约, 合同, 方案, 组合, 合约腿, contract, structure, strategy, portfolio, basket, leg]
+  lifecycle: [生效, 重置, 平仓, 终止, 到期, effective, activation, reset, unwind, close, terminate, maturity, lifecycle]
+  position-risk: [持仓, 头寸, 敞口, 对冲, 限额, 风险, position, holding, exposure, hedge, limit, risk]
+  valuation-collateral-cashflow: [名义本金, 估值, 价格, 保证金, 抵押品, 现金流, 费用, 利息, 金额, notional, valuation, price, premium, fee, interest, collateral, cashflow, amount]
+  execution-clearing-settlement: [结算, 清算, 交割, 支付, settlement, clearing, delivery, payment, cash]
+  reference-configuration: [币种, 市场, 交易所, 类型, 规则, 参数, 配置, currency, exchange, market, type, rule, parameter, configuration]
+  operations-reporting-data: [报表, 对账, 报送, 批处理, 加工, 审计, report, reconciliation, batch, process, job, source, target, audit, created, updated]
 attribute_axes:
   - id: IDENTIFIER
     label: 标识

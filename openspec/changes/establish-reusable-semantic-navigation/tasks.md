@@ -48,3 +48,12 @@
 - [x] 7.3 Review the final diff for source writes, closed classification leakage, Wiki overreach, hidden Unknown/Conflict, and generated artifacts in Git.
 - [x] 7.4 Update project status and reader-entry documentation with separate engineering, reader-delivery, business-acceptance, and scale-authorization states.
 - [ ] 7.5 Present the resulting navigation Projection and review report for explicit user acceptance before replacing the existing field semantic map entry.
+
+## 8. Correct the Reader Projection Gap
+
+- [x] 8.1 Define the six-stage lifecycle spine separately from the ten reusable business areas and add deterministic multi-entry mappings.
+- [x] 8.2 Build a real-run semantic-navigation Projection from the current TRADEFLOW field/context outputs, preserving source references, counts, Unknown and Conflict.
+- [x] 8.3 Render the target three-column reader page: lifecycle spine; stage business map; concept expression index; expression detail and evidence; separate governance queue.
+- [x] 8.4 Add reader-facing and anti-placeholder tests proving the page uses real TRADEFLOW Projection data and leaves the old page untouched.
+- [x] 8.5 Run the corrected Projection on current TRADEFLOW inputs, perform independent surrogate review, fix in-scope REWORK and repeat until ACCEPT or a documented STOP/DEFER.
+- [x] 8.6 Re-run deterministic/full validation and present the corrected page plus review report for explicit user acceptance; do not replace the existing entry before acceptance.

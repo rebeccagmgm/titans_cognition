@@ -11,7 +11,7 @@ artifacts:
     sha256: 159f4e481db249baa6f8ccb49e2ead7924bc3b4287778a0962e9527d0f1f942b
   - role: SEMANTIC_CONFIG
     path: cases/tradeflow/reusable-semantic-navigation.yaml
-    sha256: 6e1dc5f427b28213c487a94d7d141c6ac42ff7db0f8b40107cf27c489f5fd39b
+    sha256: d44d5c27fa8732cf6773877cf63f83347da844b5c469329bed916565712d057c
   - role: FIELD_MANIFEST
     path: output/stage2-tradeflow-field-semantics-v2-20260812/field-semantic-index-v2/manifest.json
     sha256: 74bd886af4608504a63fab257bacc79235a9afd7bffdc3cc98e2285330a30339
