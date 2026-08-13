@@ -1,0 +1,21 @@
+schema_name: NOVA_RATES
+objects:
+  - object_name: QUOTE_EVENT
+    comment: null
+    columns:
+      - {name: STATUS, comment: Counterparty display label}
+      - {name: LEG_REF, comment: null}
+  - object_name: PARTY_AMOUNT
+    comment: Misleading amount-like table that stores party references.
+    columns:
+      - {name: PARTY_ID, comment: External participant key}
+missing_metadata:
+  - QUOTE_EVENT.comment
+  - QUOTE_EVENT.LEG_REF.comment
+ambiguous_relations:
+  - left: QUOTE_EVENT.LEG_REF
+    right: PARTY_AMOUNT.PARTY_ID
+    reason: Same type and overlapping values are not a proved business relation.
+misleading_names:
+  - field: QUOTE_EVENT.STATUS
+    reason: Physical name suggests state but comment suggests a participant label.

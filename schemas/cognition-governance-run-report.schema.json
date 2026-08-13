@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cognition-governance-run-report-v1",
+  "title": "Derived Cognition Governance Audit Projection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "report_kind", "report_id", "profile_id", "case_id", "derived_from", "checkpoints", "operations", "model_usage", "conflicts", "gaps", "contract_isolation_check"],
+  "properties": {
+    "schema_version": {"const": "cognition-governance-run-report-v1"},
+    "report_kind": {"const": "DERIVED_AUDIT_PROJECTION"},
+    "report_id": {"type": "string", "pattern": "^[0-9a-f]{24}$"},
+    "profile_id": {"type": "string", "minLength": 1},
+    "case_id": {"type": "string", "minLength": 1},
+    "derived_from": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reference"}},
+    "checkpoints": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {"$ref": "#/$defs/checkpoint"}
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {"$ref": "#/$defs/operation"}
+    },
+    "model_usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["calls", "tokens", "measurement_status", "max_total_calls", "max_total_tokens", "cache_key"],
+      "properties": {
+        "calls": {"type": "integer", "minimum": 0},
+        "tokens": {"type": "integer", "minimum": 0},
+        "measurement_status": {"enum": ["MEASURED", "UNMEASURED"]},
+        "max_total_calls": {"type": "integer", "minimum": 0},
+        "max_total_tokens": {"type": "integer", "minimum": 0},
+        "cache_key": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_ref", "source_sha256", "observation"],
+        "properties": {
+          "source_ref": {"type": "string", "minLength": 1},
+          "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "observation": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "gaps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "source_ref"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "source_ref": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "contract_isolation_check": {"enum": ["NOT_APPLICABLE", "PASS", "FAIL"]}
+  },
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["checkpoint", "phase", "result", "observations"],
+      "properties": {
+        "checkpoint": {"enum": ["PREFLIGHT", "POST_STAGE", "PRE_REVIEW", "POST_REVIEW", "PRE_FINALIZE"]},
+        "phase": {"type": "string", "minLength": 1},
+        "result": {"const": "PASS"},
+        "observations": {"type": "array", "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_id", "result", "observations", "derived_from"],
+      "properties": {
+        "operation_id": {"enum": ["authority-snapshot", "artifact-integrity", "review-readiness", "final-audit"]},
+        "result": {"const": "PASS"},
+        "observations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "derived_from": {"type": "array", "items": {"$ref": "#/$defs/reference"}}
+      }
+    }
+  }
+}

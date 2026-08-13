@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "cognition-schema-case-pack-v1",
+  "title": "Cognition Schema Case Pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "workflow_profile_id", "schema_name", "artifacts", "data_policy", "authority_refs", "model_budget", "contract_isolation_check"],
+  "properties": {
+    "schema_version": {"const": "cognition-schema-case-pack-v1"},
+    "case_id": {"type": "string", "minLength": 1},
+    "workflow_profile_id": {"type": "string", "minLength": 1},
+    "schema_name": {"type": "string", "minLength": 1},
+    "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reference"}},
+    "data_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_classes", "business_rows", "source_writes", "model_egress"],
+      "properties": {
+        "allowed_classes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["METADATA", "WIKI_CONTEXT", "SYNTHETIC_METADATA"]}},
+        "business_rows": {"const": false},
+        "source_writes": {"const": false},
+        "model_egress": {"const": false}
+      }
+    },
+    "authority_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/reference"}},
+    "model_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_total_calls", "max_total_tokens", "require_measured_usage"],
+      "properties": {
+        "max_total_calls": {"const": 0},
+        "max_total_tokens": {"const": 0},
+        "require_measured_usage": {"type": "boolean"}
+      }
+    },
+    "contract_isolation_check": {"type": "boolean"}
+  },
+  "$defs": {
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256"],
+      "properties": {
+        "role": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

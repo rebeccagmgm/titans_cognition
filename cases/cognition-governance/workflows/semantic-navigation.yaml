@@ -1,0 +1,34 @@
+schema_version: cognition-workflow-profile-v1
+profile_id: semantic-navigation-governance-v1
+capability: semantic-navigation
+operations:
+  - authority-snapshot
+  - artifact-integrity
+  - review-readiness
+  - final-audit
+required_artifact_roles:
+  - CHANGE_SCOPE
+  - FROZEN_INPUTS
+  - SEMANTIC_CONFIG
+  - FIELD_MANIFEST
+  - CONTEXT_MANIFEST
+  - TABLE_MANIFEST
+  - SURROGATE_REVIEW
+  - STATUS_BASELINE
+mandatory_checkpoints:
+  - PREFLIGHT
+  - POST_STAGE
+  - PRE_REVIEW
+  - POST_REVIEW
+  - PRE_FINALIZE
+ambiguity_triggers:
+  - UNRESOLVED_CONCEPTS
+  - CONFLICTING_CANDIDATES
+  - MISLEADING_NAME
+  - MISSING_METADATA
+  - USER_ACCEPTANCE_PENDING
+model_policy:
+  default_calls: 0
+  max_total_calls: 0
+  max_total_tokens: 0
+  require_measured_usage: true

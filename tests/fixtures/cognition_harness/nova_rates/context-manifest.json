@@ -1,0 +1,14 @@
+{
+  "schema_version": "synthetic-context-projection-v1",
+  "run_id": "nova-rates-context-fixture-v1",
+  "inputs": {"field_manifest": "field-manifest.json"},
+  "outputs": [
+    {
+      "logical_name": "context_observations",
+      "relative_path": "context-observations.jsonl",
+      "content_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+    }
+  ],
+  "quality_gate": {"boundary": "fixture contract only", "status": "FIXTURE_ONLY"},
+  "missing_metadata": 2
+}

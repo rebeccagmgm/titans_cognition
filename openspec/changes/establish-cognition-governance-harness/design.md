@@ -8,7 +8,7 @@
 
 - 用最小系统代码固定语义导航治理旅程和检查点。
 - 将 TRADEFLOW 局部信息隔离到 Case Pack，为后续真实 Schema 接入留下受检入口。
-- 让低成本模型仅处理确定性方法无法处理的有界歧义。
+- 为低成本 Reviewer 留出隔离输入契约，但本切片不让 Runner 自动调用模型。
 
 **Non-Goals:**
 
@@ -54,9 +54,11 @@ Workflow Profile + Schema Case Pack
 
 `.agents/skills/govern-cognition-work` 只负责选择 Profile/Case、调用单一 Runner、展示失败/升级结果，不手工执行或重新排列阶段。第一版只配置 `counterexample_reviewer`，输入与实施上下文隔离；不增加 Evidence Scout，避免重复已有确定性 Evidence Resolver。
 
-### 5. 模型经济由 Runner 校验
+### 5. 首个切片保持零模型执行
 
-Profile 默认 `model_calls=0`。审阅阶段必须同时满足歧义触发器、授权引用、总调用/Token 上限和缓存未命中。预算跨 REWORK 累计；缓存键包含冻结输入、审阅契约和模型配置哈希。要求测量但无法测量时，结果不可发布。
+Profile 和 Case Pack 的当前预算均固定为 `model_calls=0`、`tokens=0`，Runner 拒绝任何非零模型用量。歧义触发器仅用于校验独立 Reviewer 输入是否有明确理由；Reviewer 响应作为外部工程审阅 Artifact 被校验和引用，Runner 不负责发起调用或声称测量其成本。
+
+自动低成本模型执行、跨 REWORK 累计用量账本和缓存命中属于后续独立 Change。这样保留未来入口，但不在尚无授权和真实第二 Schema 的阶段建设模型运行平台。
 
 ### 6. 固定点由 Runner 保证，不使用 Hooks/Rules
 
@@ -66,7 +68,7 @@ Skill 只能调用 Runner 的高层入口，不能调用内部阶段跳过校验
 
 - [Risk] 窄 Runner 仍被扩展成通用平台 → 注册表只接受语义导航操作，新增能力必须独立 Change。
 - [Risk] 合成 Case 延续 TRADEFLOW 形状 → Fixture 强制缺失元数据、不同命名顺序、歧义关系和误导名称，并仅给隔离检查结论。
-- [Risk] Reviewer 成本失控 → 默认零调用、总预算、缓存和不可测即不发布。
+- [Risk] Reviewer 成本失控 → Runner 保持零模型执行；自动 Reviewer 与累计成本治理留给后续独立 Change。
 - [Risk] 当前语义导航 Change 尚未用户验收 → Harness 原样引用状态，不替换页面或推动完成。
 
 ## Migration Plan

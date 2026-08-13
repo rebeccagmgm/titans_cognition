@@ -1,0 +1,27 @@
+schema_version: cognition-schema-case-pack-v1
+case_id: nova-rates-contract-isolation-v1
+workflow_profile_id: semantic-navigation-governance-v1
+schema_name: NOVA_RATES
+artifacts:
+  - {role: CHANGE_SCOPE, path: tests/fixtures/cognition_harness/nova_rates/change-scope.yaml, sha256: 38c865caa88f6dc75d193c9dfdd3a88019d7dba804820f91664c27f2972ab378}
+  - {role: FROZEN_INPUTS, path: tests/fixtures/cognition_harness/nova_rates/frozen-inputs.yaml, sha256: ecb7904602ace5b7241b29d5d60f9d4214f1717dd281af65aa140b258b4c3d3d}
+  - {role: SEMANTIC_CONFIG, path: tests/fixtures/cognition_harness/nova_rates/semantic-config.yaml, sha256: 2a9605d2592f095be35e012b8a8d94570260523af68da51976f3df7492135c37}
+  - {role: FIELD_MANIFEST, path: tests/fixtures/cognition_harness/nova_rates/field-manifest.json, sha256: a11069a074814f1e2f6dc76fc528f2ea0ab7f40343123408bdf054433594193f}
+  - {role: CONTEXT_MANIFEST, path: tests/fixtures/cognition_harness/nova_rates/context-manifest.json, sha256: 1ef38282f7eb727e22477e7719293dda781489078ff3163bd1dd96877d4c3196}
+  - {role: TABLE_MANIFEST, path: tests/fixtures/cognition_harness/nova_rates/table-manifest.json, sha256: 26b4652b9e4c3ac67a55541e14484fdbebb741826f6cc9ee17af9524f7b9e94b}
+  - {role: SURROGATE_REVIEW, path: tests/fixtures/cognition_harness/nova_rates/surrogate-review.md, sha256: 9b1431bc46b7a40003ed183350e73c1f3436060d40c96e1d8bd604371659f37c}
+  - {role: STATUS_BASELINE, path: tests/fixtures/cognition_harness/nova_rates/status-baseline.yaml, sha256: 1717b1c52ae12fac42234f274d58b8142b9f5f25611ddd9a6d1670a1a57f8074}
+data_policy:
+  allowed_classes: [SYNTHETIC_METADATA]
+  business_rows: false
+  source_writes: false
+  model_egress: false
+authority_refs:
+  - role: SECURITY_POLICY
+    path: docs/spec/11-security-and-operations.md
+    sha256: fb564028e155524f5c5e9b548471e7287fe1cdb1d2e6ffedb33c74a15911d5bf
+model_budget:
+  max_total_calls: 0
+  max_total_tokens: 0
+  require_measured_usage: true
+contract_isolation_check: true

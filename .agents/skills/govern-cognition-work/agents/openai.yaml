@@ -1,0 +1,4 @@
+interface:
+  display_name: "Govern Cognition Work"
+  short_description: "Run the fixed semantic-navigation governance checks"
+  default_prompt: "Run the configured cognition governance profile and case pack, then report the derived audit result without promoting business status."

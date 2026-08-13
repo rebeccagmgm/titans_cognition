@@ -1,0 +1,12 @@
+{
+  "schema_version": "cognition-review-input-v1",
+  "objective": "Verify fixed governance checkpoints without changing domain state.",
+  "acceptance_criteria": ["All fixed checkpoints execute", "The report remains a derived projection"],
+  "trigger_codes": ["USER_ACCEPTANCE_PENDING"],
+  "source_refs": [
+    {"role": "FROZEN_INPUTS", "path": "tests/fixtures/cognition_harness/nova_rates/frozen-inputs.yaml", "sha256": "ecb7904602ace5b7241b29d5d60f9d4214f1717dd281af65aa140b258b4c3d3d"}
+  ],
+  "projection_ref": {"role": "CONTEXT_MANIFEST", "path": "tests/fixtures/cognition_harness/nova_rates/context-manifest.json", "sha256": "1ef38282f7eb727e22477e7719293dda781489078ff3163bd1dd96877d4c3196"},
+  "counterexamples": ["Checkpoint PASS must not be promoted to business acceptance"],
+  "known_gaps": []
+}

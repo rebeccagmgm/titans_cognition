@@ -8,7 +8,7 @@ TITANS Cognition 后续要接入多个 Schema，而当前 TRADEFLOW 语义导航
 - 增加窄化的确定性 Runner。它只执行代码内注册的语义导航操作 ID 和类型化参数，在预检、每阶段后、审阅前、审阅后、报告定稿前强制验证；Profile 不得携带任意 Shell。
 - 将复用契约拆成“语义导航 Workflow Profile × Schema Case Pack”：Profile 定义固定旅程和 Gate，Case Pack 定义具体 Schema 范围、批准的 Manifest/配置、数据类别、局部词汇和授权引用。
 - 仅实现首个纵向切片：语义导航 Profile、TRADEFLOW Case Pack、真实现有 Artifact 的审计报告、一个薄仓库 Skill 和一个隔离的反例审阅 Agent。
-- 模型默认调用数为 0；只有 Profile 声明歧义触发器且 Case Pack 存在有效授权引用时才可审阅，并强制总调用/Token 上限、冻结输入哈希缓存和失败停止。模型阶段成本未测量时不得形成可发布结论。
+- 本切片强制 Runner 模型调用数为 0；歧义触发器只用于形成隔离的 Reviewer 输入。Reviewer 由 Codex 工程审阅适配执行，不由 Runner 自动发起，也不冒充领域 Review Decision。未来若需要 Runner 自动调用低成本模型，必须通过独立 Change 补齐数据外发授权、跨重试累计用量账本和缓存契约。
 - 使用结构显著不同的合成非 TRADEFLOW Fixture 只做 `CONTRACT_ISOLATION_CHECK`；真实第二 Schema 由 `D-010` 后续独立 Change 接入，未完成前不得宣称跨 Schema 有效。
 - 本 Change 不增加 Evidence Scout、未来 Schema 模板、Hooks 或 Rules；这些只有在首个切片证明真实缺口后才能另行提案。
 

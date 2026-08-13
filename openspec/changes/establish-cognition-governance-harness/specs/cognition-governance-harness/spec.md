@@ -52,17 +52,17 @@ Runner SHALL 在预检、每个操作完成后、独立审阅前、独立审阅�
 - **WHEN** Codex Hook 未配置、未信任或被禁用
 - **THEN** 直接运行 Runner SHALL 仍执行全部固定验证点并产生相同结论
 
-### Requirement: 模型调用必须默认关闭并具备总预算
+### Requirement: 首个切片的 Runner 模型调用必须保持关闭
 
-模型和 Subagent 调用 SHALL 默认为 0。只有 Workflow Profile 声明可验证的歧义触发器、Schema Case Pack 引用有效授权记录且确定性阶段无法完成时，Runner 才能生成审阅包。模型阶段 SHALL 具备跨重试的总调用上限、总 Token 上限、冻结输入哈希缓存键和明确降级；实际用量无法测量时，模型依赖结果 SHALL 保持不可发布。
+本 Change 的 Workflow Profile 和 Schema Case Pack SHALL 将模型调用与 Token 预算固定为 0，Runner SHALL 拒绝任何非零或负数用量。Workflow Profile 的歧义触发器只用于校验隔离 Reviewer 输入；Runner 可以校验并引用外部工程 Reviewer 响应，但 SHALL NOT 自动发起模型或 Subagent 调用，也不得声称测量该外部审阅成本。自动模型执行、跨重试累计预算账本和缓存消费契约必须由后续独立 Change 授权和实现。
 
 #### Scenario: 确定性校验足够
 - **WHEN** 当前阶段仅需检查 Schema、哈希、引用、路径或已有 Gate
 - **THEN** Runner SHALL 完成检查而不生成模型审阅包
 
-#### Scenario: 预算耗尽或用量不可测
-- **WHEN** 总调用/Token 上限已达到，或 Profile 要求测量但实际用量为 `UNMEASURED`
-- **THEN** 模型阶段 SHALL 停止并形成不可发布缺口，不得通过增加重试或降低证据门槛继续
+#### Scenario: 当前切片收到模型用量
+- **WHEN** 调用方提交非零、负数或 `UNMEASURED` 的模型用量
+- **THEN** Runner SHALL 拒绝运行，不得通过增加重试、伪造测量或降低证据门槛继续
 
 ### Requirement: 独立审阅必须隔离实施结论
 

@@ -1,0 +1,3 @@
+fixture: nova-rates
+objective: Prove that the governance contract is isolated from one Schema shape.
+claim_boundary: CONTRACT_ISOLATION_CHECK_ONLY

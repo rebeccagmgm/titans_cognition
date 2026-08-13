@@ -1,0 +1,46 @@
+schema_version: cognition-schema-case-pack-v1
+case_id: tradeflow-semantic-navigation-v1
+workflow_profile_id: semantic-navigation-governance-v1
+schema_name: TITANS_TRADEFLOW
+artifacts:
+  - role: CHANGE_SCOPE
+    path: openspec/changes/establish-cognition-governance-harness/proposal.md
+    sha256: 3d11cd95fe38cdd82ca41a7f990f66d61fd0ff3947fcc89076f94fc1ac38e2fd
+  - role: FROZEN_INPUTS
+    path: openspec/changes/establish-reusable-semantic-navigation/inputs/frozen-inputs.yaml
+    sha256: 159f4e481db249baa6f8ccb49e2ead7924bc3b4287778a0962e9527d0f1f942b
+  - role: SEMANTIC_CONFIG
+    path: cases/tradeflow/reusable-semantic-navigation.yaml
+    sha256: 6e1dc5f427b28213c487a94d7d141c6ac42ff7db0f8b40107cf27c489f5fd39b
+  - role: FIELD_MANIFEST
+    path: output/stage2-tradeflow-field-semantics-v2-20260812/field-semantic-index-v2/manifest.json
+    sha256: 74bd886af4608504a63fab257bacc79235a9afd7bffdc3cc98e2285330a30339
+  - role: CONTEXT_MANIFEST
+    path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map/manifest.json
+    sha256: 98fb504349b7c0570b4317439f8698c7d9972a5459988c7fbe318b2137f1218b
+  - role: TABLE_MANIFEST
+    path: output/stage4-tradeflow-table-semantic-map-v1-rework-20260812/table-semantic-map/manifest.json
+    sha256: 3b4ba8e216b8a131a65f53ffbd2cf9419c869ded98893d7ed9b1052b77f3b948
+  - role: SURROGATE_REVIEW
+    path: openspec/changes/establish-reusable-semantic-navigation/review/surrogate-review-v2.md
+    sha256: 224cef5323b3bc1ef738d0da6219d8cf87a052012f8507a3010e051424c7b7fa
+  - role: STATUS_BASELINE
+    path: docs/current-status-baseline.md
+    sha256: 325e19c0d10eacb397c2ff9ddae884a6c14d0b9970d8fd0eb78b784e9311de7a
+  - role: OPEN_DECISIONS
+    path: docs/spec/12-open-decisions.md
+    sha256: 73b306cb3c13e115cef55103be7aa062667ee9931de99b912aa917c5e28ff1cf
+data_policy:
+  allowed_classes: [METADATA, WIKI_CONTEXT]
+  business_rows: false
+  source_writes: false
+  model_egress: false
+authority_refs:
+  - role: SECURITY_POLICY
+    path: docs/spec/11-security-and-operations.md
+    sha256: fb564028e155524f5c5e9b548471e7287fe1cdb1d2e6ffedb33c74a15911d5bf
+model_budget:
+  max_total_calls: 0
+  max_total_tokens: 0
+  require_measured_usage: true
+contract_isolation_check: false

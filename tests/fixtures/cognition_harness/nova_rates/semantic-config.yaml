@@ -1,0 +1,5 @@
+schema_name: NOVA_RATES
+token_order: suffix_first
+attribute_patterns:
+  - {pattern: "* Name", attribute_kind: NAME}
+unknown_policy: PRESERVE
