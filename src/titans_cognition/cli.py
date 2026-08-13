@@ -19,6 +19,22 @@ from .field_concepts import (
     run_field_concepts,
     write_field_concept_results,
 )
+from .field_semantics import (
+    load_field_semantic_config,
+    run_field_semantics,
+    write_field_semantic_results,
+)
+from .context_semantics import (
+    load_context_map_config,
+    run_context_map,
+    write_context_map_results,
+)
+from .indicator_catalog import build_indicator_catalog
+from .table_semantics import (
+    load_table_semantic_config,
+    run_table_semantic_map,
+    write_table_semantic_results,
+)
 from .llm_field_review import (
     import_review_responses,
     load_review_config,
@@ -65,6 +81,7 @@ from .provider import GfDerivativeDbProvider
 from .reconcile import panorama_delivery_ready, reconcile_facts
 from .render import render_panorama
 from .scope import load_scope
+from .semantic_cleaning import import_review_decisions
 
 
 def _filter_facts_by_schema(facts: PhysicalFacts, schema_name: str) -> PhysicalFacts:
@@ -72,7 +89,9 @@ def _filter_facts_by_schema(facts: PhysicalFacts, schema_name: str) -> PhysicalF
 
     normalized = schema_name.strip().upper()
     objects = [
-        row for row in facts.objects if str(row.get("schema_name", "")).upper() == normalized
+        row
+        for row in facts.objects
+        if str(row.get("schema_name", "")).upper() == normalized
     ]
     asset_ids = {str(row["asset_id"]) for row in objects}
 
@@ -142,7 +161,9 @@ def _load_metadata_json(path: Path) -> list[ObjectMetadata]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     records = payload.get("objects", payload) if isinstance(payload, dict) else payload
     if not isinstance(records, list):
-        raise ValueError("metadata JSON must be a list or an object with an objects list")
+        raise ValueError(
+            "metadata JSON must be a list or an object with an objects list"
+        )
     return [_object_metadata_from_mapping(item) for item in records]
 
 
@@ -212,26 +233,42 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="write run-local nearest-neighbor diagnostics",
     )
-    prepare_field_review = subparsers.add_parser(
-        "prepare-field-concept-llm-review"
+    field_semantics = subparsers.add_parser("discover-field-semantics")
+    field_semantics.add_argument("--facts-dir", required=True, type=Path)
+    field_semantics.add_argument("--config", required=True, type=Path)
+    field_semantics.add_argument("--output", required=True, type=Path)
+    field_semantics.add_argument(
+        "--investigation-query",
+        action="append",
+        default=[],
+        help="repeatable acceptance query; does not alter inference",
     )
-    prepare_field_review.add_argument(
-        "--field-concepts-dir", required=True, type=Path
-    )
+    context_map = subparsers.add_parser("build-context-semantic-map")
+    context_map.add_argument("--config", required=True, type=Path)
+    context_map.add_argument("--output", required=True, type=Path)
+    indicator_catalog = subparsers.add_parser("build-indicator-catalog-review")
+    indicator_catalog.add_argument("--snapshot-dir", required=True, type=Path)
+    indicator_catalog.add_argument("--output", required=True, type=Path)
+    table_map = subparsers.add_parser("build-table-semantic-map")
+    table_map.add_argument("--config", required=True, type=Path)
+    table_map.add_argument("--output", required=True, type=Path)
+    import_context_review = subparsers.add_parser("import-context-semantic-review")
+    import_context_review.add_argument("--review-pack-dir", required=True, type=Path)
+    import_context_review.add_argument("--responses", required=True, type=Path)
+    import_context_review.add_argument("--output", required=True, type=Path)
+    import_context_review.add_argument("--model-id", required=True)
+    prepare_field_review = subparsers.add_parser("prepare-field-concept-llm-review")
+    prepare_field_review.add_argument("--field-concepts-dir", required=True, type=Path)
     prepare_field_review.add_argument("--config", required=True, type=Path)
     prepare_field_review.add_argument("--output", required=True, type=Path)
     prepare_field_review.add_argument("--max-packs", type=int)
     prepare_field_review.add_argument("--token-budget", type=int)
-    import_field_review = subparsers.add_parser(
-        "import-field-concept-llm-review"
-    )
+    import_field_review = subparsers.add_parser("import-field-concept-llm-review")
     import_field_review.add_argument("--review-dir", required=True, type=Path)
     import_field_review.add_argument("--responses", required=True, type=Path)
     import_field_review.add_argument("--model-id", required=True)
     import_field_review.add_argument("--cache-dir", type=Path)
-    render_field_review = subparsers.add_parser(
-        "render-field-concept-llm-review"
-    )
+    render_field_review = subparsers.add_parser("render-field-concept-llm-review")
     render_field_review.add_argument("--review-dir", required=True, type=Path)
     render_field_review.add_argument("--source-panorama-root", type=Path)
     reconcile = subparsers.add_parser("reconcile")
@@ -388,6 +425,90 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    if args.command == "discover-field-semantics":
+        facts = read_json_facts(args.facts_dir)
+        config = load_field_semantic_config(args.config)
+        result = run_field_semantics(facts, config)
+        paths = write_field_semantic_results(
+            args.output,
+            result,
+            facts,
+            config=config,
+            investigation_queries=tuple(args.investigation_query),
+        )
+        print(
+            json.dumps(
+                {
+                    **result.stats,
+                    "semantic_shape_gate": result.quality_gate["status"],
+                    "root": str(paths["manifest"].parent),
+                    "manifest": str(paths["manifest"]),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "build-context-semantic-map":
+        config = load_context_map_config(args.config)
+        result = run_context_map(config)
+        paths = write_context_map_results(args.output, result, config)
+        print(
+            json.dumps(
+                {
+                    **result.stats,
+                    "model_gate": result.quality_gate["status"],
+                    "root": str(paths["manifest"].parent),
+                    "manifest": str(paths["manifest"]),
+                    "investigation_card": str(paths["investigation_card"]),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "build-indicator-catalog-review":
+        result = build_indicator_catalog(args.snapshot_dir, args.output)
+        print(
+            json.dumps(
+                {
+                    key: str(value) if isinstance(value, Path) else value
+                    for key, value in result.items()
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "build-table-semantic-map":
+        config = load_table_semantic_config(args.config)
+        result = run_table_semantic_map(config)
+        paths = write_table_semantic_results(args.output, result, config)
+        print(
+            json.dumps(
+                {
+                    **result.stats,
+                    "model_gate": result.quality_gate["status"],
+                    "root": str(paths["manifest"].parent),
+                    "manifest": str(paths["manifest"]),
+                    "investigation_cards": str(paths["investigation_cards"]),
+                    "review_index": str(paths.get("review_index", "NOT_BUILT")),
+                },
+                ensure_ascii=False,
+            )
+        )
+        return 0
+
+    if args.command == "import-context-semantic-review":
+        stats = import_review_decisions(
+            args.review_pack_dir,
+            args.responses,
+            args.output,
+            model_id=args.model_id,
+        )
+        print(json.dumps({**stats, "output": str(args.output)}, ensure_ascii=False))
+        return 0
+
     if args.command == "prepare-field-concept-llm-review":
         config = load_review_config(args.config).with_run_limits(
             max_packs=args.max_packs,
@@ -438,16 +559,13 @@ def main(argv: list[str] | None = None) -> int:
             facts,
             baseline,
             delivery_ready=(
-                panorama_delivery_ready(args.render_dir)
-                if args.render_dir
-                else False
+                panorama_delivery_ready(args.render_dir) if args.render_dir else False
             ),
         )
         if args.output:
             args.output.parent.mkdir(parents=True, exist_ok=True)
             args.output.write_text(
-                json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True)
-                + "\n",
+                json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
                 encoding="utf-8",
             )
         print(json.dumps(report, ensure_ascii=False))
@@ -488,8 +606,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
-            json.dumps(baseline, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n",
+            json.dumps(baseline, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
         print(
@@ -548,7 +665,9 @@ def main(argv: list[str] | None = None) -> int:
         facts = read_json_facts(args.facts_dir)
         sample = load_sample(str(args.sample))
         derived = derive_tradeflow_features(facts, sample)
-        inference = infer_tradeflow(facts, derived, case_id=str(sample.get("case_id", "tradeflow")))
+        inference = infer_tradeflow(
+            facts, derived, case_id=str(sample.get("case_id", "tradeflow"))
+        )
         paths = write_json_tradeflow_inference(args.output, inference)
         print(
             json.dumps(
@@ -556,7 +675,9 @@ def main(argv: list[str] | None = None) -> int:
                     "identity_candidate_count": len(inference.identity_candidates),
                     "grain_candidate_count": len(inference.grain_candidates),
                     "field_role_candidate_count": len(inference.field_role_candidates),
-                    "object_role_candidate_count": len(inference.object_role_candidates),
+                    "object_role_candidate_count": len(
+                        inference.object_role_candidates
+                    ),
                     "relation_candidate_count": len(inference.relation_candidates),
                     "inference_result_count": len(inference.inference_results),
                     "evidence_item_count": len(inference.evidence_items),
@@ -588,9 +709,15 @@ def main(argv: list[str] | None = None) -> int:
                     "gate_b_scope": report["gate_b"]["scope"],
                     "gold_set_status": report["gold_set_status"],
                     "adjudicated_case_count": report["adjudicated_case_count"],
-                    "unknown_result_count": report["evidence_quality"]["unknown_result_count"],
-                    "business_acceptance_status": report["business_acceptance"]["status"],
-                    "scale_authorization_status": report["scale_authorization"]["status"],
+                    "unknown_result_count": report["evidence_quality"][
+                        "unknown_result_count"
+                    ],
+                    "business_acceptance_status": report["business_acceptance"][
+                        "status"
+                    ],
+                    "scale_authorization_status": report["scale_authorization"][
+                        "status"
+                    ],
                     "v1c_authorized": report["v1c_authorized"],
                     "output": str(args.output),
                 },
@@ -629,9 +756,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "deep-measure-pack":
         measurements = load_yaml_mapping(args.measurements)
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(
-            render_measurement_pack(measurements), encoding="utf-8"
-        )
+        args.output.write_text(render_measurement_pack(measurements), encoding="utf-8")
         print(json.dumps({"output": str(args.output)}, ensure_ascii=False))
         return 0
 

@@ -38,6 +38,23 @@ This project reconstructs an evidence-grounded cognitive map from read-only TITA
 - Candidate clusters are run-scoped; reviewed families or concepts must not inherit unstable cluster identity implicitly.
 - Generated maps and Object Cards are projections of canonical facts and typed candidate datasets, not independent sources of truth.
 
+## Mandatory surrogate review
+
+Before presenting a new or materially changed semantic map, classification, label system, table group, relation map, investigation card, review UI, or information-model Gate for user review, perform an independent surrogate review first.
+
+- Review the user-facing result, not merely its tests, schemas, row counts, or successful generation.
+- Challenge the proposed taxonomy. Examples and seed labels must not silently become a closed classification system.
+- Check representative positive cases, ambiguous cases, and name-based counterexamples.
+- For each critical table, concept, group, or relation, distinguish direct evidence, supporting field evidence, configuration seeds, inference, counterevidence, and Unknown.
+- Fields may support, distinguish, or refute a table-level judgment, but field counts or token matches must not vote a table into a business category.
+- A business group must explain evidenced collaboration among its members; configured membership or structural similarity alone is not a business relation.
+- Inspect relation direction, predicate meaning, and evidence. Shared keys, naming, Wiki directory context, and absence of foreign keys are investigation leads rather than confirmation.
+- Attempt to falsify every Gate with critical missing roles, disconnected groups, unsupported relations, misleading names, uneven evidence coverage, and vacuous-pass cases.
+- Verify that the reader UI exposes uncertainty and evidence boundaries instead of presenting candidates as accepted truth.
+- Record one disposition: `ACCEPT`, `REWORK`, `STOP`, or `DEFER`, with the decisive reasons and the smallest next action.
+
+This surrogate review is an engineering and reader-value judgment made on the user's behalf when they are unavailable. It must not mark a user-review task complete, set `business_acceptance=ACCEPTED`, or grant scale authorization. If defects are within the authorized change, fix them and repeat the review before handoff. If remediation requires a material scope expansion or a user-owned business decision, stop and request direction.
+
 ## Implementation discipline
 
 - Enforce the stage gates: finish V1A Panorama before V1B cognition work; validate one V1B vertical slice and its Gold Set before V1C full-scale inference.

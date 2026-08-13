@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "reusable-semantic-navigation.schema.json",
+  "title": "Reusable Semantic Navigation Contracts",
+  "type": "object",
+  "required": ["schema_version", "run_id", "navigation_entries", "concepts", "attribute_expressions", "field_attributes", "qualifiers", "physical_implementations", "evidence", "review_decisions", "published_entries"],
+  "properties": {
+    "schema_version": {"const": "reusable-semantic-navigation-v1"},
+    "run_id": {"type": "string", "minLength": 1},
+    "navigation_entries": {"type": "array", "items": {"$ref": "#/$defs/navigationEntry"}},
+    "concepts": {"type": "array", "items": {"$ref": "#/$defs/concept"}},
+    "attribute_expressions": {"type": "array", "items": {"$ref": "#/$defs/attributeExpression"}},
+    "field_attributes": {"type": "array", "items": {"$ref": "#/$defs/fieldAttribute"}},
+    "qualifiers": {"type": "array", "items": {"$ref": "#/$defs/qualifier"}},
+    "physical_implementations": {"type": "array", "items": {"$ref": "#/$defs/physicalImplementation"}},
+    "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+    "review_decisions": {"type": "array", "items": {"$ref": "#/$defs/reviewDecision"}},
+    "published_entries": {"type": "array", "items": {"$ref": "#/$defs/publishedEntry"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["CANDIDATE", "CONFIRMED", "REJECTED", "UNKNOWN", "CONFLICT", "INSUFFICIENT_EVIDENCE"]},
+    "navigationEntry": {
+      "type": "object",
+      "required": ["entry_id", "label", "path", "entry_kind", "status", "evidence_refs"],
+      "properties": {
+        "entry_id": {"$ref": "#/$defs/id"},
+        "label": {"$ref": "#/$defs/id"},
+        "path": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}},
+        "entry_kind": {"enum": ["BUSINESS_AREA", "CONCEPT", "CONTEXT", "REVIEW_QUEUE"]},
+        "target_id": {"$ref": "#/$defs/id"},
+        "status": {"$ref": "#/$defs/status"},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/id"}}
+      },
+      "additionalProperties": false
+    },
+    "concept": {
+      "type": "object",
+      "required": ["concept_id", "label", "status", "source_refs"],
+      "properties": {
+        "concept_id": {"$ref": "#/$defs/id"},
+        "label": {"$ref": "#/$defs/id"},
+        "status": {"$ref": "#/$defs/status"},
+        "source_refs": {"type": "array", "items": {"$ref": "#/$defs/id"}}
+      },
+      "additionalProperties": false
+    },
+    "attributeExpression": {
+      "type": "object",
+      "required": ["expression_id", "concept_id", "label", "qualifier_refs", "field_refs", "status"],
+      "properties": {
+        "expression_id": {"$ref": "#/$defs/id"},
+        "concept_id": {"$ref": "#/$defs/id"},
+        "label": {"$ref": "#/$defs/id"},
+        "qualifier_refs": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "field_refs": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": false
+    },
+    "fieldAttribute": {
+      "type": "object",
+      "required": ["attribute_id", "axis", "label", "concept_id", "field_refs", "status"],
+      "properties": {
+        "attribute_id": {"$ref": "#/$defs/id"},
+        "axis": {"enum": ["IDENTIFIER", "ROLE", "STATE", "DIRECTION", "MEASURE", "CURRENCY", "TIME", "CONFIGURATION", "AUDIT", "OPEN"]},
+        "label": {"$ref": "#/$defs/id"},
+        "concept_id": {"$ref": "#/$defs/id"},
+        "field_refs": {"type": "array", "items": {"$ref": "#/$defs/id"}},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": false
+    },
+    "qualifier": {
+      "type": "object",
+      "required": ["qualifier_id", "axis", "value", "status"],
+      "properties": {
+        "qualifier_id": {"$ref": "#/$defs/id"},
+        "axis": {"$ref": "#/$defs/id"},
+        "value": {"$ref": "#/$defs/id"},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": false
+    },
+    "physicalImplementation": {
+      "type": "object",
+      "required": ["implementation_id", "schema", "table", "column", "source_ref"],
+      "properties": {
+        "implementation_id": {"$ref": "#/$defs/id"},
+        "schema": {"$ref": "#/$defs/id"},
+        "table": {"$ref": "#/$defs/id"},
+        "column": {"$ref": "#/$defs/id"},
+        "source_ref": {"$ref": "#/$defs/id"}
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["evidence_id", "source_kind", "source_ref", "role"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/id"},
+        "source_kind": {"enum": ["FIELD", "COMMENT", "TABLE", "WIKI", "DOMAIN_KNOWLEDGE", "REVIEW"]},
+        "source_ref": {"$ref": "#/$defs/id"},
+        "role": {"enum": ["SUPPORT", "COUNTEREVIDENCE", "CONTEXT", "BOUNDARY"]}
+      },
+      "additionalProperties": false
+    },
+    "reviewDecision": {
+      "type": "object",
+      "required": ["decision_id", "target_id", "disposition", "reason", "review_version"],
+      "properties": {
+        "decision_id": {"$ref": "#/$defs/id"},
+        "target_id": {"$ref": "#/$defs/id"},
+        "disposition": {"enum": ["ACCEPT", "REWORK", "STOP", "DEFER"]},
+        "reason": {"$ref": "#/$defs/id"},
+        "review_version": {"$ref": "#/$defs/id"}
+      },
+      "additionalProperties": false
+    },
+    "publishedEntry": {
+      "type": "object",
+      "required": ["entry_id", "target_id", "publication_reason", "source_candidate_refs"],
+      "properties": {
+        "entry_id": {"$ref": "#/$defs/id"},
+        "target_id": {"$ref": "#/$defs/id"},
+        "publication_reason": {"$ref": "#/$defs/id"},
+        "source_candidate_refs": {"type": "array", "items": {"$ref": "#/$defs/id"}}
+      },
+      "additionalProperties": false
+    }
+  }
+}

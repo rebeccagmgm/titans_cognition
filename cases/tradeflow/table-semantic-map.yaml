@@ -1,0 +1,149 @@
+version: v1
+scope:
+  schema: TITANS_TRADEFLOW
+  object_types: [TABLE]
+  expected_all_tables: 477
+  expected_subject_tables: 233
+  expected_variant_or_other_tables: 244
+
+inputs:
+  physical_facts:
+    path: output/stage0-panorama-comments-refresh-20260811
+    manifest: manifest.json
+    manifest_sha256: c075853613d99bf9c9d4c0f36d09b056f378e3dbe31b38dd74389a542a35daee
+  classification:
+    path: output/stage1-tradeflow-business-classification-v4-replay-20260811
+    manifest: classification-manifest.json
+    manifest_sha256: ac66e6c8ba9d4019413d3f233bf58c5fface5896a8d565bd16f061a9ea9a9c8d
+  field_semantics:
+    path: output/stage2-tradeflow-field-semantics-v2-business-review-20260812/field-semantic-index-v2
+    manifest: manifest.json
+    manifest_sha256: 0f6e03cf83f11bf2ff87b813af30cebba73efbd525cfe946b6e9345ca93bc8d7
+    required: false
+  field_context:
+    path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map
+    manifest: manifest.json
+    manifest_sha256: 16c9820685152a5ff3aaa66069fb54930bbfa2358b0b0cb4eb720f31196f5920
+    required: false
+  wiki_tree:
+    path: E:/03_resource/wiki-cache/trees/70218986/20260811T065812302Z-8e8a2076
+    manifest: manifest.json
+    manifest_sha256: d25dc7c8d92926dd8647cdfc6d80c6243aaa5f687f7636118e650e6816f02839
+    tree: tree.jsonl
+    tree_sha256: 40cae36e16b99fdfca588bc06fd3433d0ba3d0bc40095c606168048fde51f57d
+    required: false
+approved_wiki_bodies: []
+
+approved_test_aggregates:
+  - evidence_id: option-event-contract-cardinality-20260812
+    environment: TEST
+    observed_at: '2026-08-12T23:24:08+08:00'
+    authorization_scope: TRD_OPTION_EVENT.KEY_OPTION_DEAL_ID to REF_OTC_OPTION_DEAL.KEY_OTC_TRADE_ID aggregate only
+    authorization_scope_sha256: c9b98f0577a3af22e251e99c8c8197b66d856b8421bcf77672b80b376ca821fc
+    query_sha256: 248213bc017899444f995e7f140f2d411c302b431bf0209bfb87a476a734bd45
+    subject_table: TRD_OPTION_EVENT
+    subject_key: KEY_OPTION_DEAL_ID
+    predicate: EVENT_OF
+    object_table: REF_OTC_OPTION_DEAL
+    object_key: KEY_OTC_TRADE_ID
+    event_rows: 213
+    event_non_null: 213
+    event_distinct_keys: 128
+    contract_rows: 1228
+    contract_non_null: 1228
+    contract_distinct_keys: 1228
+    matched_event_rows: 213
+    unmatched_event_rows: 0
+    contracts_with_events: 128
+    contracts_without_events: 1100
+    deal_keys_with_multiple_events: 48
+    max_events_per_deal: 7
+    limitations:
+      - test environment snapshot only
+      - not a declared foreign key, production rule, or business acceptance
+      - no business key values or row samples retained
+
+limits:
+  max_variant_rules: 8
+  max_variant_candidates_per_table: 3
+  max_structural_neighbors_per_table: 8
+  max_wiki_candidates_per_table: 5
+  max_wiki_candidates_total: 800
+  max_wiki_body_reads: 0
+  max_context_candidates_per_table: 4
+  max_anchor_candidates_per_table: 4
+  max_responsibility_candidates_per_table: 4
+  max_relations_per_table: 12
+  max_investigation_cards: 5
+  review_shard_size: 50
+  first_load_table_limit: 100
+
+variant_rules:
+  - id: dated_yyyymmdd
+    pattern: '_(?:19|20)\d{6}$'
+  - id: dated_yymmdd
+    pattern: '_\d{6}$'
+  - id: dated_yyyymm
+    pattern: '_(?:19|20)\d{4}$'
+  - id: backup
+    pattern: '_BAK(?:_(?:19|20)?\d{6,8})?$'
+  - id: version
+    pattern: '_V\d+$'
+  - id: numeric_revision
+    pattern: '_?\d{1,5}$'
+
+relation_registry:
+  version: table-relation-predicates-v1
+  predicates:
+    SPECIALIZES: {directed: true, symmetric: false, min_direct_evidence: 2}
+    EXTENDS: {directed: true, symmetric: false, min_direct_evidence: 2}
+    CONTAINS_DETAIL: {directed: true, symmetric: false, min_direct_evidence: 2}
+    EVENT_OF: {directed: true, symmetric: false, min_direct_evidence: 2}
+    CURRENT_HISTORY: {directed: true, symmetric: false, min_direct_evidence: 2}
+    CONFIGURES: {directed: true, symmetric: false, min_direct_evidence: 2}
+    INSTANTIATES: {directed: true, symmetric: false, min_direct_evidence: 2}
+    MAPS_TO: {directed: true, symmetric: false, min_direct_evidence: 2}
+    RESULT_OF: {directed: true, symmetric: false, min_direct_evidence: 2}
+    PHYSICAL_VARIANT: {directed: false, symmetric: true, min_direct_evidence: 2}
+    RELATED_TO: {directed: false, symmetric: true, min_direct_evidence: 1}
+
+semantic_seeds:
+  contexts:
+    TRS: [TRS, 收益互换]
+    IRS: [IRS, 利率互换]
+    OPTION: [OPTION, 期权]
+    OTC_SHARED: [OTC, 场外]
+  anchors:
+    CONTRACT: [CONTR, CONTRACT, DEAL, 合约]
+    EVENT: [EVENT, 事件]
+    POSITION: [POS, POSITION, 持仓]
+    MAPPING: [MAPPING, MAP, 映射]
+  responsibilities:
+    MASTER_RECORD: [REF, MASTER, 主表]
+    DETAIL_OR_LEG: [DETAIL, LEG, 明细, 腿]
+    LIFECYCLE_EVENT: [EVENT, 事件]
+    CURRENT_STATE: [CURRENT, CURR, 当前]
+    HISTORY_STATE: [HIS, HISTORY, 历史]
+    CONFIGURATION: [CFG, CONFIG, PARAM, PARAMETER, 参数, 配置]
+    APPROVAL_OR_AUDIT_TRAIL: [APPROVAL, AUDIT, 审批, 审计]
+    OPERATIONAL_LOG: [LOG, 日志]
+    VALIDATION_RECORD: [VALIDATION, CHECK, 校验]
+    REPORT_OR_WRITEBACK: [REPORT, RESULT, 报表, 报送, 回写]
+    MAPPING_DEFINITION: [MAPPING, MAP, 映射]
+
+investigation_sets:
+  - id: trs-collaboration
+    kind: BUSINESS_COLLABORATION
+    tables: [TRD_OTC_TRADE, REF_TRS, REF_TRS_LEG, TRD_TRS_EVENT, POS_TRS_LEG_CURRENT_POS, POS_TRS_LEG_HIS_POS, TRD_TRS_UDLY_DEAL_ALLO]
+  - id: option-collaboration
+    kind: BUSINESS_COLLABORATION
+    tables: [TRD_OTC_TRADE, REF_OTC_OPTION_DEAL, REF_OPTION_DEAL_STRUCTURE, TRD_OPTION_EVENT, REF_OTC_CONTR_MARGIN_PARAM]
+  - id: current-history-holding
+    kind: RELATION_CONTRAST
+    tables: [POS_TRS_LEG_CURRENT_POS, POS_TRS_LEG_HIS_POS]
+  - id: name-counterexamples
+    kind: RESPONSIBILITY_CONTRAST
+    tables: [REF_IRS, OTC_OPTION_PARAMETER, REF_CONTR_DAILY_MARGIN_PARAM, ADM_UPDATE_AUDIT_LOG, TRD_FAST_TRS_FEE_LOG, TRD_PRE_TRADE_VALIDATION_LOG, TRD_OTC_CONTR_REPORT, TRD_OTC_REPORT_RESULT, TRD_ATP_TRADE_REPORT]
+  - id: mapping-contrast
+    kind: RELATION_CONTRAST
+    tables: [TRD_OPTION_DEAL_MAPPING, TRD_OTC_CONTR_MAIN_SUB_MAPPING, TRS_CONTRACT_MAPPING_CONFIG, TRS_CONTRACT_MAPPING_RELATION]

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "field-semantic-index-v2.schema.json",
+  "title": "TITANS field semantic index V2 contracts",
+  "$defs": {
+    "base_concept": {
+      "type": "object",
+      "required": ["concept_id", "canonical_key", "label", "support_status", "semantic_scope", "method_id", "method_version", "support_counts"],
+      "properties": {
+        "concept_id": {"type": "string", "minLength": 1},
+        "canonical_key": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "support_status": {"enum": ["SUPPORTED", "PROVISIONAL"]},
+        "semantic_scope": {"enum": ["DOMAIN", "TECHNICAL", "UNRESOLVED"]},
+        "value_kinds": {"type": "array", "items": {"type": "string"}},
+        "method_id": {"const": "field_semantics.faceted_index.v2"},
+        "method_version": {"const": "v2"},
+        "support_counts": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "concept_expression": {
+      "type": "object",
+      "required": ["expression_id", "concept_id", "expression_kind", "expression_status", "original_text", "normalized_text", "source_ref"],
+      "properties": {
+        "expression_kind": {"enum": ["SOURCE_EXPRESSION", "ALIAS", "VARIANT"]},
+        "expression_status": {"enum": ["CANDIDATE", "QUARANTINED"]}
+      },
+      "additionalProperties": true
+    },
+    "candidate_binding": {
+      "type": "object",
+      "required": ["binding_id", "concept_id", "rank", "status", "method_id", "source_refs"],
+      "properties": {
+        "status": {"enum": ["CANDIDATE", "CONFLICT"]},
+        "rank": {"type": ["integer", "null"], "minimum": 1},
+        "relation_kind": {"enum": ["EXPRESSES", "RELATED_TO"]}
+      },
+      "additionalProperties": true
+    },
+    "field_semantic_result": {
+      "type": "object",
+      "required": ["result_id", "column_id", "asset_id", "field_family", "outcome", "candidate_bindings", "method_id", "method_version"],
+      "properties": {
+        "field_family": {"type": ["string", "null"]},
+        "outcome": {"enum": ["SINGLE_CANDIDATE", "COMPETING", "UNKNOWN"]},
+        "candidate_bindings": {"type": "array", "items": {"$ref": "#/$defs/candidate_binding"}}
+      },
+      "additionalProperties": true
+    },
+    "field_facet": {
+      "type": "object",
+      "required": ["facet_id", "binding_id", "dimension", "value", "raw_fragment", "status", "source_ref"],
+      "properties": {"status": {"enum": ["CANDIDATE", "CONFLICT"]}},
+      "additionalProperties": true
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["schema_version", "run_id", "method_id", "method_version", "inputs", "stats", "quality_gate", "outputs"],
+      "properties": {
+        "schema_version": {"const": "field-semantic-index-v2"},
+        "business_rows_read": {"const": false},
+        "table_business_classification_read": {"const": false},
+        "llm_mode": {"const": "disabled"}
+      },
+      "additionalProperties": true
+    }
+  }
+}

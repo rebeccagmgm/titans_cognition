@@ -1,0 +1,94 @@
+version: v1
+
+inputs:
+  field_semantics_dir: output/stage2-tradeflow-field-semantics-v2-business-review-20260812/field-semantic-index-v2
+  field_semantics_manifest_sha256: 0f6e03cf83f11bf2ff87b813af30cebba73efbd525cfe946b6e9345ca93bc8d7
+  wiki_tree_dir: E:/03_resource/wiki-cache/trees/70218986/20260811T065812302Z-8e8a2076
+  wiki_manifest_sha256: d25dc7c8d92926dd8647cdfc6d80c6243aaa5f687f7636118e650e6816f02839
+  wiki_tree_sha256: 40cae36e16b99fdfca588bc06fd3433d0ba3d0bc40095c606168048fde51f57d
+  panorama_root: output/stage0-panorama-comments-refresh-20260811/panorama
+
+limits:
+  max_wiki_candidates_per_expression: 8
+  max_wiki_candidates_per_concept: 20
+  max_page_body_reads: 0
+  review_page_size: 30
+  initial_navigation_limit: 200
+
+# Versioned interpretation of upstream Facet axes. This is case configuration,
+# not a universal ontology: a second Schema must review and version its mapping.
+qualifier_axes:
+  version: tradeflow-v1
+  mappings:
+    party_role:
+      SOURCE: flow_side
+      TARGET: flow_side
+      COUNTERPARTY: party_role
+    direction:
+      LONG: position_side
+      SHORT: position_side
+      BUY: trade_side
+      SELL: trade_side
+      PAY: cashflow_direction
+      RECEIVE: cashflow_direction
+    measure_state:
+      DYNAMIC: variability
+      FIXED: variability
+      AVAILABLE: availability_state
+      FROZEN: availability_state
+      ESTIMATED: estimation_status
+      ACCUMULATED: aggregation_state
+
+wiki_semantics:
+  document_contexts:
+    DESIGN: [设计, 方案, 概要]
+    TEST: [测试, 验收, 回归]
+    OPERATIONS: [生产事件, 修复, 排查, 上线]
+    MANUAL: [指引, 手册, 操作]
+  products:
+    TRS: [TRS, 收益互换, 极速互换]
+    IRS: [IRS, 利率互换]
+    OPTION: [期权, OPTION]
+  objects: [合约, 交易, 持仓, 订单, 账簿, 产品, 标的, 方案, 券源, 组合, 腿, 账户, 品种]
+  events: [事件, 成交, 平仓, 终止, 重置, 公司行为, 清算]
+  processes: [簿记, 估值, 定价, 对冲, 报备, 审批, 导入]
+  subjects: [客户, 交易对手, 发行人, 机构, 部门, 交易员, 联系人, 甲方, 乙方, 买方, 卖方, Seller, Buyer]
+  rules: [规则, 校验, 限额, 准入]
+
+navigation:
+  entity_attribute_template: "{entity}属性"
+  container_patterns: ["*列表", "*清单", "*集合"]
+  semantic_family_order: [TIME, DATE, RATE, QUANTITY, AMOUNT]
+  concept_types:
+    业务度量: [AMOUNT, QUANTITY, RATE]
+    日期时间: [DATE, TIME]
+    业务主体: [PARTY]
+    业务事件: [EVENT]
+    业务对象: [OBJECT]
+    字段属性: [ATTRIBUTE]
+  family_labels:
+    AMOUNT: 金额
+    QUANTITY: 数量
+    RATE: 比率
+    DATE: 日期
+    TIME: 时间
+    CODE: 代码
+    NAME: 名称
+  family_terms:
+    AMOUNT: [金额, 本金, 保证金, 费用, 市值, 盈亏, 收益, 利息, 价格, 成本, 余额, 估值, "*价", "*额", "*款", "*费", "*金"]
+    QUANTITY: [数量, 份额, 张数, 手数, 股数]
+    RATE: [比例, 比率, 汇率, 利率, 费率, 收益率, 波动率, 折扣率, "*率", 利差, 券息]
+    DATE: [日期, DATE, "*日"]
+    TIME: [时间, 时刻, TIME, TIMESTAMP]
+  attribute_types:
+    标识: ["*ID", "*编号", "*编码", "*代码", "*主键", "*流水号", "*序号", "*内码", "*账号", "*号"]
+    名称: ["*名称", "*短名", "*简称", "*缩写", "*户名"]
+    状态标志: ["*状态", "*标志", "*结果", "*原因", "是否*"]
+    分类配置: ["*类型", "*类别", "*方式", "*模式", "*规则", "*参数", "*配置", "*模板", "*版本", "*精度"]
+    说明备注: ["*备注", "*说明", "*描述"]
+    人员角色: ["*人", "*人员", "*员", "*联系人"]
+    币种: ["*币种", "*货币"]
+    期限周期: ["*期限", "*延期", "*起止", "*周期", "*频率"]
+    来源渠道: ["*来源", "*渠道", "*市场", "*交易所", "*开户行"]
+    联系信息: ["*地址", "*电话", "*手机号", "*邮件", "*邮箱"]
+    角色身份: ["*身份", "*方", SELLER, BUYER]

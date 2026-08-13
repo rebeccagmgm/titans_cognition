@@ -1,0 +1,140 @@
+version: v2
+
+scope:
+  schemas: [TITANS_TRADEFLOW]
+  object_types: [TABLE]
+  exclude_numeric_suffix: true
+  expected_object_count: 233
+  expected_excluded_count: 244
+  expected_field_count: 5512
+
+baselines:
+  physical_facts:
+    path: output/stage0-panorama-comments-refresh-20260811
+    manifest_sha256: c075853613d99bf9c9d4c0f36d09b056f378e3dbe31b38dd74389a542a35daee
+  field_concepts_v1:
+    path: output/stage2-tradeflow-field-concepts-v1-20260811/field-concepts
+    manifest_sha256: 3b2204bdc971705271161a7878def387eb311fa44a2c543e67490eab0fc3cbcf
+    concepts_sha256: 45b357ad2359e2e079c4a0607c5f7aa86f7441438e8525b3454776336caff4c5
+    links_sha256: 592c69fa31022a795f00425aa67cee9480095d1be07ad5f93ec3709e470c6c35
+  ontology_review:
+    path: output/stage2-tradeflow-field-concepts-v1-20260811/field-concepts/ontology-review
+    manifest_sha256: aa4328da8a5e53f38d12bbc58363d21cad2cdb899a06a056baad90e181d1c5fa
+  llm_review:
+    path: output/stage2-tradeflow-field-concepts-v1-20260811/field-concepts/llm-review
+    manifest_sha256: e4e68b87fd1530cf57b63fe6f5ce5ac12d1594b75908ff7c93a12461c46da9da
+    revisions_sha256: ffa105b8b568ee32f9b67312c4c02ff447ce6b78fb115dafbeb7676ee5d4c3a6
+
+support_gate:
+  min_fields: 2
+  require_cross_object_or_multi_expression: true
+
+limits:
+  max_competing_candidates: 3
+  max_approximate_neighbors: 8
+  max_approximate_pairs: 25000
+  min_approximate_similarity: 0.72
+  review_page_size: 50
+  initial_concept_limit: 100
+
+abbreviations:
+  AMT: AMOUNT
+  AMTS: AMOUNT
+  CURR: CURRENT
+  INIT: INITIAL
+  ORG: ORIGINAL
+  CCY: CURRENCY
+  QTY: QUANTITY
+  DT: DATE
+  NO: NUMBER
+  CP: COUNTERPARTY
+
+bilingual_aliases:
+  AMOUNT: 金额
+  CURRENCY: 币种
+  DATE: 日期
+  TIME: 时间
+  STATUS: 状态
+  DIRECTION: 方向
+  COUNTERPARTY: 交易对手
+  MARGIN: 保证金
+  NOTIONAL: 名义本金
+  PRINCIPAL: 本金
+  FEE: 费用
+  EXPENSE: 费用
+  INTEREST: 利息
+  INCOME: 收益
+  CAPITAL: 资金
+  PAYMENT: 支付
+  TRADE: 交易
+  KNOCKIN: 敲入
+  KNOCKED: 敲入
+  KNOCKOUT: 敲出
+  PREMIUM: 权利金
+  TERM: 终止
+  SETTLE: 结算
+  SETTLEMENT: 结算
+  OBSERVATION: 观察
+  CREATE: 创建
+  UPDATE: 更新
+  LOAD: 加载
+  WIND: 万得
+
+field_families:
+  DATE: [日期, 日, DATE, DT]
+  TIME: [时间, 时刻, TIME]
+  AMOUNT: [金额, AMOUNT, AMT]
+  QUANTITY: [数量, QUANTITY, QTY]
+  RATE: [比率, 比例, RATE]
+  CODE: [代码, 编码, CODE]
+  NAME: [名称, 姓名, NAME]
+
+facets:
+  temporal_stage:
+    INITIAL: [初始, 期初, INITIAL, INIT]
+    CURRENT: [当前, 当日, CURRENT, CURR]
+    END: [期末, END]
+    BEFORE_ADJUSTMENT: [调整前, 调前, BEFORE_ADJUSTMENT]
+    AFTER_ADJUSTMENT: [调整后, 调后, AFTER_ADJUSTMENT]
+  direction:
+    LONG: [多头, LONG]
+    SHORT: [空头, SHORT]
+    BUY: [买入, 买方, BUY]
+    SELL: [卖出, 卖方, SELL]
+    PAY: [支付, 付出, PAY]
+    RECEIVE: [收取, 收入方, RECEIVE]
+  currency_basis:
+    ORIGINAL_CURRENCY: [原币, ORIGINAL_CURRENCY]
+    LOCAL_CURRENCY: [本币, LOCAL_CURRENCY]
+    UNDERLYING_CURRENCY: [标的币种, UNDERLYING_CURRENCY]
+    SETTLEMENT_CURRENCY: [结算币种, SETTLEMENT_CURRENCY]
+  party_role:
+    CLIENT: [客户, CLIENT]
+    INTERNAL: [我方, INTERNAL]
+    COUNTERPARTY: [对手方, 交易对手方, COUNTERPARTY]
+    SOURCE: [源侧, 来源方, SOURCE]
+    TARGET: [目标侧, TARGET]
+  lifecycle_stage:
+    ORDER: [委托, ORDER]
+    EXECUTION: [成交, EXECUTION, DEAL]
+    POSITION: [持仓, POSITION]
+    CLEARING: [清算, CLEARING]
+    TERMINATION: [终止, TERMINATION]
+  measure_state:
+    DYNAMIC: [动态, DYNAMIC]
+    FIXED: [固定, FIXED]
+    AVAILABLE: [可用, AVAILABLE]
+    FROZEN: [冻结, FROZEN]
+    ACCUMULATED: [累计, 累积, ACCUMULATED]
+    ESTIMATED: [预估, 估算, ESTIMATED]
+
+technical_patterns:
+  audit: [创建人, 创建时间, 更新人, 更新时间, CREATED_BY, CREATED_TIME, UPDATED_BY, UPDATED_TIME]
+  synchronization: [同步, SYNC]
+  provenance: [数据来源, 来源系统, SOURCE_SYSTEM, DATA_SOURCE]
+  configuration: [配置, 参数, CONFIG, PARAM]
+
+decorations:
+  dictionary_markers: [数据字典, 字典项, DICT]
+  implementation_markers: [仅供系统使用, 内部使用, 暂不使用, 预留, 冗余]
+  deprecation_markers: [废弃, 已弃用, DEPRECATED]

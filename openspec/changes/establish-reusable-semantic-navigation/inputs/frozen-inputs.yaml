@@ -1,0 +1,60 @@
+freeze_version: semantic-navigation-inputs-v1
+frozen_at: '2026-08-13'
+purpose: >-
+  Read-only input boundary for the reusable semantic-navigation prototype.
+  These inputs are observed artifacts and configuration; they are not business
+  acceptance or production authority.
+constraints:
+  read_only: true
+  business_rows: false
+  source_write: false
+  canonical_write: false
+  wiki_role: bounded_candidate_and_context_only
+inputs:
+  - path: output/stage2-tradeflow-field-semantics-v2-20260812
+    kind: field-semantic-run
+    file_count: 79
+    bytes: 29641253
+    content_hash: 8542f4d086895b7e631e9e776721a01d8b32a27aad979e2eb524529c1c55f087
+  - path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map
+    kind: context-enriched-field-semantic-run
+    file_count: 1440
+    bytes: 36233176
+    content_hash: 0f756802df4b7ef9d6db8d25a1d2ec874227de3d307820105a0f7410a7a81f53
+  - path: output/stage4-tradeflow-table-semantic-map-v1-rework-20260812/table-semantic-map
+    kind: table-semantic-run
+    file_count: 44
+    bytes: 18079790
+    content_hash: c651116824c4df42f8a4077f280f1a7aac4e58f91a790b741f7bc300442f539f
+  - path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map/diagnostics/wiki_semantic_candidates.jsonl
+    kind: bounded-wiki-candidate-input
+    lines: 8801
+    sha256: c01e5c9dee157f57a50414c61317d677a24d01f200a894878b490ce2c499b6c5
+  - path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map/business_concepts.jsonl
+    kind: observed-business-concept-input
+    lines: 1375
+    sha256: e01a249782b32b71e0f98a4365b7319acecf3f6f7fb47ab10b5359a8c1905647
+  - path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map/attribute_expressions.jsonl
+    kind: observed-attribute-expression-input
+    lines: 1559
+    sha256: 6e0747dfa7a820d45979ec56c67e422b373a74c27303c64672d55ba0d60fa67b
+  - path: output/stage4-tradeflow-table-semantic-map-v1-rework-20260812/table-semantic-map/table_profiles.jsonl
+    kind: table-profile-input
+    lines: 477
+    sha256: e0d0c5c553b7418c74ae7adaa4785e041020d0ab210a0f5ab66e446bef8a3a16
+  - path: cases/tradeflow/field-semantics-v2.yaml
+    kind: field-semantics-config
+    sha256: 02fbd91ea03edf467e508917a8009d549d77624beae0a241fe98f0da562a80e4
+  - path: cases/tradeflow/context-enriched-field-semantic-map.yaml
+    kind: context-navigation-config
+    sha256: 2b329a8564a96bde66af85e0fc18fe375b821a3b97c4078b1b42eb738f6db49e
+  - path: cases/tradeflow/table-semantic-map.yaml
+    kind: table-semantic-config
+    sha256: b6dcd4fe15d6456bbfa7b4ba14c0f7b9c09407e5b3f1b2030692f8801acb34b4
+  - path: cases/titans-panorama/scope.yaml
+    kind: panorama-scope
+    sha256: a5e600da76d85f15c93735a788f9bd850a175ee78aad4521e5a28d123b21822f
+freeze_note: >-
+  Regeneration is allowed only into this Change's prototype output area. The
+  existing field and table semantic-map outputs remain untouched until explicit
+  review and user acceptance.

@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "context-enriched-field-semantic-map.schema.json",
+  "title": "Context Enriched Field Semantic Map Row Contracts",
+  "$defs": {
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": ["CANDIDATE", "CONFIRMED", "REJECTED", "INSUFFICIENT_EVIDENCE", "CONFLICT"]
+    },
+    "semanticRelation": {
+      "enum": ["BROADER", "NARROWER", "EXPRESSION_OF", "APPEARS_IN", "QUALIFIED_BY", "RELATED_TO", "IMPLEMENTED_BY"]
+    },
+    "qualifierValue": {
+      "type": "object",
+      "required": ["dimension", "value"],
+      "properties": {
+        "dimension": {"$ref": "#/$defs/nonEmptyString"},
+        "value": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "semanticObservation": {
+      "type": "object",
+      "required": ["observation_id", "column_id", "asset_id", "column_name", "declared_type", "value_kind", "source_concept_id", "source_concept_label", "binding_id", "raw_facets"],
+      "properties": {
+        "observation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "column_id": {"$ref": "#/$defs/nonEmptyString"},
+        "asset_id": {"$ref": "#/$defs/nonEmptyString"},
+        "column_name": {"$ref": "#/$defs/nonEmptyString"},
+        "declared_type": {"type": ["string", "null"]},
+        "value_kind": {"type": ["string", "null"]},
+        "source_concept_id": {"$ref": "#/$defs/nonEmptyString"},
+        "source_concept_label": {"$ref": "#/$defs/nonEmptyString"},
+        "binding_id": {"$ref": "#/$defs/nonEmptyString"},
+        "raw_facets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["dimension", "value"],
+            "properties": {
+              "dimension": {"$ref": "#/$defs/nonEmptyString"},
+              "value": {"$ref": "#/$defs/nonEmptyString"}
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "semanticHypothesis": {
+      "type": "object",
+      "required": ["hypothesis_id", "proposed_attribute_expression_id", "proposed_business_concept_id", "label", "field_refs", "observation_refs", "method_id", "evidence_refs", "counterevidence_refs", "status", "publication_status", "publication_reason"],
+      "properties": {
+        "hypothesis_id": {"$ref": "#/$defs/nonEmptyString"},
+        "proposed_attribute_expression_id": {"$ref": "#/$defs/nonEmptyString"},
+        "proposed_business_concept_id": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "field_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "observation_refs": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "method_id": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "counterevidence_refs": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "status": {"$ref": "#/$defs/status"},
+        "publication_status": {"enum": ["PUBLISHED", "NOT_PUBLISHED"]},
+        "publication_reason": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": true
+    },
+    "reviewDecision": {
+      "type": "object",
+      "required": ["decision_id", "hypothesis_id", "decision", "reviewer", "reviewed_at", "decision_version"],
+      "properties": {
+        "decision_id": {"$ref": "#/$defs/nonEmptyString"},
+        "hypothesis_id": {"$ref": "#/$defs/nonEmptyString"},
+        "decision": {"enum": ["ACCEPT", "REJECT", "DEFER"]},
+        "reviewer": {"$ref": "#/$defs/nonEmptyString"},
+        "reviewed_at": {"$ref": "#/$defs/nonEmptyString"},
+        "decision_version": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": true
+    },
+    "businessConcept": {
+      "type": "object",
+      "required": ["business_concept_id", "label", "source_concept_ids", "status"],
+      "properties": {
+        "business_concept_id": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "source_concept_ids": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": true
+    },
+    "businessContext": {
+      "type": "object",
+      "required": ["business_context_id", "context_type", "label", "status"],
+      "properties": {
+        "business_context_id": {"$ref": "#/$defs/nonEmptyString"},
+        "context_type": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": true
+    },
+    "attributeExpression": {
+      "type": "object",
+      "required": ["attribute_expression_id", "label", "business_concept_id", "qualifier_signature", "field_count", "object_count", "status"],
+      "properties": {
+        "attribute_expression_id": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"},
+        "business_concept_id": {"$ref": "#/$defs/nonEmptyString"},
+        "qualifier_signature": {"type": "array", "items": {"$ref": "#/$defs/qualifierValue"}, "uniqueItems": true},
+        "contextual_qualifiers": {"type": "array", "items": {"$ref": "#/$defs/qualifierValue"}, "uniqueItems": true},
+        "field_count": {"type": "integer", "minimum": 1},
+        "object_count": {"type": "integer", "minimum": 1},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": true
+    },
+    "qualifier": {
+      "type": "object",
+      "required": ["qualifier_id", "dimension", "value", "status"],
+      "properties": {
+        "qualifier_id": {"$ref": "#/$defs/nonEmptyString"},
+        "dimension": {"$ref": "#/$defs/nonEmptyString"},
+        "value": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"$ref": "#/$defs/status"}
+      },
+      "additionalProperties": true
+    },
+    "semanticRelationRow": {
+      "type": "object",
+      "required": ["relation_id", "subject_id", "predicate", "object_id"],
+      "properties": {
+        "relation_id": {"$ref": "#/$defs/nonEmptyString"},
+        "subject_id": {"$ref": "#/$defs/nonEmptyString"},
+        "predicate": {"$ref": "#/$defs/semanticRelation"},
+        "object_id": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": false
+    },
+    "assertion": {
+      "type": "object",
+      "required": ["assertion_id", "subject_id", "predicate", "object_id", "status", "method_id", "evidence_refs", "counterevidence_refs"],
+      "properties": {
+        "assertion_id": {"$ref": "#/$defs/nonEmptyString"},
+        "subject_id": {"$ref": "#/$defs/nonEmptyString"},
+        "predicate": {"$ref": "#/$defs/semanticRelation"},
+        "object_id": {"$ref": "#/$defs/nonEmptyString"},
+        "status": {"$ref": "#/$defs/status"},
+        "method_id": {"$ref": "#/$defs/nonEmptyString"},
+        "method_score": {"type": ["number", "null"], "minimum": 0},
+        "evidence_refs": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "counterevidence_refs": {"type": "array", "items": {"$ref": "#/$defs/nonEmptyString"}, "uniqueItems": true},
+        "review_status": {"enum": ["UNREVIEWED", "ACCEPTED", "REJECTED", "DEFERRED"]}
+      },
+      "additionalProperties": true
+    },
+    "evidenceRef": {
+      "type": "object",
+      "required": ["evidence_id", "evidence_type", "source_ref", "label"],
+      "properties": {
+        "evidence_id": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_type": {"$ref": "#/$defs/nonEmptyString"},
+        "source_ref": {"$ref": "#/$defs/nonEmptyString"},
+        "label": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "additionalProperties": true
+    },
+    "manifest": {
+      "type": "object",
+      "required": ["schema_version", "run_id", "method_id", "method_version", "config_sha256", "inputs", "stats", "quality_gate", "outputs", "business_rows_read", "llm_mode", "canonical_write_back"],
+      "properties": {
+        "schema_version": {"const": "context-enriched-field-semantic-map-v1"},
+        "run_id": {"$ref": "#/$defs/nonEmptyString"},
+        "config_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "business_rows_read": {"const": false},
+        "canonical_write_back": {"const": false}
+      },
+      "additionalProperties": true
+    }
+  },
+  "oneOf": [
+    {"$ref": "#/$defs/businessConcept"},
+    {"$ref": "#/$defs/businessContext"},
+    {"$ref": "#/$defs/attributeExpression"},
+    {"$ref": "#/$defs/qualifier"},
+    {"$ref": "#/$defs/semanticRelationRow"},
+    {"$ref": "#/$defs/assertion"},
+    {"$ref": "#/$defs/evidenceRef"},
+    {"$ref": "#/$defs/manifest"}
+  ]
+}

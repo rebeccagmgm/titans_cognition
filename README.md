@@ -73,6 +73,49 @@ TITANS Cognition 的唯一交付目标，是形成一张可从业务区域、业
 - 全量 Panorama 运行共记录 2,636 个对象、68,458 个字段，表 DDL 和 View SQL 定义均成功；批量定义入口按块落盘并读取，避免一次性保留全部定义文本。
 - DDL/View SQL 已接入 Provider 的 `--definition-mode all` 路径；默认 `record-only` 仍只记录能力缺口，避免全景扫描隐式执行大量 DDL 子命令。Parquet 实际写出仍需安装项目依赖。
 - TRADEFLOW 字段概念 V1 已形成独立的概念—字段—表候选导航；LLM 辅助审阅作为旁路，只对统一算法选出的疑难簇生成最小 Pack，通过当前 GPT 会话离线导入结构化候选，不修改 V1 概念或字段链接。
+- TRADEFLOW 字段语义 V2 已新增独立 `discover-field-semantics` 确定性命令，将字段族、稳定复合概念、限定条件、相关表达、`EXPRESSES/RELATED_TO`、Conflict/Unknown 分开写入新目录；V1、全树体检和 LLM Review 保持只读基线。字段族只用于宽范围发现，例如“日期类”下分别保留支付日期、终止日期和交易日期，不表示这些概念互为别名。当前 233 表运行只通过结构与双向调查 Gate，不代表总体语义正确或业务验收。
+- 上下文增强字段语义地图已形成独立候选 Projection：以字段/注释为主数据源，从完整概念语料发现候选语义族和修饰词，Wiki Tree 只提供弱上下文；页面使用业务导航树、属性表达分面矩阵和物理字段详情。当前真实 TRADEFLOW 回放与确定性重放通过，但候选归拢、同名异注释和上下文映射仍需人工/模型复核，不构成 Canonical 字典、跨 Schema 验证或业务验收。
+- TRADEFLOW 表语义地图已形成独立候选 Projection：477 张表全部保留显式主体、物理变体、独立对象或 Unknown 处置；表是唯一分类主体。2026-08-12 首轮替代评审处置为 `REWORK` 后，名称种子与语料发现职责表达已分层保存，字段候选/组合链接到具体表级 Assertion，Wiki 总预算改为确定性轮转，配置旅程不再自动发布为业务协作组。`KEY_LEG_ID` 物理桥连接了 TRS 调查图；一次用户授权的一行 TEST 聚合又为 `TRD_OPTION_EVENT EVENT_OF REF_OTC_OPTION_DEAL` 提供了候选证据。收紧后的信息模型 Gate 现为 `PASS`；用户随后明确委托代理评审五条固定旅程，结论为 `ACCEPT_WITH_UNKNOWNS`，可作为表级调查入口继续使用。测试快照仍不是外键或生产业务真值，该限定评审也不等于全表正确、完整读者交付或业务验收。
+
+## 表语义地图
+
+```text
+$env:PYTHONPATH='src'
+python -m titans_cognition.cli build-table-semantic-map `
+  --config cases/tradeflow/table-semantic-map.yaml `
+  --output output/stage4-tradeflow-table-semantic-map-v1-rework-20260812
+```
+
+输出将表画像、开放上下文/锚点/职责候选、三种表组、表间关系、Assertion、Evidence、字段辅助摘要、旧传播提示和 Review Decision 分开保存。Wiki Tree 目录仅用于有界召回；只有配置显式批准且哈希固定的正文文件可以形成提表或多表关联证据。配置中的 TEST 聚合只消费冻结计数与查询指纹，构建时不重新查库，也不保存业务键值或行样本。模型 Gate 失败时不会生成完整审阅页面；通过也只表示信息模型不变量成立，不代表表标签正确或业务验收完成。
+
+## 字段语义索引 V2
+
+```text
+$env:PYTHONPATH='src'
+python -m titans_cognition.cli discover-field-semantics `
+  --facts-dir output/stage0-panorama-comments-refresh-20260811 `
+  --config cases/tradeflow/field-semantics-v2.yaml `
+  --output output/stage2-tradeflow-field-semantics-v2-20260812 `
+  --investigation-query 名义本金 `
+  --investigation-query 交易对手 `
+  --investigation-query 成交时间 `
+  --investigation-query 保证金 `
+  --investigation-query 交易方向
+```
+
+V2 不原地修改 Physical Facts 或 V1。`EXPRESSES` 表示字段直接表达基础概念，`RELATED_TO` 只用于“相关字段集合”导航，不增加概念成员或支持计数；例如“保证金支付时间”直接表达支付时间、仅关联保证金。声明字段类型只产生非权威 `value_kind`。确定性主线不调用 Provider SDK；当前 GPT 可对压缩统计与代表样本做方向审阅，但模型建议不自动覆盖 Canonical 结果。
+
+上下文增强地图会在 `diagnostics/semantic_review_packs` 生成有界复核包。模型或人工响应只能通过下列命令导入为 `IMPORTED_NOT_APPLIED` 决策记录，不会自动改写候选语义族、属性表达或 Physical Facts：
+
+```text
+python -m titans_cognition.cli import-context-semantic-review `
+  --review-pack-dir <run>/context-enriched-field-semantic-map/diagnostics/semantic_review_packs `
+  --responses <responses.jsonl> `
+  --output <review-decisions.jsonl> `
+  --model-id <approved-model-id>
+```
+
+审阅入口为 `field-semantic-index-v2/review/index.html`。页面默认从字段族进入具体业务概念，以中文展示相关表达和限定条件，原始 relation/Facet 枚举折叠在技术详情中；同时支持字段/注释/表名搜索、直接/相关字段筛选、待判断/冲突视图，以及概念→字段→表和表→字段→概念反查。字段明细与表明细按哈希分片加载，并链接到 Panorama Object Card 与冻结 V1 页面。
 
 ## 字段概念 LLM 辅助审阅
 

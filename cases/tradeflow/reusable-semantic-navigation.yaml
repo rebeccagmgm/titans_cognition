@@ -1,0 +1,75 @@
+schema_version: reusable-semantic-navigation-v1
+business_skeleton_version: otc-derivatives-navigation-v1
+attribute_axes_version: reusable-field-attributes-v1
+business_areas:
+  - id: participants
+    label: 参与主体
+  - id: products-underlyings
+    label: 产品与标的
+  - id: inquiry-order-trade
+    label: 询价、订单与交易
+  - id: contract-structure
+    label: 合同与结构
+  - id: lifecycle
+    label: 合同生命周期
+  - id: position-risk
+    label: 持仓与风险
+  - id: valuation-collateral-cashflow
+    label: 估值、履约保障与现金流
+  - id: execution-clearing-settlement
+    label: 市场执行、清算与结算
+  - id: reference-configuration
+    label: 参考数据与配置
+  - id: operations-reporting-data
+    label: 运营、报表与数据加工
+business_area_terms:
+  participants: [client, customer, counterparty, buyer, seller, trader, institution, department, party]
+  products-underlyings: [product, underlying, instrument, asset, stock, index, rate]
+  inquiry-order-trade: [inquiry, quote, quotation, order, trade, deal, execution]
+  contract-structure: [contract, structure, strategy, portfolio, basket, leg]
+  lifecycle: [effective, activation, reset, unwind, close, terminate, maturity, lifecycle]
+  position-risk: [position, holding, exposure, hedge, limit, risk, margin]
+  valuation-collateral-cashflow: [notional, valuation, price, premium, fee, interest, collateral, cashflow, amount]
+  execution-clearing-settlement: [settlement, clearing, delivery, payment, cash]
+  reference-configuration: [currency, exchange, market, type, rule, parameter, configuration]
+  operations-reporting-data: [report, batch, process, job, source, target, audit, created, updated]
+attribute_axes:
+  - id: IDENTIFIER
+    label: 标识
+  - id: ROLE
+    label: 角色
+  - id: STATE
+    label: 状态
+  - id: DIRECTION
+    label: 方向
+  - id: MEASURE
+    label: 计量
+  - id: CURRENCY
+    label: 币种
+  - id: TIME
+    label: 时间
+  - id: CONFIGURATION
+    label: 配置
+  - id: AUDIT
+    label: 审计
+boundary_rules:
+  lifecycle_and_settlement:
+    primary_area: lifecycle
+    alternate_area: execution-clearing-settlement
+    rule: keep_both_contexts_until_evidence_distinguishes_event_and_result
+  participant_and_role:
+    primary_area: participants
+    role_axis: ROLE
+    rule: do_not_publish_role_as_new_business_subject
+extension_policy:
+  unknown_business_area: OPEN_CANDIDATE
+  unknown_attribute_axis: OPEN_CANDIDATE
+  unknown_qualifier: UNKNOWN
+  wiki_only_hierarchy: NOT_PUBLISHED
+  structure_only_relation: INVESTIGATION_LEAD
+publication:
+  candidate_layer: true
+  review_decision_layer: true
+  published_projection: true
+  canonical_write_back: false
+  business_rows_read: false

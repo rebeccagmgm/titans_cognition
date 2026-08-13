@@ -1,5 +1,17 @@
 # 04 结果数据契约
 
+## 字段语义索引 V2（TRADEFLOW 有界重构）
+
+V2 使用独立目录 `field-semantic-index-v2/`，Canonical 文件为：
+
+- `base_concepts.jsonl`：运行级基础概念、确定性 `canonical_key`、`SUPPORTED/PROVISIONAL`、`DOMAIN/TECHNICAL/UNRESOLVED` 和独立支持计数。
+- `concept_expressions.jsonl`：`SOURCE_EXPRESSION/ALIAS/VARIANT` 候选及原文、规范文本、来源和装饰摘要。
+- `field_semantic_results.jsonl`：每个 `column_id` 一条 `SINGLE_CANDIDATE/COMPETING/UNKNOWN` 结果；可选 `field_family` 只表示日期/金额/代码/名称等宽发现入口，绑定必须区分 `relation_kind=EXPRESSES/RELATED_TO`。
+- `field_facets.jsonl`：以 `binding_id` 关联的正交 Facet，不生成限定词笛卡尔层级。
+- `manifest.json`：固定输入及哈希、配置/方法版本、结果计数、质量 Gate、无业务数据行/无表级分类/LLM disabled 边界。
+
+`field_family`、稳定复合概念和 Facet 是三层不同语义：支付日期/终止日期/交易日期可以同属日期类，但不得因此互认 Alias/Variant；实际/预计/初始等只有在移除后不改变复合概念身份时才作为 Facet。`RELATED_TO` 只支持相关导航，不计入直接成员、支持强度或推断候选数。Unknown 由空的直接候选集合表达，不创建 Unknown 概念。机器可读契约的 JSON Schema 位于 `schemas/field-semantic-index-v2.schema.json`；Physical Facts、字段概念 V1、全树体检和 LLM Review 不得由 V2 改写。
+
 ## 1. 契约目标
 
 结果契约定义V1各阶段可交换、可检查和可评测的数据。它优先服务真实分析任务，不为未来数据库或知识图谱提前扭曲模型。
@@ -547,3 +559,9 @@ LLM Task Result与结构Inference Result分开评测。
 7. 任何数值分数不得跨方法直接比较，除非后续建立了明确校准Spec。
 8. Unknown、Abstain、Deferred和Not Evaluable必须分别落在Inference Result、LLM Action、Review Decision和Evaluation Eligibility中。
 9. Identity和Grain页面必须展示`data_validation_status=NOT_PERFORMED`，不得暗示已验证实际唯一性或业务粒度。
+
+## 14. 表语义候选 Projection
+
+`table-semantic-map/` 是固定 TRADEFLOW 输入之上的独立 Projection，不修改 Physical Facts、旧分类或字段语义结果。核心类型化数据集包括 `table_profiles`、三类开放候选、`table_groups`、`table_group_memberships`、`table_relations`、`assertions`、`evidence_refs`、`review_decisions`、`field_support_summaries` 和 `structural_propagation_hints`，并同时写出 JSONL 与 Parquet。
+
+表是唯一判断主体。字段摘要不得通过数量或多数投票生成表标签；旧分类候选必须标记为 `STRUCTURAL_PROPAGATION_HINT` 且 `recommended_profile_eligible=false`。业务协作组、物理变体组与结构邻域使用不同 `group_kind`，不得自动转换。所有精确关系必须经过版本化 Predicate Registry 校验；证据不足时降级为 `RELATED_TO`/Unknown。Review Decision 只能引用并处置原 Assertion，不得删除或改写机器候选和 Evidence。

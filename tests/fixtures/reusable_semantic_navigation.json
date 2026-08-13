@@ -1,0 +1,36 @@
+{
+  "schema_version": "reusable-semantic-navigation-v1",
+  "run_id": "fixture-navigation-v1",
+  "navigation_entries": [
+    {"entry_id": "nav:valuation", "label": "估值与履约保障", "path": ["估值与履约保障"], "entry_kind": "BUSINESS_AREA", "status": "CANDIDATE", "evidence_refs": ["ev:domain"]},
+    {"entry_id": "nav:notional", "label": "名义本金", "path": ["估值与履约保障", "名义本金"], "entry_kind": "CONCEPT", "target_id": "concept:notional", "status": "CANDIDATE", "evidence_refs": ["ev:field"]},
+    {"entry_id": "nav:counterparty", "label": "交易对手", "path": ["参与主体", "交易对手"], "entry_kind": "CONCEPT", "target_id": "concept:counterparty", "status": "CANDIDATE", "evidence_refs": ["ev:comment"]}
+  ],
+  "concepts": [
+    {"concept_id": "concept:notional", "label": "名义本金", "status": "CANDIDATE", "source_refs": ["field:NOTIONAL"]},
+    {"concept_id": "concept:counterparty", "label": "交易对手", "status": "CANDIDATE", "source_refs": ["field:COUNTERPARTY_ID"]}
+  ],
+  "attribute_expressions": [
+    {"expression_id": "expr:dynamic-notional", "concept_id": "concept:notional", "label": "动态名义本金", "qualifier_refs": ["q:dynamic"], "field_refs": ["field:DYNAMIC_NOTIONAL"], "status": "CANDIDATE"}
+  ],
+  "field_attributes": [
+    {"attribute_id": "attr:counterparty-id", "axis": "IDENTIFIER", "label": "标识", "concept_id": "concept:counterparty", "field_refs": ["field:COUNTERPARTY_ID"], "status": "CANDIDATE"}
+  ],
+  "qualifiers": [
+    {"qualifier_id": "q:dynamic", "axis": "STATE", "value": "动态", "status": "CANDIDATE"}
+  ],
+  "physical_implementations": [
+    {"implementation_id": "impl:dynamic-notional", "schema": "TITANS_TRADEFLOW", "table": "REF_TRS", "column": "DYNAMIC_NOTIONAL", "source_ref": "field:DYNAMIC_NOTIONAL"},
+    {"implementation_id": "impl:counterparty-id", "schema": "TITANS_TRADEFLOW", "table": "TRD_TRADE", "column": "COUNTERPARTY_ID", "source_ref": "field:COUNTERPARTY_ID"}
+  ],
+  "evidence": [
+    {"evidence_id": "ev:domain", "source_kind": "DOMAIN_KNOWLEDGE", "source_ref": "domain:otc-derivatives", "role": "CONTEXT"},
+    {"evidence_id": "ev:field", "source_kind": "FIELD", "source_ref": "field:DYNAMIC_NOTIONAL", "role": "SUPPORT"},
+    {"evidence_id": "ev:comment", "source_kind": "COMMENT", "source_ref": "field:COUNTERPARTY_ID", "role": "SUPPORT"},
+    {"evidence_id": "ev:wiki-conflict", "source_kind": "WIKI", "source_ref": "wiki:wrong-context", "role": "COUNTEREVIDENCE"}
+  ],
+  "review_decisions": [
+    {"decision_id": "review:fixture", "target_id": "nav:notional", "disposition": "REWORK", "reason": "fixture_requires_reader_review", "review_version": "surrogate-v1"}
+  ],
+  "published_entries": []
+}
