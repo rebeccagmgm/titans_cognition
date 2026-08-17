@@ -1,0 +1,20 @@
+# Build output / generated parsers — never hand-formatted.
+dist/
+src/generated/
+*.tsbuildinfo
+
+# Vendored reference grammars and local-only corpora (gitignored anyway).
+vendor/
+harness/local/
+
+# Throwaway scratch (globally gitignored) — fetched pages and probe artifacts in
+# arbitrary formats trip the checker locally; CI never sees them.
+temp_auto/
+
+# Dependencies. package-lock.json is npm-managed (npm rewrites it to 2-space on
+# install, so formatting it just churns).
+node_modules/
+package-lock.json
+
+# Hand-maintained prose docs — Prettier's markdown reflow just churns them.
+*.md

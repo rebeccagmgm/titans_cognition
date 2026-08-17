@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.titans-cognition/machine-facts-records.schema.json",
+  "title": "TITANS Machine Facts V1 JSONL records",
+  "type": "object",
+  "properties": {
+    "source-artifact.json": { "type": "object", "required": ["schema_version", "task_id", "logical_source_id", "sql_snapshot", "sql_sha256", "byte_length", "encoding"] },
+    "task-fact-index.jsonl": { "type": "object", "required": ["task_id", "logical_source_id", "sql_sha256", "manifest_sha256", "bundle_path", "status"] },
+    "statements.jsonl": { "type": "object", "required": ["statement_id", "task_id", "statement_index", "statement_type", "span", "raw_sql", "parse_status"] },
+    "schema-refs.jsonl": { "type": "object", "required": ["schema_ref_id", "logical_source_id", "qualified_name", "guid", "status", "source", "metadata_qualified_name", "ddl_sha256", "table_status", "required_for_star", "physical_columns", "partition_columns"] },
+    "dataset-io.jsonl": { "type": "object", "required": ["task_id", "direction", "dataset_id", "physical_dataset", "provenance", "resolution_status"] },
+    "relation-nodes.jsonl": { "type": "object", "required": ["relation_id", "task_id", "statement_id", "relation_type", "source_span", "provenance", "relation"] },
+    "relation-edges.jsonl": { "type": "object", "required": ["edge_id", "task_id", "statement_id", "from_relation_id", "to_relation_id", "edge_type", "provenance", "source_span"] },
+    "field-expression-nodes.jsonl": { "type": "object", "required": ["expression_id", "task_id", "statement_id", "relation_id", "role", "ordinal", "expression_text", "source_span", "input_fields", "unresolved_input_columns", "input_dependency_status"] },
+    "column-lineage-edges.jsonl": { "type": "object", "required": ["edge_id", "task_id", "statement_id", "from_field_id", "to_expression_id", "method", "resolution_provenance"] },
+    "unknowns.jsonl": { "type": "object", "required": ["outcome_class", "reason_code", "message"] }
+  }
+}
