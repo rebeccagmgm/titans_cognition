@@ -1,0 +1,1 @@
+{"artifact_id":"sql:106204:a3be47d16e41a624b2c5a24fd1566254bd5bd673ed4119dfa64fb8d89010ee69","message":"star/匿名投影无法枚举: 缺该表 schema 或子查询输出列未知","outcome_class":"NOT_APPLICABLE","reason_code":"NON_QUERY_OUTPUT_NOT_APPLICABLE","source_locator":{"end":1121,"start":0},"statement_id":"task:106204:statement:0","subject":"root.project","task_id":"106204","unknown_id":"unknown:106204:0:0"}

@@ -1,0 +1,367 @@
+{
+  "schemaVersion": "minimal-causal-paths-v1",
+  "caseId": "indicator-journey-rgstcomp-mthend",
+  "status": "PASS",
+  "paths": [
+    {
+      "pathId": "value-flow-option-dyna-nom-prin",
+      "pathType": "VALUE_FLOW",
+      "description": "dyna_nom_prin -> index_val",
+      "status": "COMPLETE",
+      "producerTaskId": "86840",
+      "producerRole": "T98_OPTION_BRANCH",
+      "consumerTaskId": "162610",
+      "consumerRole": "INDICATOR_BUILD",
+      "partitionSlice": {
+        "dataset": "pdata_n.t98_otc_deri_comp_sale_info",
+        "field": "grp_id",
+        "literal": "01",
+        "resolutionStatus": "PROFILE_DECLARED_NOT_SQL_IR_VERIFIED",
+        "provenance": "PROFILE_DECLARED"
+      },
+      "steps": [
+        {
+          "stepType": "TASK_OUTPUT_EXPRESSION",
+          "taskId": "86840",
+          "fieldNodeId": "task:86840:statement:1:relation:root.project:expression:project_expression:26",
+          "outputField": "dyna_nom_prin",
+          "expression": "(case when deal.COLLATERAL_NOTIONAL_CURRENCY = 'CNY' then 1 when deal.SETTLEMENT_CURRENCY = 'CNY' then ds.INIT_NOTL_EXCHANGE_RATE else mid.MIDRATE end ) * if('2026-05-24' between substring(ds.start_date, 1, 10) and substring(coalesce(deal.Early_Term_Date,ds.end_date), 1, 10), coalesce(deal.Notional,0), 0) as Dyna_Nom_Prin",
+          "provenance": "SQL_IR_EXTRACTED",
+          "evidenceRefs": [
+            "sql:86840:84273036b635006e5c17094008a781802a096026c3c5ac7d984242c57bf3e1e4"
+          ]
+        },
+        {
+          "stepType": "MATERIALIZES_AS",
+          "taskId": "86840",
+          "targetDataset": "pdata_n.t98_otc_deri_comp_sale_info",
+          "targetField": "dyna_nom_prin",
+          "provenance": "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
+          "evidenceRefs": [
+            "sql:86840:84273036b635006e5c17094008a781802a096026c3c5ac7d984242c57bf3e1e4"
+          ]
+        },
+        {
+          "stepType": "READS_AS",
+          "taskId": "162610",
+          "readRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.a.read.t98_otc_deri_comp_sale_info",
+          "fieldNodeId": "task:162610:statement:1:relation:root.index.setop.b0.a.project:expression:project_expression:26",
+          "physicalBinding": {
+            "table": "pdata_n.t98_otc_deri_comp_sale_info",
+            "field": "dyna_nom_prin",
+            "viaAlias": null
+          },
+          "resolutionStatus": "RESOLVED",
+          "provenance": "MACHINE_FACTS_RELATION_TO_FIELD",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        },
+        {
+          "stepType": "AGGREGATES_TO",
+          "taskId": "162610",
+          "sourceFieldNodeId": "task:162610:statement:1:relation:root.index.setop.b0.a.project:expression:project_expression:26",
+          "aggregateFieldNodeId": "task:162610:statement:1:relation:root.index.setop.b0.aggregate:expression:aggregate_measure:0",
+          "aggregateFunctions": [
+            "sum"
+          ],
+          "outputField": "index_val",
+          "provenance": "MACHINE_FACTS_EXPRESSION_TO_AGGREGATE",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        },
+        {
+          "stepType": "MATERIALIZES_AS",
+          "taskId": "162610",
+          "targetDataset": "dm_index_n.index_grp1_compscal_otcderirgstcomp_mthend",
+          "targetField": "index_val",
+          "provenance": "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "edgeId": "SOURCE-1",
+          "edgeType": "FIELD_EXPRESSION_WRITES_FIELD",
+          "from": "task:86840:statement:1:relation:root.project:expression:project_expression:26",
+          "to": "field:pdata_n.t98_otc_deri_comp_sale_info:dyna_nom_prin",
+          "provenance": "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
+          "evidenceRefs": [
+            "profile:f08d221349515e460ade877fb3733546f1345b46b0828cd3a2cb7788ac93a036",
+            "sql:86840:84273036b635006e5c17094008a781802a096026c3c5ac7d984242c57bf3e1e4"
+          ]
+        },
+        {
+          "edgeId": "SOURCE-2",
+          "edgeType": "TASK_DATASET_FLOW",
+          "from": "task:86840",
+          "to": "task:162610",
+          "dataset": "pdata_n.t98_otc_deri_comp_sale_info",
+          "provenance": "PROFILE_DECLARED_OUTPUT_PLUS_MACHINE_FACTS_READ",
+          "evidenceRefs": [
+            "profile:f08d221349515e460ade877fb3733546f1345b46b0828cd3a2cb7788ac93a036"
+          ]
+        },
+        {
+          "edgeId": "SOURCE-3",
+          "edgeType": "READ_RELATION_READS_FIELD_AS_EXPRESSION",
+          "from": "task:162610:statement:1:relation:root.index.setop.b0.a.read.t98_otc_deri_comp_sale_info",
+          "to": "task:162610:statement:1:relation:root.index.setop.b0.a.project:expression:project_expression:26",
+          "dataset": "pdata_n.t98_otc_deri_comp_sale_info",
+          "field": "dyna_nom_prin",
+          "provenance": "MACHINE_FACTS_RELATION_TO_FIELD",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        },
+        {
+          "edgeId": "SOURCE-4",
+          "edgeType": "FIELD_EXPRESSION_FEEDS_EXPRESSION",
+          "from": "task:162610:statement:1:relation:root.index.setop.b0.a.project:expression:project_expression:26",
+          "to": "task:162610:statement:1:relation:root.index.setop.b0.aggregate:expression:aggregate_measure:0",
+          "dataset": "pdata_n.t98_otc_deri_comp_sale_info",
+          "field": "dyna_nom_prin",
+          "provenance": "MACHINE_FACTS_EXPRESSION_TO_AGGREGATE",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        },
+        {
+          "edgeId": "SOURCE-5",
+          "edgeType": "FIELD_EXPRESSION_WRITES_FIELD",
+          "from": "task:162610:statement:1:relation:root.index.setop.b0.aggregate:expression:aggregate_measure:0",
+          "to": "field:dm_index_n.index_grp1_compscal_otcderirgstcomp_mthend:index_val",
+          "provenance": "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
+          "evidenceRefs": [
+            "profile:f08d221349515e460ade877fb3733546f1345b46b0828cd3a2cb7788ac93a036",
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        }
+      ],
+      "gaps": []
+    },
+    {
+      "pathId": "rowset-control-skip-report",
+      "pathType": "ROWSET_CONTROL",
+      "description": "rgst_stat_cd controls rows entering index_val",
+      "status": "COMPLETE",
+      "producerTaskId": "106204",
+      "producerRole": "T05_REPORT_STATUS",
+      "consumerTaskId": "162610",
+      "consumerRole": "INDICATOR_BUILD",
+      "steps": [
+        {
+          "stepType": "TASK_OUTPUT_EXPRESSION",
+          "taskId": "106204",
+          "fieldNodeId": "task:106204:statement:1:relation:root.project:expression:project_expression:9",
+          "outputField": "rgst_stat_cd",
+          "expression": "REPORT_STATUS AS Rgst_Stat_Cd",
+          "provenance": "SQL_IR_EXTRACTED",
+          "evidenceRefs": [
+            "sql:106204:a3be47d16e41a624b2c5a24fd1566254bd5bd673ed4119dfa64fb8d89010ee69"
+          ]
+        },
+        {
+          "stepType": "MATERIALIZES_AS",
+          "taskId": "106204",
+          "targetDataset": "pdata_n.t05_otc_comp_rgst_sac_evt",
+          "targetField": "rgst_stat_cd",
+          "provenance": "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
+          "evidenceRefs": [
+            "sql:106204:a3be47d16e41a624b2c5a24fd1566254bd5bd673ed4119dfa64fb8d89010ee69"
+          ]
+        },
+        {
+          "stepType": "READS_AS",
+          "taskId": "162610",
+          "readRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.c.read.t05_otc_comp_rgst_sac_evt",
+          "fieldNodeId": "task:162610:statement:1:relation:root.index.setop.b0.c.project:expression:project_expression:9",
+          "physicalBinding": {
+            "table": "pdata_n.t05_otc_comp_rgst_sac_evt",
+            "field": "rgst_stat_cd"
+          },
+          "resolutionStatus": "RESOLVED",
+          "provenance": "MACHINE_FACTS_RELATION_TO_FIELD",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        },
+        {
+          "stepType": "CONTROL_VALUE_FILTER",
+          "taskId": "162610",
+          "filterRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.c.filter",
+          "controlLiteral": "SKIP_REPORT",
+          "predicateFacts": {
+            "comparisons": [
+              {
+                "columns": [
+                  "rgst_stat_cd"
+                ],
+                "literals": [
+                  "'SKIP_REPORT'"
+                ],
+                "operator": "="
+              }
+            ],
+            "functions": [],
+            "literals": [
+              "'ODATA_N_TIT.D_TRD_OTC_CONTR_REPORT'",
+              "'ODATA_N_TIT.D_KS_TRADE_COMFIRM_INFO'",
+              "'SKIP_REPORT'"
+            ],
+            "operators": [
+              "and",
+              "="
+            ],
+            "predicates": [
+              {
+                "negated": false,
+                "operator": "in"
+              }
+            ]
+          },
+          "provenance": "SQL_IR_EXTRACTED",
+          "evidenceRefs": []
+        },
+        {
+          "stepType": "LEFT_JOIN_FORMATION",
+          "taskId": "162610",
+          "joinRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.join.1",
+          "joinType": "left",
+          "rightPhysicalKey": {
+            "table": "pdata_n.t05_otc_comp_rgst_sac_evt",
+            "field": "otc_comp_agt_id"
+          },
+          "conditionColumns": [
+            {
+              "clause": "join",
+              "name": "Inr_Seri_No",
+              "physical": [
+                {
+                  "column": "inr_seri_no",
+                  "table": "PDATA_N.T98_OTC_DERI_COMP_SALE_INFO"
+                }
+              ],
+              "qualifier": "a",
+              "resolution": "PHYSICAL"
+            },
+            {
+              "clause": "join",
+              "name": "Otc_Comp_Agt_Id",
+              "physical": [
+                {
+                  "column": "otc_comp_agt_id",
+                  "table": "PDATA_N.T05_OTC_COMP_RGST_SAC_EVT"
+                }
+              ],
+              "qualifier": "c",
+              "resolution": "PHYSICAL"
+            }
+          ],
+          "provenance": "SQL_IR_EXTRACTED",
+          "evidenceRefs": []
+        },
+        {
+          "stepType": "IS_NULL_FILTER",
+          "taskId": "162610",
+          "filterRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.filter",
+          "filterField": "otc_comp_agt_id",
+          "predicateFacts": {
+            "comparisons": [],
+            "functions": [],
+            "literals": [],
+            "operators": [],
+            "predicates": [
+              {
+                "negated": false,
+                "operator": "null"
+              }
+            ]
+          },
+          "provenance": "SQL_IR_EXTRACTED",
+          "evidenceRefs": []
+        },
+        {
+          "stepType": "ROWSET_CONTROL",
+          "taskId": "162610",
+          "controlledAggregateNodeId": "task:162610:statement:1:relation:root.index.setop.b0.aggregate",
+          "controlledOutputField": "index_val",
+          "controlMechanism": "LEFT_JOIN_PLUS_IS_NULL",
+          "provenance": "DERIVED_FROM_STRUCTURED_IR",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        }
+      ],
+      "edges": [
+        {
+          "edgeId": "SOURCE-1",
+          "edgeType": "FIELD_EXPRESSION_WRITES_FIELD",
+          "from": "task:106204:statement:1:relation:root.project:expression:project_expression:9",
+          "to": "field:pdata_n.t05_otc_comp_rgst_sac_evt:rgst_stat_cd",
+          "provenance": "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
+          "evidenceRefs": [
+            "profile:f08d221349515e460ade877fb3733546f1345b46b0828cd3a2cb7788ac93a036",
+            "sql:106204:a3be47d16e41a624b2c5a24fd1566254bd5bd673ed4119dfa64fb8d89010ee69"
+          ]
+        },
+        {
+          "edgeId": "SOURCE-2",
+          "edgeType": "TASK_DATASET_FLOW",
+          "from": "task:106204",
+          "to": "task:162610",
+          "dataset": "pdata_n.t05_otc_comp_rgst_sac_evt",
+          "provenance": "PROFILE_DECLARED_OUTPUT_PLUS_MACHINE_FACTS_READ",
+          "evidenceRefs": [
+            "profile:f08d221349515e460ade877fb3733546f1345b46b0828cd3a2cb7788ac93a036"
+          ]
+        },
+        {
+          "edgeId": "SOURCE-3",
+          "edgeType": "READ_RELATION_READS_FIELD_AS_EXPRESSION",
+          "from": "task:162610:statement:1:relation:root.index.setop.b0.c.read.t05_otc_comp_rgst_sac_evt",
+          "to": "task:162610:statement:1:relation:root.index.setop.b0.c.project:expression:project_expression:9",
+          "dataset": "pdata_n.t05_otc_comp_rgst_sac_evt",
+          "field": "rgst_stat_cd",
+          "provenance": "MACHINE_FACTS_RELATION_TO_FIELD",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        },
+        {
+          "edgeId": "DERIVED-4",
+          "edgeType": "ROWSET_CONTROL",
+          "from": "task:162610:statement:1:relation:root.index.setop.b0.c.filter",
+          "to": "task:162610:statement:1:relation:root.index.setop.b0.aggregate:expression:aggregate_measure:0",
+          "joinRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.join.1",
+          "nullFilterRelationNodeId": "task:162610:statement:1:relation:root.index.setop.b0.filter",
+          "provenance": "DERIVED_FROM_STRUCTURED_IR",
+          "evidenceRefs": [
+            "sql:162610:23e6e88bdb4af8bc44e618f2c29f1d29386d7d8104eb2d3c10cc5fd1bf6e4c83"
+          ]
+        }
+      ],
+      "gaps": [],
+      "controlFlowNote": "ROWSET_CONTROL changes the aggregate input row set; it is not a value-flow edge."
+    }
+  ],
+  "validation": {
+    "configuredPathCount": 2,
+    "assembledPathCount": 2,
+    "completePathCount": 2,
+    "gapCount": 0,
+    "usesStructuredExpressionDependencies": true,
+    "partitionAssertionsAreProfileDeclarations": true
+  },
+  "boundaries": {
+    "notClaimed": [
+      "complete_indicator_journey",
+      "all_task_coverage",
+      "business_correctness",
+      "cross_indicator_algorithm"
+    ]
+  }
+}

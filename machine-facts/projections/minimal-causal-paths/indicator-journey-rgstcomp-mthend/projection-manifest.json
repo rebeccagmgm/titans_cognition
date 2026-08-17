@@ -1,0 +1,46 @@
+{
+  "schema_version": "machine-facts-projection-manifest-v1",
+  "projection_version": "1.0.1",
+  "source_contract_version": "machine-facts-v1",
+  "assembler_version": "minimal-causal-paths-v1",
+  "projection_type": "minimal-causal-paths",
+  "case_id": "indicator-journey-rgstcomp-mthend",
+  "profile_sha256": "f08d221349515e460ade877fb3733546f1345b46b0828cd3a2cb7788ac93a036",
+  "facts_root": "../../..",
+  "upstream_task_manifests": [
+    {
+      "task_id": "162610",
+      "manifest_sha256": "8e18b16421979a1a2d401541f77abc1e5f18989890ba874c47f2094c2f8b1664"
+    },
+    {
+      "task_id": "86840",
+      "manifest_sha256": "c6a0245b3cfc02875f7fd6ded839cadcddbdb7b61621b7d51af270528ca990cb"
+    },
+    {
+      "task_id": "86841",
+      "manifest_sha256": "13847c9885af778acdd2b531204b5e21cec238d0c9e054a0d3511f69aa1b3fa8"
+    },
+    {
+      "task_id": "86842",
+      "manifest_sha256": "d62062d25159e9c1ba3b32a016e9818043762976c6ac0aa5d7d13f0bbd562df8"
+    },
+    {
+      "task_id": "220650",
+      "manifest_sha256": "ebec3d0cc78e24ee2105d582bac98ac742e95f7b92704deaa83decb59efb40a4"
+    },
+    {
+      "task_id": "106204",
+      "manifest_sha256": "0a9dd017e825878ffaf30d2ae87011f6733617f2c7824d83ace9c359f84a5bc2"
+    }
+  ],
+  "result_sha256": "a859f1967b7a35d18c076642c64790986797240e9e5e6a276978b923557b8a9d",
+  "status": "PASS",
+  "boundaries": {
+    "notClaimed": [
+      "complete_indicator_journey",
+      "all_task_coverage",
+      "business_correctness",
+      "cross_indicator_algorithm"
+    ]
+  }
+}

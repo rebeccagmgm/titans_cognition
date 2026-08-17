@@ -1,0 +1,1 @@
+{"artifact_id":"sql:86840:84273036b635006e5c17094008a781802a096026c3c5ac7d984242c57bf3e1e4","message":"star/匿名投影无法枚举: 缺该表 schema 或子查询输出列未知","outcome_class":"NOT_APPLICABLE","reason_code":"NON_QUERY_OUTPUT_NOT_APPLICABLE","source_locator":{"end":3510,"start":0},"statement_id":"task:86840:statement:0","subject":"root.project","task_id":"86840","unknown_id":"unknown:86840:0:0"}
