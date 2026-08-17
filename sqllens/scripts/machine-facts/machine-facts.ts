@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, existsSync } from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 
-import { Schema, SqlSession } from "../../src/index.ts";
+import { Schema, SqlSession, type SchemaMapping } from "../../src/index.ts";
 import { buildPlanFacts, EXPRESSION_DEPENDENCY_ADAPTER_VERSION } from "../plans/plan-adapter.ts";
 import type { PlanFacts } from "../plans/plan-contract.ts";
 import {
@@ -38,6 +38,16 @@ import {
 
 type JsonRecord = Record<string, any>;
 type SourceSpan = { start: number; end: number };
+type SchemaAvailability = ReadonlySet<string> | Pick<Schema, "columnsFor">;
+
+function hasSchemaTable(table: string, available: SchemaAvailability, dialect: string): boolean {
+	const provider = available as Partial<Pick<Schema, "columnsFor">>;
+	if (typeof provider.columnsFor === "function") {
+		const columns = provider.columnsFor.call(available, normalizeName(table).split("."), dialect);
+		return Array.isArray(columns) && columns.length > 0;
+	}
+	return (available as ReadonlySet<string>).has(normalizeName(table));
+}
 
 export interface TaskRunResult {
 	task_id: string;
@@ -65,6 +75,128 @@ const REQUIRED_DATASETS = [
 ] as const;
 
 const workspace = resolve(import.meta.dirname, "../../..");
+
+type ParserSqlInput = {
+	sql: string;
+	restore: <T>(value: T) => T;
+};
+
+function parserToken(length: number, index: number): string {
+	if (length < 3) throw new Error(`parser placeholder is too short to sanitize safely: ${length}`);
+	const payloadLength = length - 2;
+	const payload = index.toString(36).toUpperCase().padStart(payloadLength, "0").slice(-payloadLength);
+	return `_P${payload}`;
+}
+
+function sanitizeSqlForParser(sql: string): ParserSqlInput {
+	const rawToToken = new Map<string, string>();
+	const tokenToRaw = new Map<string, string>();
+	let tokenIndex = 0;
+	const register = (raw: string): string => {
+		const existing = rawToToken.get(raw);
+		if (existing) return existing;
+		let token = parserToken(raw.length, tokenIndex++);
+		while (sql.includes(token) || tokenToRaw.has(token)) token = parserToken(raw.length, tokenIndex++);
+		rawToToken.set(raw, token);
+		tokenToRaw.set(token, raw);
+		return token;
+	};
+
+	// Scheduler placeholders are lexical values, even when they occur inside
+	// a table identifier. Keep replacement length identical so every parser
+	// span remains a valid span in the original SQL.
+	let sanitized = sql.replace(/\$\{[^{}\r\n]*\}/g, (raw) => register(raw));
+
+	// Some source systems also expose legacy bare identifiers containing '$'.
+	// Sanitize those only outside quoted strings/comments; quoted identifiers
+	// already have an unambiguous SQL representation.
+	let output = "";
+	let quote: "'" | '"' | "`" | null = null;
+	let lineComment = false;
+	let blockComment = false;
+	const isIdentifierStart = (char: string): boolean => /[A-Za-z_]/.test(char);
+	const isIdentifierPart = (char: string): boolean => /[A-Za-z0-9_$]/.test(char);
+	for (let index = 0; index < sanitized.length;) {
+		const char = sanitized[index]!;
+		const next = sanitized[index + 1] ?? "";
+		if (lineComment) {
+			output += char;
+			index++;
+			if (char === "\n") lineComment = false;
+			continue;
+		}
+		if (blockComment) {
+			output += char;
+			index++;
+			if (char === "*" && next === "/") {
+				output += next;
+				index++;
+				blockComment = false;
+			}
+			continue;
+		}
+		if (quote) {
+			output += char;
+			index++;
+			if (char === quote) {
+				if (next === quote) {
+					output += next;
+					index++;
+				} else {
+					quote = null;
+				}
+			}
+			continue;
+		}
+		if (char === "-" && next === "-") {
+			output += "--";
+			index += 2;
+			lineComment = true;
+			continue;
+		}
+		if (char === "/" && next === "*") {
+			output += "/*";
+			index += 2;
+			blockComment = true;
+			continue;
+		}
+		if (char === "'" || char === '"' || char === "`") {
+			output += char;
+			index++;
+			quote = char;
+			continue;
+		}
+		if (isIdentifierStart(char)) {
+			let end = index + 1;
+			while (end < sanitized.length && isIdentifierPart(sanitized[end]!)) end++;
+			const identifier = sanitized.slice(index, end);
+			output += identifier.includes("$") ? register(identifier) : identifier;
+			index = end;
+			continue;
+		}
+		output += char;
+		index++;
+	}
+	sanitized = output;
+
+	const replacements = [...tokenToRaw.entries()].sort(([left], [right]) => right.length - left.length);
+	const restoreString = (value: string): string => replacements.reduce((current, [token, raw]) => {
+		const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+		return current.replace(new RegExp(escaped, "gi"), () => raw);
+	}, value);
+	const restore = <T>(value: T): T => {
+		const visit = (item: unknown): unknown => {
+			if (typeof item === "string") return restoreString(item);
+			if (Array.isArray(item)) return item.map(visit);
+			if (item && typeof item === "object") {
+				for (const [key, child] of Object.entries(item as JsonRecord)) (item as JsonRecord)[key] = visit(child);
+			}
+			return item;
+		};
+		return visit(value) as T;
+	};
+	return { sql: sanitized, restore };
+}
 
 function json<T>(path: string): T {
 	return JSON.parse(readFileSync(path, "utf8")) as T;
@@ -148,24 +280,68 @@ function globalizeRelation(taskId: string, statementIndex: number, relation: Jso
 	return converted;
 }
 
-function schemaProjection(raw: JsonRecord, logicalSourceId: string): JsonRecord {
-	const records = Array.isArray(raw.records) ? raw.records : [];
+
+function schemaRecordQuality(record: JsonRecord): [number, number, number, string] {
+	return [
+		record.status === "SUCCESS" ? 1 : 0,
+		Array.isArray(record.columns) ? record.columns.length : 0,
+		typeof record.ddl === "string" && record.ddl.length > 0 ? 1 : 0,
+		canonicalJson(record),
+	];
+}
+
+function isBetterSchemaRecord(candidate: JsonRecord, current: JsonRecord | undefined): boolean {
+	if (!current) return true;
+	const left = schemaRecordQuality(candidate);
+	const right = schemaRecordQuality(current);
+	for (let i = 0; i < left.length - 1; i++) {
+		if (left[i] !== right[i]) return left[i] > right[i];
+	}
+	return left[left.length - 1] < right[right.length - 1];
+}
+
+export function mergeSchemaEvidence(raws: readonly JsonRecord[], logicalSourceId: string): JsonRecord {
+	const byQualifiedName = new Map<string, JsonRecord>();
+	for (const raw of raws) {
+		const records = Array.isArray(raw.records) ? raw.records : [];
+		for (const record of records) {
+			if (!record || typeof record !== "object") continue;
+			const candidate = stripVolatile(record) as JsonRecord;
+			const qualifiedName = String(candidate.qualified_name ?? `${candidate.db ?? ""}.${candidate.table ?? ""}`).trim();
+			if (!qualifiedName || qualifiedName === ".") continue;
+			const key = normalizeName(qualifiedName);
+			if (isBetterSchemaRecord(candidate, byQualifiedName.get(key))) byQualifiedName.set(key, candidate);
+		}
+	}
 	return {
 		schema_version: "machine-facts-schema-bundle-v1",
 		logical_source_id: logicalSourceId,
-		records: stableRecords(records.map((record: JsonRecord) => stripVolatile(record) as JsonRecord), (record) =>
-			String(record.qualified_name ?? `${record.db ?? ""}.${record.table ?? ""}`).toLowerCase(),
-		),
+		records: stableRecords([...byQualifiedName.values()], (record) => normalizeName(String(record.qualified_name ?? `${record.db ?? ""}.${record.table ?? ""}`))),
 	};
 }
 
+function schemaProjection(raw: JsonRecord, logicalSourceId: string): JsonRecord {
+	return mergeSchemaEvidence([raw], logicalSourceId);
+}
+
 function schemaProvider(schemaBundle: JsonRecord): Schema {
-	const mapping: Record<string, Record<string, string>> = {};
+	const mapping: SchemaMapping = {};
 	for (const record of schemaBundle.records as JsonRecord[]) {
 		if (record.status !== "SUCCESS" || !Array.isArray(record.columns) || !record.qualified_name) continue;
-		mapping[record.qualified_name] = Object.fromEntries(
+		const table: SchemaMapping = Object.fromEntries(
 			record.columns.map((column: JsonRecord) => [String(column.name), "unknown"]),
 		);
+		const parts = String(record.qualified_name).split(".").filter(Boolean);
+		if (parts.length === 0) continue;
+		let namespace = mapping;
+		for (const part of parts.slice(0, -1)) {
+			const current = namespace[part];
+			if (typeof current !== "object" || current === null || "nullable" in current) {
+				namespace[part] = {};
+			}
+			namespace = namespace[part] as SchemaMapping;
+		}
+		namespace[parts[parts.length - 1]!] = table;
 	}
 	return new Schema(mapping);
 }
@@ -220,29 +396,42 @@ function unresolvedInputColumns(expression: JsonRecord): JsonRecord[] {
 		}));
 }
 
-export function relationNeedsMissingSchema(nodeId: string, relations: readonly JsonRecord[], availableSchemaNames: ReadonlySet<string>, visiting = new Set<string>()): boolean {
+export function relationNeedsMissingSchema(
+	nodeId: string,
+	relations: readonly JsonRecord[],
+	availableSchemaNames: SchemaAvailability,
+	visiting = new Set<string>(),
+	dialect = "databricks",
+): boolean {
 	if (visiting.has(nodeId)) return true;
 	const relation = relations.find((candidate) => candidate.id === nodeId);
 	if (!relation) return true;
 	if (relation.type === "read") {
 		if (relation.is_cte) return false;
-		return !availableSchemaNames.has(normalizeName(String(relation.table ?? "")));
+		return !hasSchemaTable(String(relation.table ?? ""), availableSchemaNames, dialect);
 	}
 	const nextVisiting = new Set(visiting).add(nodeId);
 	const inputs = [relation.source, relation.left, relation.right, ...(Array.isArray(relation.branches) ? relation.branches : [])].filter(Boolean) as string[];
-	return inputs.some((input) => relationNeedsMissingSchema(input, relations, availableSchemaNames, nextVisiting));
+	return inputs.some((input) => relationNeedsMissingSchema(input, relations, availableSchemaNames, nextVisiting, dialect));
 }
 
 function classifyPlanUnknown(
 	item: JsonRecord,
 	relation: JsonRecord | undefined,
 	statementType: string,
-	availableSchemaNames: ReadonlySet<string>,
+	availableSchemaNames: SchemaAvailability,
 	relations: readonly JsonRecord[],
+	dialect: string,
 ): { outcome_class: OutcomeClass; reason_code: string } {
 	const expressions = outputColumns(relation ?? {});
-	const schemaAvailable = relation ? !relationNeedsMissingSchema(String(relation.id), relations, availableSchemaNames) : false;
+	const schemaAvailable = relation ? !relationNeedsMissingSchema(String(relation.id), relations, availableSchemaNames, new Set<string>(), dialect) : false;
 	if (item.field === "physical") {
+		if (String(item.reason ?? "").includes("schema 快照缺少字段证据")) {
+			return { outcome_class: "NOT_EVALUABLE", reason_code: "SCHEMA_BINDING_NOT_EVALUABLE" };
+		}
+		if (String(item.reason ?? "").includes("followColumn 无来源")) {
+			return { outcome_class: "UNKNOWN", reason_code: "PHYSICAL_FIELD_UNRESOLVED" };
+		}
 		return schemaAvailable
 			? { outcome_class: "UNKNOWN", reason_code: "PHYSICAL_FIELD_UNRESOLVED" }
 			: { outcome_class: "NOT_EVALUABLE", reason_code: "SCHEMA_BINDING_NOT_EVALUABLE" };
@@ -262,6 +451,47 @@ function classifyPlanUnknown(
 		}
 	}
 	return { outcome_class: "UNKNOWN", reason_code: "PLAN_FACT_UNRESOLVED" };
+}
+
+const SQL_CANDIDATE_SAFE_RESOLUTIONS = new Set(["PHYSICAL", "SQL_CANDIDATE", "DERIVED_OUTPUT"]);
+
+/**
+ * A missing table schema does not by itself make a SQL dependency unevaluable.
+ * If every column-bearing part of the plan is already bound physically or by
+ * an unambiguous SQL candidate, the writer can preserve the dependency as
+ * UNVERIFIED_SCHEMA. Keep the schema gap as NOT_EVALUABLE when a star or an
+ * unresolved predicate/condition prevents that representation.
+ */
+function canRepresentMissingSchemaAsSqlCandidate(
+	missingTables: readonly string[],
+	relations: readonly JsonRecord[],
+): boolean {
+	const missing = new Set(missingTables.map((table) => normalizeName(table)));
+	const candidateTables = new Set<string>();
+	let safe = true;
+
+	const visit = (value: unknown): void => {
+		if (!safe || value === null || value === undefined) return;
+		if (Array.isArray(value)) {
+			for (const item of value) visit(item);
+			return;
+		}
+		if (typeof value !== "object") return;
+		const object = value as JsonRecord;
+		if (object.output === "*" || object.output_name_status === "STAR_EXPANSION") safe = false;
+		if (typeof object.resolution === "string") {
+			if (!SQL_CANDIDATE_SAFE_RESOLUTIONS.has(object.resolution)) safe = false;
+			if (object.resolution === "SQL_CANDIDATE" && Array.isArray(object.sql_candidate)) {
+				for (const candidate of object.sql_candidate as JsonRecord[]) {
+					if (typeof candidate.table === "string") candidateTables.add(normalizeName(candidate.table));
+				}
+			}
+		}
+		for (const child of Object.values(object)) visit(child);
+	};
+
+	for (const relation of relations) visit(relation);
+	return safe && missing.size > 0 && [...missing].every((table) => candidateTables.has(table));
 }
 
 function makeFailure(outcome_class: OutcomeClass, reason_code: string, message: string, subject?: string): FailureOutcome {
@@ -358,7 +588,8 @@ function planRecords(
 	statementId: string,
 	statementIndex: number,
 	statementType: string,
-	availableSchemaNames: ReadonlySet<string>,
+	availableSchemaNames: SchemaAvailability,
+	dialect: string,
 	artifactId: string,
 ): {
 	relations: RelationNodeRecord[];
@@ -391,7 +622,7 @@ function planRecords(
 
 	for (const item of plan.unknowns) {
 		const relation = planRelations.find((candidate) => candidate.id === item.node_id);
-		const classification = classifyPlanUnknown(item as JsonRecord, relation, statementType, availableSchemaNames, planRelations);
+		const classification = classifyPlanUnknown(item as JsonRecord, relation, statementType, availableSchemaNames, planRelations, dialect);
 		unknowns.push({
 			unknown_id: `unknown:${task.task_id}:${statementIndex}:${unknowns.length}`,
 			task_id: task.task_id,
@@ -411,8 +642,10 @@ function planRecords(
 			.map((item) => String(item.node_id)),
 	);
 	for (const relation of planRelations) {
-		const missingTables = [...physicalTablesIn(relation)].filter((table) => !availableSchemaNames.has(table));
-		if (missingTables.length > 0 && !explicitPhysicalUnknowns.has(String(relation.id))) {
+		const missingTables = [...physicalTablesIn(relation)].filter((table) => !hasSchemaTable(table, availableSchemaNames, dialect));
+		const explicitPhysicalUnknown = explicitPhysicalUnknowns.has(String(relation.id));
+		const candidateBinding = missingTables.length > 0 && !explicitPhysicalUnknown && canRepresentMissingSchemaAsSqlCandidate(missingTables, planRelations);
+		if (missingTables.length > 0 && !candidateBinding && !explicitPhysicalUnknown) {
 			unknowns.push({
 				unknown_id: `unknown:${task.task_id}:${statementIndex}:${unknowns.length}`,
 				task_id: task.task_id,
@@ -774,27 +1007,28 @@ function buildTaskBundle(
 			? record.columns.filter((column: JsonRecord) => column.partition === true).map((column: JsonRecord) => String(column.name)).filter(Boolean)
 			: [],
 	}));
-	const availableSchemaNames = new Set(
-		schemaRefs
-			.filter((reference) => reference.status === "SUCCESS" && reference.physical_columns.length > 0 && reference.qualified_name)
-			.map((reference) => normalizeName(reference.qualified_name as string)),
-	);
 	let parserVersion = "unknown";
 	let planAdapterVersion = "unknown";
-	const session = SqlSession.create(sql, profile.dialect as any, { schema });
+	const parserSql = sanitizeSqlForParser(sql);
+	const session = SqlSession.create(parserSql.sql, profile.dialect as any, { schema });
 	for (const [statementIndex, cell] of session.doc.statements.entries()) {
 		const statementId = `task:${task.task_id}:statement:${statementIndex}`;
 		const span = { start: cell.span.start, end: cell.span.end };
 		const rawSql = sql.slice(span.start, span.end);
 		const parsedWrite = parseSqlWrite(rawSql);
+		const statementType = classifyStatement(rawSql);
 		if (parsedWrite) {
 			datasetIo.push({ task_id: task.task_id, statement_id: statementId, direction: "WRITE", dataset_id: datasetId(logicalSourceId, parsedWrite), physical_dataset: parsedWrite, provenance: "SQL_PARSE", resolution_status: "RESOLVED" });
 		}
-		const plan: PlanFacts = buildPlanFacts(cell, sql, {
+		const plan: PlanFacts = parserSql.restore(buildPlanFacts(cell, sql, {
 			statement_index: statementIndex,
 			dialect: profile.dialect,
 			schema,
 			include_expression_dependencies: true,
+		}));
+		const hasActionableUnknown = plan.unknowns.some((item) => {
+			const relation = (plan.relations as JsonRecord[]).find((candidate) => candidate.id === item.node_id);
+			return classifyPlanUnknown(item as JsonRecord, relation, statementType, schema, plan.relations as JsonRecord[], profile.dialect).outcome_class !== "NOT_APPLICABLE";
 		});
 		parserVersion = plan.meta.parser.version;
 		planAdapterVersion = plan.meta.adapter_version;
@@ -802,13 +1036,13 @@ function buildTaskBundle(
 			statement_id: statementId,
 			task_id: task.task_id,
 			statement_index: statementIndex,
-			statement_type: classifyStatement(rawSql),
+			statement_type: statementType,
 			span,
 			raw_sql: rawSql,
-			parse_status: cell.errors > 0 || plan.unknowns.length > 0 ? "PARTIAL" : "SUCCESS",
+			parse_status: cell.errors > 0 || hasActionableUnknown ? "PARTIAL" : "SUCCESS",
 			diagnostic: cell.diagnostics,
 		});
-		const records = planRecords(task, logicalSourceId, sql, plan, statementId, statementIndex, classifyStatement(rawSql), availableSchemaNames, `sql:${task.task_id}:${sqlHash}`);
+		const records = planRecords(task, logicalSourceId, sql, plan, statementId, statementIndex, statementType, schema, profile.dialect, `sql:${task.task_id}:${sqlHash}`);
 		relations.push(...records.relations);
 		relationEdges.push(...records.relationEdges);
 		expressions.push(...records.fields);
@@ -821,6 +1055,15 @@ function buildTaskBundle(
 			}
 		}
 	}
+	const dedupedUnknowns = new Set<string>();
+	const retainedUnknowns = unknowns.filter((item) => {
+		if (item.reason_code !== "SCHEMA_BINDING_NOT_EVALUABLE" || !item.message.startsWith("physical references lack schema evidence:")) return true;
+		const key = `${item.task_id}|${item.statement_id ?? ""}|${item.message}`;
+		if (dedupedUnknowns.has(key)) return false;
+		dedupedUnknowns.add(key);
+		return true;
+	});
+	unknowns.splice(0, unknowns.length, ...retainedUnknowns);
 	for (const write of normalizeWrites(task)) {
 		datasetIo.push({ task_id: task.task_id, direction: "WRITE", dataset_id: datasetId(logicalSourceId, write), physical_dataset: write, provenance: "PROFILE_DECLARED", resolution_status: "DECLARED" });
 	}
@@ -994,9 +1237,12 @@ export function processProfile(profilePath: string, outputRoot: string, sourceId
 	if (new Set(taskIds).size !== taskIds.length) throw new Error("profile task_id values must be unique");
 	const root = resolve(workspace, outputRoot);
 	mkdirSync(root, { recursive: true });
-	const evidencePath = profile.schema_evidence ? resolve(workspace, profile.schema_evidence) : "";
-	if (!evidencePath || !existsSync(evidencePath)) throw new Error("schema_evidence is required and must exist");
-	const schemaBundle = schemaProjection(json<JsonRecord>(evidencePath), logicalSourceId);
+	const configuredEvidence = Array.isArray(profile.schema_evidence)
+		? [...profile.schema_evidence]
+		: profile.schema_evidence ? [profile.schema_evidence] : [];
+	const evidencePaths = configuredEvidence.map((path) => resolve(workspace, path));
+	if (evidencePaths.length === 0 || evidencePaths.some((path) => !existsSync(path))) throw new Error("schema_evidence is required and must exist");
+	const schemaBundle = mergeSchemaEvidence(evidencePaths.map((path) => json<JsonRecord>(path)), logicalSourceId);
 	const schemaBytes = Buffer.from(canonicalJson(schemaBundle), "utf8");
 	const schemaBundleHash = sha256(schemaBytes);
 	snapshot(root, "schema", schemaBundleHash, schemaBytes);

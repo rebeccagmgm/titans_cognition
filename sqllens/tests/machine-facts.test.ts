@@ -4,7 +4,7 @@ import { join, relative, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalJson, datasetId, sha256, safeSegment, stripVolatile } from "../scripts/machine-facts/machine-facts-contract.ts";
-import { inputDependencyStatus, processProfile, rebuildIndex, relationNeedsMissingSchema } from "../scripts/machine-facts/machine-facts.ts";
+import { inputDependencyStatus, mergeSchemaEvidence, processProfile, rebuildIndex, relationNeedsMissingSchema } from "../scripts/machine-facts/machine-facts.ts";
 
 const workspace = resolve(import.meta.dirname, "../..");
 const roots: string[] = [];
@@ -36,6 +36,26 @@ describe("machine facts contract", () => {
 		expect(() => safeSegment("CON", "task_id")).toThrow();
 		expect(() => safeSegment("name.", "task_id")).toThrow();
 		expect(datasetId("source-a", "Demo.Source")).not.toBe(datasetId("source-b", "Demo.Source"));
+	});
+
+	it("merges persisted schema evidence deterministically without task-specific rules", () => {
+		const merged = mergeSchemaEvidence([
+			{ records: [
+				{ qualified_name: "demo.source", status: "SUCCESS", columns: [{ name: "id" }] },
+				{ qualified_name: "demo.missing", status: "NOT_EVALUABLE", columns: [] },
+			] },
+			{ records: [
+				{ qualified_name: "DEMO.SOURCE", status: "SUCCESS", columns: [{ name: "id" }, { name: "dt" }], ddl: "CREATE TABLE demo.source" },
+				{ qualified_name: "demo.extra", status: "SUCCESS", columns: [{ name: "key" }] },
+			] },
+		], "test-source");
+
+		expect(merged.logical_source_id).toBe("test-source");
+		expect(merged.records).toHaveLength(3);
+		expect(merged.records.find((record: { qualified_name?: string }) => record.qualified_name?.toLowerCase() === "demo.source")).toMatchObject({
+		status: "SUCCESS",
+		columns: [{ name: "id" }, { name: "dt" }],
+		});
 	});
 
 	it("creates one current bundle, reuses it, and replaces it when SQL changes", () => {
@@ -221,7 +241,7 @@ describe("machine facts contract", () => {
 		expect(relationNeedsMissingSchema("join", relations, new Set(["demo.source", "demo.missing"]))).toBe(false);
 	});
 
-	it("emits a not-evaluable fact when the adapter marks a missing-schema field physical", () => {
+	it("keeps qualified missing-schema columns as candidates", () => {
 		const f = fixture();
 		writeFileSync(f.sql, "INSERT OVERWRITE TABLE demo.target SELECT s.id FROM demo.source s JOIN demo.missing m ON s.id = m.id;\n", "utf8");
 		processProfile(f.profile, f.output, "test-source");
@@ -231,7 +251,48 @@ describe("machine facts contract", () => {
 			.split(/\r?\n/)
 			.filter(Boolean)
 			.map((line) => JSON.parse(line));
-		expect(unknowns.some((item) => item.outcome_class === "NOT_EVALUABLE" && item.reason_code === "SCHEMA_BINDING_NOT_EVALUABLE")).toBe(true);
+		expect(unknowns.some((item) => item.reason_code === "SCHEMA_BINDING_NOT_EVALUABLE")).toBe(false);
+	});
+
+	it("does not relabel followColumn parser unknowns as missing schema", () => {
+		const f = fixture();
+		writeFileSync(f.sql, "CREATE TABLE demo.target AS SELECT A.*, B.* FROM (SELECT id FROM demo.source) A FULL OUTER JOIN (SELECT id FROM demo.missing) B ON A.id = B.id;", "utf8");
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+
+		expect(unknowns.filter((item) => item.reason_code === "SCHEMA_BINDING_NOT_EVALUABLE" && item.message.includes("followColumn 无来源"))).toHaveLength(0);
+		expect(unknowns.filter((item) => item.reason_code === "PHYSICAL_FIELD_UNRESOLVED" && item.message.includes("followColumn 无来源"))).toHaveLength(0);
+		expect(unknowns.some((item) => item.reason_code === "SCHEMA_BINDING_NOT_EVALUABLE" && item.message.includes("demo.missing"))).toBe(true);
+	});
+
+	it("passes nested schema namespaces to derived-table star resolution", () => {
+		const f = fixture();
+		writeFileSync(f.sql, "CREATE TABLE demo.target AS SELECT A.id FROM (SELECT id FROM demo.source) A;", "utf8");
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+
+		expect(unknowns.filter((item) => item.reason_code === "PHYSICAL_FIELD_UNRESOLVED")).toHaveLength(0);
+		expect(unknowns.filter((item) => item.reason_code === "PLAN_FACT_UNRESOLVED")).toHaveLength(0);
+	});
+
+	it("does not mark a non-query-only unknown as a partial parse", () => {
+		const f = fixture();
+		writeFileSync(f.sql, "CREATE TABLE demo.target (id STRING);", "utf8");
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const statements = readFileSync(join(bundle, "statements.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+
+		expect(statements).toHaveLength(1);
+		expect(statements[0].parse_status).toBe("SUCCESS");
+		expect(unknowns).toHaveLength(1);
+		expect(unknowns[0]).toMatchObject({ outcome_class: "NOT_APPLICABLE", reason_code: "NON_QUERY_OUTPUT_NOT_APPLICABLE" });
 	});
 
 	it("records syntax-only candidates when a single source schema is absent", () => {
@@ -257,6 +318,52 @@ describe("machine facts contract", () => {
 		expect(expressions.some((item) => item.input_dependency_status === "SQL_CANDIDATE")).toBe(true);
 		expect(expressions.some((item) => item.candidate_input_fields?.some((field: { binding_status?: string }) => field.binding_status === "UNVERIFIED_SCHEMA"))).toBe(true);
 		expect(lineage.some((item) => item.resolution_status === "UNVERIFIED_SCHEMA" && item.method === "SQL_SINGLE_SOURCE_BINDING")).toBe(true);
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+		expect(unknowns.some((item) => item.reason_code === "SCHEMA_BINDING_NOT_EVALUABLE")).toBe(false);
+	});
+
+	it("keeps missing-schema facts unevaluable for star expansion", () => {
+		const f = fixture();
+		const schemaPath = join(f.root, "schema.json");
+		const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+		schema.records = schema.records.filter((record: { qualified_name?: string }) => record.qualified_name !== "demo.source");
+		writeFileSync(schemaPath, JSON.stringify(schema), "utf8");
+		writeFileSync(f.sql, "INSERT OVERWRITE TABLE demo.target SELECT * FROM demo.source;\n", "utf8");
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+		expect(unknowns.some((item) => item.outcome_class === "NOT_EVALUABLE" && item.reason_code === "SCHEMA_BINDING_NOT_EVALUABLE")).toBe(true);
+	});
+
+	it("treats scheduler date placeholders as reversible parser values", () => {
+		const f = fixture();
+		writeFileSync(
+			f.sql,
+			"SELECT '${yyyy-MM-dd}' AS busi_date, id FROM demo.trd_${yyyyMM}_h UNION ALL SELECT '${yyyy-MM-dd}' AS busi_date, id FROM demo.trd_${yyyyMM,-1M}_h;\n",
+			"utf8",
+		);
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const statements = readFileSync(join(bundle, "statements.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+		const relations = readFileSync(join(bundle, "relation-nodes.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+
+		const nonEmptyStatements = statements.filter((item) => String(item.raw_sql).trim().length > 0);
+		expect(nonEmptyStatements.length).toBeGreaterThan(0);
+		expect(nonEmptyStatements.every((item) => item.parse_status === "SUCCESS")).toBe(true);
+		expect(statements.map((item) => item.raw_sql).join("\n")).toContain("${yyyyMM,-1M}");
+		expect(relations.some((item) => item.relation?.table === "demo.trd_${yyyyMM}_h")).toBe(true);
+		expect(relations.some((item) => item.relation?.table === "demo.trd_${yyyyMM,-1M}_h")).toBe(true);
+		expect(relations.some((item) => item.relation?.binding === "trd_${yyyyMM}_h")).toBe(true);
+		expect(relations.some((item) => item.relation?.binding === "trd_${yyyyMM,-1M}_h")).toBe(true);
+		expect(unknowns.some((item) => item.reason_code === "SYNTAX_DIAGNOSTIC")).toBe(false);
 	});
 
 	it("reuses the materialized 118141 Schema Evidence for star expansion", () => {

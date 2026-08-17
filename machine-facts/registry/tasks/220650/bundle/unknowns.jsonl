@@ -1,1 +1,0 @@
-{"artifact_id":"sql:220650:2dd6c664fa5185f7a24fcf62d95ec4d946684c0337a033ab873c9cda7e20954e","message":"star/匿名投影无法枚举: 缺该表 schema 或子查询输出列未知","outcome_class":"NOT_APPLICABLE","reason_code":"NON_QUERY_OUTPUT_NOT_APPLICABLE","source_locator":{"end":3510,"start":0},"statement_id":"task:220650:statement:0","subject":"root.project","task_id":"220650","unknown_id":"unknown:220650:0:0"}

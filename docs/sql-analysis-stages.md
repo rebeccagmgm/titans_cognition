@@ -85,6 +85,7 @@ sqllens IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsOf` 均已�
 2. **`clausesOf` 坐标系陷阱**：多语句 SQL 文档必须用 `doc.clausesOf(scope)` 实例方法（自动平移坐标），自由函数 `clausesOf` 在多语句文档中返回空。
 3. **JOIN 深嵌套**：必须递归遍历所有 scope 层，不能只检查顶层（118141 的 7 个 JOIN 在最内层 t 层）。
 4. **`lineageAt` offset 是 cell 坐标**（与 IR 的 cst/partSpans 同坐标系），且 `nodeAt` 是裸数值比较 —— 必须精确锚定到列名 token 起始位置（`ColumnRef.partSpans[0].start`），否则命中父表达式导致"张冠李戴"（返回整个投影的来源）。输出 span 才是 doc 坐标（需加 cell.span.start 平移）。
+5. **调度模板占位符先做等长可逆预处理**：`${yyyyMM}`、`${yyyyMM,-1M}` 等只作为解析哨兵，不解释日期语义；解析完成后恢复原文，避免破坏表名、字段名和 span。
 5. **`hop.terminal` 两种失败形态**：字符串 `"unresolved"`（sqllens 显式判定）与 `undefined`（followColumn 无来源，如 lateral view 子查询别名列在 JOIN ON 中引用）。`JSON.stringify(undefined)` 返回字符串 `"undefined"` 易误判，必须用严格 `===` 区分。
 6. **PowerShell 重定向中文乱码**：不要用 `> file` 重定向脚本输出；用 `fs.createWriteStream(path, { encoding: "utf8" })` 直接写文件。
 7. sqllens 工具本身**无 transform provenance 与 grain 模型**（`grain` 零匹配、hop 血缘明确排除 WHERE/JOIN 条件），但 IR 保留完整结构（where/joins/groupBy/joinConditions），是阶段 2/3 的原料。
@@ -153,7 +154,7 @@ npx tsx scripts/machine-facts/machine-facts.ts `
 118141 Schema Fixture 物化。字段输入依赖按证据强度分层：
 
 - 表和字段都能被 Schema Evidence 验证时，写入 `PHYSICAL` 及 `SCHEMA_BOUND` 血缘边；
-- Schema 缺失但 SQL 结构明确指向单一物理来源时，写入 `SQL_CANDIDATE`，并将候选字段和边标为 `UNVERIFIED_SCHEMA`，不能冒充 `PHYSICAL`；
+- Schema 缺失但 SQL 结构明确指向单一物理来源时，写入 `SQL_CANDIDATE`，并将候选字段和边标为 `UNVERIFIED_SCHEMA`，不能冒充 `PHYSICAL`；此时不再额外生成重复的 `SCHEMA_BINDING_NOT_EVALUABLE`；
 - 多个可能来源、星号展开或无法唯一绑定时，保留 `UNRESOLVED`，同时将缺失的读表保留为 `NOT_EVALUABLE`/Unknown。
 
 因此缺 Schema 不再导致所有简单直接加工都被静默丢弃，也不会因为 SQL 看起来简单就伪造物理字段事实。补齐真实 Schema Evidence 后重跑，候选绑定才会升级为 Schema-backed `PHYSICAL`。
@@ -172,6 +173,31 @@ machine-facts/
 同一输入重跑返回 `REUSED`；输入或方法变化在校验成功后替换同一 Task 的当前 Bundle。Windows 发布采用单写者的 Staging/Recovery 可恢复流程，不保存 Fact Diff、历史 Edition 或旧版本目录。V1 不生成 Grain、跨任务血缘、指标/影响 Projection、Capability Package 或查询层结果。
 
 环境要求：Node.js ≥ 20.11，`npm install` 后 `npm run gen:all`（生成 ANTLR parser）。
+
+### 5.5 下游 `SELECT *` 元数据批处理
+
+下游任务 SQL 中出现 `SELECT *` 时，先用 sqllens 生成
+`star-metadata-targets.json`，再通过只读 SZData 查询缓存表元数据和 DDL。批处理脚本会：
+
+- 从任务数据库映射和既有血缘清单复用 GUID，减少重复的表查询；
+- 正确处理 SZData 的外层数组和 `table.guid` 嵌套返回；
+- 采用单写者追加 JSONL 缓存，支持断点续跑和失败项重试；
+- 默认单路调用，避免触发用户级限流；`--workers 2` 需要在确认限流余量后显式开启。
+
+```powershell
+.venv\Scripts\python.exe scripts\szdata_star_metadata_batch.py `
+  --targets output\downstream-machine-facts-20260817\star-metadata-targets.json `
+  --cache output\downstream-machine-facts-20260817\szdata-schema-cache.jsonl `
+  --task-map output\titans-collection-20260815\data\downstream-tables-tasks.csv `
+  --odata-lineage output\titans-collection-20260815\data\downstream-odata.csv `
+  --guid-overrides cases\downstream-machine-facts\szdata-guid-overrides.json `
+  --retry-errors --retry-empty
+```
+
+脚本只查询元数据和 DDL，不查询业务行、不运行调度任务、不写入源系统。缓存采用 latest-wins：同一
+`cache_key` 的最后一条记录为当前状态；需要重新验证空结果时使用 `--retry-empty`，需要重试接口错误时使用
+`--retry-errors`。当 SZData 对同名异物理对象返回歧义时，必须通过 `--guid-overrides` 显式绑定 GUID，不能
+按名称自动猜测。
 
 ## 6. 当前状态与边界
 

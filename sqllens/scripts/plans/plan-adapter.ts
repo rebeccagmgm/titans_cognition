@@ -19,6 +19,8 @@
 // ============================================================================
 import { readFileSync } from "node:fs";
 import type { Scope, ScopeTree } from "../../src/scope/scope.js";
+import { resolveColumnSource } from "../../src/sema/resolve.js";
+import type { SchemaProvider } from "../../src/qualify/schema-provider.js";
 import type {
 	AggregateRelation,
 	ColumnRef,
@@ -158,11 +160,14 @@ function resolveSetopOutput(
 	schema: unknown,
 	scope: Scope,
 	name: string,
+	resolveDerivedOutput?: DerivedOutputResolver,
 ): DerivedOutputResolution {
 	if (scope.body.kind === "setop") {
 		if (!scope.branches) return null;
 		const branches = [scope.branches.left, scope.branches.right];
-		const resolutions = branches.map((branch) => resolveSetopOutput(cell, schema, branch, name));
+		const resolutions = branches.map((branch) =>
+			resolveDerivedOutput?.(branch, name) ?? resolveSetopOutput(cell, schema, branch, name, resolveDerivedOutput),
+		);
 		if (resolutions.some((resolution) => resolution === null)) return null;
 		const physical = resolutions.flatMap((resolution) =>
 			resolution?.kind === "PHYSICAL" ? resolution.physical : [],
@@ -170,7 +175,18 @@ function resolveSetopOutput(
 		const candidates = resolutions.flatMap((resolution) =>
 			resolution?.kind === "SQL_CANDIDATE" ? resolution.candidates : [],
 		);
-		if (physical.length > 0 && candidates.length > 0) return null;
+		if (physical.length > 0 && candidates.length > 0) {
+			const seen = new Set<string>();
+			return {
+				kind: "SQL_CANDIDATE",
+				candidates: [...physical, ...candidates].filter((item) => {
+					const key = `${item.table}.${item.column}`.toLowerCase();
+					if (seen.has(key)) return false;
+					seen.add(key);
+					return true;
+				}),
+			};
+		}
 		if (physical.length > 0) {
 			const seen = new Set<string>();
 			return {
@@ -353,7 +369,22 @@ function resolvePhysical(
 		if (withOff._cellOffset == null) continue;
 		if (ref.qualifier) {
 			const source = sourceFor(ref.qualifier);
-			const sourceScope = source?.kind === "subquery" ? source.scope : undefined;
+			if (
+				source?.kind === "lateral" &&
+				Array.isArray(source.source?.columns) &&
+				source.source.columns.some((column: string) => column.toLowerCase() === ref.name.toLowerCase())
+			) {
+				ref.resolution = "DERIVED_OUTPUT";
+				ref.derived_from = `LATERAL_OUTPUT:${ref.qualifier}.${ref.name}`;
+				delete withOff._cellOffset;
+				continue;
+			}
+			// CTEs and parenthesized derived tables expose the same output
+			// boundary. Keep both on the adapter path so CTE references do not
+			// fall back to lineageAt and get misreported as a lateral blind spot.
+			const sourceScope = source?.kind === "subquery"
+				? source.scope
+				: source?.kind === "cte" ? source.ref.scope : undefined;
 			const sourceOutputs = sourceScope?.outputs;
 			if (
 				sourceScope &&
@@ -383,7 +414,7 @@ function resolvePhysical(
 				sourceScope?.body.kind === "setop" &&
 				(Array.isArray(sourceOutputs) ? sourceOutputs.some((output: string) => output.toLowerCase() === ref.name.toLowerCase()) : true)
 			) {
-				const derived = resolveSetopOutput(cell, schema, sourceScope, ref.name);
+				const derived = resolveSetopOutput(cell, schema, sourceScope, ref.name, resolveDerivedOutput);
 				if (derived?.kind === "PHYSICAL") {
 					ref.physical = derived.physical;
 					ref.resolution = "PHYSICAL";
@@ -404,6 +435,42 @@ function resolvePhysical(
 				}
 			}
 		}
+		if (!ref.qualifier && scope.sources.size === 1) {
+			const onlySource = [...scope.sources.values()][0];
+			if (onlySource?.kind === "subquery" || onlySource?.kind === "cte") {
+				const onlySourceScope = onlySource.kind === "subquery" ? onlySource.scope : onlySource.ref.scope;
+				const derived = onlySourceScope.body.kind === "setop"
+					? resolveSetopOutput(cell, schema, onlySourceScope, ref.name, resolveDerivedOutput)
+					: resolveDerivedOutput?.(onlySourceScope, ref.name);
+				if (derived?.kind === "PHYSICAL") {
+					ref.physical = derived.physical;
+					ref.resolution = "PHYSICAL";
+					delete withOff._cellOffset;
+					continue;
+				}
+				if (derived?.kind === "SQL_CANDIDATE") {
+					ref.sql_candidate = derived.candidates;
+					ref.resolution = "SQL_CANDIDATE";
+					delete withOff._cellOffset;
+					continue;
+				}
+				if (derived?.kind === "DERIVED_OUTPUT") {
+					ref.resolution = "DERIVED_OUTPUT";
+					ref.derived_from = `SUBQUERY_OUTPUT:${ref.name}`;
+					delete withOff._cellOffset;
+					continue;
+				}
+			}
+		}
+		if (!ref.qualifier) {
+			const bound = resolveColumnSource(scope, [ref.name], schema as SchemaProvider);
+			if (bound?.source.kind === "lateral") {
+				ref.resolution = "DERIVED_OUTPUT";
+				ref.derived_from = `LATERAL_OUTPUT:${bound.source.source.alias ?? ref.name}.${ref.name}`;
+				delete withOff._cellOffset;
+				continue;
+			}
+		}
 		const hop = lineageAt(cell.scopes, withOff._cellOffset, schema as never);
 		if (hop && hop.terminal !== "unresolved" && hop.terminal && hop.terminal.every((output) => schemaHasColumn(output.table, output.column))) {
 			ref.physical = hop.terminal.map((o) => ({ table: o.table.join("."), column: o.column }));
@@ -420,7 +487,9 @@ function resolvePhysical(
 				? "锚定失败"
 				: hop.terminal === "unresolved"
 					? "sqllens 判定 unresolved (列不在 schema/绑定失败)"
-					: "followColumn 无来源 (sqllens 对 lateral 子查询别名列盲区)";
+					: Array.isArray(hop.terminal) && !hop.terminal.every((output) => schemaHasColumn(output.table, output.column))
+						? "lineage 已找到候选基表，但当前 schema 快照缺少字段证据"
+						: "followColumn 无来源 (sqllens 对 lateral 子查询别名列盲区)";
 			ref.resolution = "UNRESOLVED";
 			unknownSink.push({
 				node_id: nodeId,
@@ -450,7 +519,7 @@ export interface PlanAdapterOptions {
 const CONTRACT_VERSION = "1.1.2";
 const ADAPTER_VERSION = "0.2.1";
 const EXPRESSION_DEPENDENCY_CONTRACT_VERSION = "1.1.3";
-export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.4";
+export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.10";
 
 export function buildPlanFacts(
 	cell: { scopes: ScopeTree; span: { start: number } },
@@ -763,11 +832,13 @@ export function buildPlanFacts(
 					const sub = relations.find((r) => r.id === subId);
 					const subOut = sub?.output_columns;
 					if (!Array.isArray(subOut) || subOut.length === 0) return null;
-					const project = sub as ProjectRelation;
+					const projectExpressions = sub && Array.isArray((sub as Partial<ProjectRelation>).expressions)
+						? (sub as ProjectRelation).expressions
+						: [];
 					cols.push(
 						...(subOut as string[]).map((name) => ({
 							name,
-							input_columns: project.expressions.find((expression) => expression.output === name)
+							input_columns: projectExpressions.find((expression) => expression.output === name)
 								?.input_columns,
 						})),
 					);
@@ -873,6 +944,16 @@ export function buildPlanFacts(
 		const expression = project?.expressions.find((candidate) => candidate.output.toLowerCase() === name.toLowerCase());
 		if (!expression) return null;
 		const inputs = expression.input_columns ?? [];
+		if (inputs.length === 0 && expression.output_name_status === "STAR_EXPANSION" && scope.sources.size === 1) {
+			const source = [...scope.sources.values()][0];
+			const sourceScope = source?.kind === "subquery"
+				? source.scope
+				: source?.kind === "cte" ? source.ref.scope : undefined;
+			if (sourceScope?.body.kind === "setop") {
+				const derived = resolveSetopOutput(cell, schema, sourceScope, name, resolveDerivedOutput);
+				if (derived) return derived;
+			}
+		}
 		const physical = inputs.flatMap((input) => input.resolution === "PHYSICAL" ? input.physical ?? [] : []);
 		const candidates = inputs.flatMap((input) => input.resolution === "SQL_CANDIDATE" ? input.sql_candidate ?? [] : []);
 		const unresolved = inputs.some((input) =>
@@ -904,16 +985,25 @@ export function buildPlanFacts(
 				}),
 			};
 		}
-		if (physical.length === 0 && inputs.length === 0 && expression.expr_kind === "literal") return { kind: "DERIVED_OUTPUT" };
+		if (physical.length === 0 && candidates.length === 0 && inputs.length > 0 && inputs.every((input) => input.resolution === "DERIVED_OUTPUT")) {
+			return { kind: "DERIVED_OUTPUT" };
+		}
+		// An expression with no column inputs is still a derived output when it
+		// is a function, CASE, cast, or arithmetic expression rather than a
+		// literal. Do not turn a computed constant/system value into a fake
+		// physical-field Unknown at a derived-table or set-op boundary.
+		if (physical.length === 0 && candidates.length === 0 && inputs.length === 0 && expression.expr_kind !== "column") {
+			return { kind: "DERIVED_OUTPUT" };
+		}
 		return null;
 	};
 
 	// ---- 物理解析: 所有条件/谓词/分组列追到基表 ----
 	if (schema) {
-		// Resolve child scopes before their parent projects. Ordinary derived-table
-		// outputs inherit the child project facts, so resolving the parent first
-		// would observe an as-yet-unresolved child expression and lose the binding.
-		for (const r of [...relations].reverse()) {
+		// Resolve child scopes before their parent projects. buildScope appends a
+		// derived scope's relations before its enclosing project, so preserve that
+		// construction order when derived outputs inherit child project facts.
+		for (const r of relations) {
 			const scope = relationScopes.get(r.id);
 			if (!scope) continue;
 			if (r.type === "join") resolvePhysical(cell, schema, scope, r.id, r.condition_columns, unknowns, dialect, resolveDerivedOutput);

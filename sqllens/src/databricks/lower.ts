@@ -1552,15 +1552,29 @@ function lowerWindow(windowSpec: ParserRuleContext): WindowSpec {
 }
 
 function lowerCase(node: ParserRuleContext): Expr {
+	const directExpressions = directChildrenOfRule(node, P.RULE_expression);
+	const operand = node instanceof SimpleCaseContext && directExpressions[0]
+		? lowerExpression(directExpressions[0])
+		: undefined;
 	const whens = collectOfRule(node, P.RULE_whenClause).map((wc) => {
 		const exprs = directChildrenOfRule(wc, P.RULE_expression);
+		const when = exprs[0] ? lowerExpression(exprs[0]) : otherExpr(wc);
 		return {
-			when: exprs[0] ? lowerExpression(exprs[0]) : otherExpr(wc),
+			// A simple CASE is equivalent to comparing the shared operand with
+			// each WHEN value. Preserve that operand in the shared IR so column
+			// collection and lineage do not silently lose the physical input.
+			when: operand
+				? { kind: "binary", op: "=", left: operand, right: when, cst: wc }
+				: when,
 			then: exprs[1] ? lowerExpression(exprs[1]) : otherExpr(wc),
 		};
 	});
-	// The ELSE expression is a direct `expression` child of the case node (not inside a whenClause).
-	const elseCtx = directChildrenOfRule(node, P.RULE_expression).at(-1);
+	// The ELSE expression is a direct `expression` child of the case node. A
+	// simple CASE also has its operand as the first direct expression, so only
+	// treat a second one as ELSE in that form.
+	const elseCtx = node instanceof SimpleCaseContext
+		? directExpressions.length > 1 ? directExpressions.at(-1) : undefined
+		: directExpressions.at(-1);
 	return { kind: "case", whens, elseExpr: elseCtx ? lowerExpression(elseCtx) : undefined, cst: node };
 }
 

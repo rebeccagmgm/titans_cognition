@@ -1,2 +1,0 @@
-{"dataset_id":"dataset:gfhive-test:odata_n_tit.d_ref_otc_option_deal","direction":"WRITE","physical_dataset":"odata_n_tit.d_ref_otc_option_deal","provenance":"PROFILE_DECLARED","resolution_status":"DECLARED","task_id":"78472"}
-{"dataset_id":"dataset:gfhive-test:titans_dm.ref_otc_option_deal","direction":"READ","physical_dataset":"titans_dm.ref_otc_option_deal","provenance":"SQL_PLAN","resolution_status":"RESOLVED","statement_id":"task:78472:statement:0","task_id":"78472"}

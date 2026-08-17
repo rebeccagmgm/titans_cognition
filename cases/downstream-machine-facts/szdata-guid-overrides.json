@@ -1,0 +1,10 @@
+{
+  "schema_version": "szdata-guid-overrides-v1",
+  "overrides": {
+    "pdata_n.ref_cd_cvt_map": {
+      "guid": "f4ae366f-bb60-4c5c-9cca-b928da4f1452",
+      "physical_name": "pdata_n.ref_cd_cvt_map@gfhive",
+      "reason": "User-confirmed Hive resolution for downstream Databricks SQL"
+    }
+  }
+}

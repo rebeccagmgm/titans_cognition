@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 export const MACHINE_FACTS_CONTRACT_VERSION = "1.0.0";
 export const MACHINE_FACTS_STATUS_VERSION = "1.0.0";
-export const MACHINE_FACTS_ADAPTER_VERSION = "1.0.6";
+export const MACHINE_FACTS_ADAPTER_VERSION = "1.0.12";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type OutcomeClass = "UNKNOWN" | "NOT_EVALUABLE" | "NOT_APPLICABLE" | "FAILURE";
@@ -115,7 +115,7 @@ export interface GenericAnalysisProfile {
 	readonly schema_version: string;
 	readonly dialect: string;
 	readonly logical_source_id?: string;
-	readonly schema_evidence?: string;
+	readonly schema_evidence?: string | readonly string[];
 	readonly tasks: readonly GenericTaskProfile[];
 }
 

@@ -121,6 +121,11 @@ describe("resolveColumn", () => {
 		expect(resolveColumnRef(root, ref).kind).toBe("bound");
 	});
 
+	it("binds an unqualified column to a LATERAL VIEW source", () => {
+		const { ref, root } = colOf("SELECT pos FROM t LATERAL VIEW posexplode(arr) y AS pos, val", "pos");
+		expect(resolveColumnRef(root, ref).kind).toBe("bound");
+	});
+
 	it("binds a qualified struct field access (t.addr.city) to the table, not the field", () => {
 		// `t` is the source, `addr` the (struct) column, `city` a field of it. The old flat
 		// split read `addr` as the qualifier and reported unresolved — this asserts the fix.
