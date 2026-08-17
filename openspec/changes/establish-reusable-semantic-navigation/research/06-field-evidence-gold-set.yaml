@@ -1,0 +1,343 @@
+metadata:
+  gold_set_id: field-evidence-preparation-v1-candidate
+  source_anchor_status: SOURCE_ANCHOR_VERIFIED
+  rule_execution_status: RULE_EXECUTION_NOT_PERFORMED
+  scope: TITANS_TRADEFLOW
+  source: output/stage0-panorama-comments-refresh-20260811/panorama/facts
+  source_artifacts:
+    - path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/columns.json
+      sha256: A7B783781E53CCCE713D43AF3A177E8790D8A37C0455A2A4F2E1CE54D490F4B7
+      locator: physical_field maps to schema_name, object_name, and column_name in the column artifact.
+      evidence_role: COLUMN_PHYSICAL_FACT
+    - path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/objects.json
+      sha256: 3B196BF1B02E6EDEAFA0B604406B879DCEB27EDC978D053DEA891D6AD969889C
+      locator: physical_field object segment maps to schema_name and object_name in the object artifact.
+      evidence_role: OBJECT_PHYSICAL_FACT
+  purpose: Source anchors are verified against Stage 0; rule execution is not performed and no rule result is claimed.
+  case_count: 23
+  parser_requirement: Standard YAML parser load must succeed.
+
+cases:
+  - case_id: FEP-001
+    physical_field: TITANS_TRADEFLOW.TRD_CLN_TRADE_DEAL.CTPTY_SHORT_NAME
+    identity_isolation_group: CTPTY_SHORT_NAME_DISTINCT_PHYSICAL_IDS
+    expected_identity_relation: DISTINCT_FROM_FEP_023
+    object_comment_raw: " CLN 认购流水"
+    object_context_normalized: "CLN 认购流水"
+    column_comment_raw: "客户短名"
+    expected_tokens: [CTPTY, SHORT_NAME]
+    expected_protected_phrases: [SHORT_NAME]
+    expected_generic_attributes: [NAME_VARIANT_OBSERVATION]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [position_side=SHORT, formal_reader_concept]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-002
+    physical_field: TITANS_TRADEFLOW.TRD_TRS_ORDER.CTPTY_LONG_NAME
+    object_comment_raw: "交易- 交易指令"
+    object_context_normalized: "交易- 交易指令"
+    column_comment_raw: "交易对手长名 "
+    expected_tokens: [CTPTY, LONG_NAME]
+    expected_protected_phrases: [LONG_NAME]
+    expected_generic_attributes: [NAME_VARIANT_OBSERVATION]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [position_side=LONG, formal_reader_concept]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-003
+    physical_field: TITANS_TRADEFLOW.TRD_PRE_TRADE_VALIDATION_LOG.SHORT_NAME
+    object_comment_raw: "事前交易风险速查记录表"
+    object_context_normalized: "事前交易风险速查记录表"
+    column_comment_raw: "交易对手简称"
+    expected_tokens: [SHORT_NAME]
+    expected_protected_phrases: [SHORT_NAME]
+    expected_generic_attributes: [NAME_VARIANT_OBSERVATION]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [position_side=SHORT]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-004
+    physical_field: TITANS_TRADEFLOW.TRANS_HKFT_ORIGINAL_DEAL.SOURCE_TYPE
+    object_comment_raw: "HKFT原始意向成交流水表"
+    object_context_normalized: "HKFT原始意向成交流水表"
+    column_comment_raw: "委托类别(客户委托、强制召回)"
+    expected_tokens: [SOURCE_TYPE]
+    expected_protected_phrases: [SOURCE_TYPE]
+    expected_generic_attributes: [CLASSIFICATION]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [flow_side=SOURCE, data_source_side]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-005
+    physical_field: TITANS_TRADEFLOW.TRS_FAST_MAPPING_CONFIG.TARGET_CTPTY_ID
+    object_comment_raw: "极速映射方向配置"
+    object_context_normalized: "极速映射方向配置"
+    column_comment_raw: "目标交易对手ID"
+    expected_tokens: [TARGET_CTPTY, ID]
+    expected_protected_phrases: [TARGET_CTPTY]
+    expected_generic_attributes: [IDENTIFIER_SHAPE]
+    expected_technical_class: LINEAGE_METADATA
+    expected_technical_status: CANDIDATE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [flow_side=TARGET, confirmed_counterparty]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-006
+    physical_field: TITANS_TRADEFLOW.TRS_FAST_MAPPING_CONFIG.SOURCE_CTPTY_ID
+    object_comment_raw: "极速映射方向配置"
+    object_context_normalized: "极速映射方向配置"
+    column_comment_raw: "源侧交易对手ID"
+    expected_tokens: [SOURCE_CTPTY, ID]
+    expected_protected_phrases: [SOURCE_CTPTY]
+    expected_generic_attributes: [IDENTIFIER_SHAPE]
+    expected_technical_class: LINEAGE_METADATA
+    expected_technical_status: CANDIDATE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [flow_side=SOURCE, confirmed_counterparty]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-007
+    physical_field: TITANS_TRADEFLOW.REF_FAST_TRS.SHORT_DYNAMIC_NOTIONAL
+    object_comment_raw: "极速互换合约要素表"
+    object_context_normalized: "极速互换合约要素表"
+    column_comment_raw: "空头动态名义本金（结算币种）"
+    expected_tokens: [SHORT_DYNAMIC_NOTIONAL]
+    expected_protected_phrases: [SHORT_DYNAMIC_NOTIONAL]
+    expected_generic_attributes: [MEASURE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [formal_reader_concept]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+    allowed_candidate_qualifier_observations: [position_side=SHORT, variability=DYNAMIC, currency_basis=SETTLEMENT_CURRENCY]
+
+  - case_id: FEP-008
+    physical_field: TITANS_TRADEFLOW.REF_FAST_TRS.LONG_DYNAMIC_NOTIONAL
+    object_comment_raw: "极速互换合约要素表"
+    object_context_normalized: "极速互换合约要素表"
+    column_comment_raw: "多头动态名义本金（结算币种）"
+    expected_tokens: [LONG_DYNAMIC_NOTIONAL]
+    expected_protected_phrases: [LONG_DYNAMIC_NOTIONAL]
+    expected_generic_attributes: [MEASURE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [formal_reader_concept]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+    allowed_candidate_qualifier_observations: [position_side=LONG, variability=DYNAMIC, currency_basis=SETTLEMENT_CURRENCY]
+
+  - case_id: FEP-009
+    physical_field: TITANS_TRADEFLOW.REF_LS_TRS.SHORT_DYNAMIC_NOTIONAL_ORG
+    object_comment_raw: "多空互换合约表"
+    object_context_normalized: "多空互换合约表"
+    column_comment_raw: "多头动态名义本金（结算币种）"
+    expected_tokens: [SHORT_DYNAMIC_NOTIONAL, ORG]
+    expected_protected_phrases: [SHORT_DYNAMIC_NOTIONAL]
+    expected_generic_attributes: [MEASURE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: [NAME_COMMENT_CONFLICT]
+    forbidden_semantic_inferences: [position_side=SHORT, position_side=LONG, currency_basis=ORIGINAL]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-010
+    physical_field: TITANS_TRADEFLOW.REF_LS_TRS.LONG_DYNAMIC_NOTIONAL_ORG
+    object_comment_raw: "多空互换合约表"
+    object_context_normalized: "多空互换合约表"
+    column_comment_raw: "结算币种"
+    expected_tokens: [LONG_DYNAMIC_NOTIONAL, ORG]
+    expected_protected_phrases: [LONG_DYNAMIC_NOTIONAL]
+    expected_generic_attributes: [MEASURE, CURRENCY]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: [NAME_COMMENT_CONFLICT]
+    forbidden_semantic_inferences: [position_side=LONG, formal_notional_concept]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-011
+    physical_field: TITANS_TRADEFLOW.ACCOUNT_AMT_FAILED_EVENT_INFO.AMOUNT
+    object_comment_raw: "账户操作失败处理信息"
+    object_context_normalized: "账户操作失败处理信息"
+    column_comment_raw: "发生金额"
+    expected_tokens: [AMOUNT]
+    expected_protected_phrases: []
+    expected_generic_attributes: [MEASURE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_concept=金额]
+    expected_handoff_status: UNBOUND_ATTRIBUTE_OBSERVATION
+
+  - case_id: FEP-012
+    physical_field: TITANS_TRADEFLOW.HKFT_ORIGINAL_DEAL_202607.STATUS
+    object_comment_raw: "HKFT原始意向成交流水表"
+    object_context_normalized: "HKFT原始意向成交流水表"
+    column_comment_raw: "委托状态"
+    expected_tokens: [STATUS]
+    expected_protected_phrases: []
+    expected_generic_attributes: [BUSINESS_OBJECT_STATE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_concept=状态, confirmed_order]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-013
+    physical_field: TITANS_TRADEFLOW.OTC_OPTION_PARAMETER.TYPE
+    object_comment_raw: "综合业务管理平台-OTC期权参数表"
+    object_context_normalized: "综合业务管理平台-OTC期权参数表"
+    column_comment_raw: "类型 "
+    expected_tokens: [TYPE]
+    expected_protected_phrases: []
+    expected_generic_attributes: [CLASSIFICATION]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_concept=类型]
+    expected_handoff_status: UNBOUND_ATTRIBUTE_OBSERVATION
+
+  - case_id: FEP-014
+    physical_field: TITANS_TRADEFLOW.CURRENT_POS_202300213.CURRENCY
+    object_comment_raw: null
+    object_context_normalized: null
+    column_comment_raw: null
+    expected_tokens: [CURRENCY]
+    expected_protected_phrases: []
+    expected_generic_attributes: [CURRENCY]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: [MISSING_INFORMATION]
+    forbidden_semantic_inferences: [business_concept=币种, currency_basis=SETTLEMENT_CURRENCY]
+    expected_handoff_status: UNBOUND_ATTRIBUTE_OBSERVATION
+
+  - case_id: FEP-015
+    physical_field: TITANS_TRADEFLOW.ADM_LEND_INFO_AUDIT_LOG.ID
+    object_comment_raw: "出借记录操作日志"
+    object_context_normalized: "出借记录操作日志"
+    column_comment_raw: "ID"
+    expected_tokens: [ID]
+    expected_protected_phrases: []
+    expected_generic_attributes: [IDENTIFIER_SHAPE]
+    expected_technical_class: TECHNICAL_IDENTIFIER
+    expected_technical_status: UNRESOLVED
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_concept=ID, confirmed_primary_key]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-016
+    physical_field: TITANS_TRADEFLOW.REF_IRS.TRADE_ID
+    object_comment_raw: "IRS利率互换合约全量要素表"
+    object_context_normalized: "IRS利率互换合约全量要素表"
+    column_comment_raw: "交易编号"
+    expected_tokens: [TRADE_ID]
+    expected_protected_phrases: [TRADE_ID]
+    expected_generic_attributes: [IDENTIFIER_SHAPE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [confirmed_trade_identity]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-017
+    physical_field: TITANS_TRADEFLOW.TRANS_SMT_ATP_T_REPORT.ORDER_ID
+    object_comment_raw: "带有委托编号的成交流水表"
+    object_context_normalized: "带有委托编号的成交流水表"
+    column_comment_raw: null
+    expected_tokens: [ORDER_ID]
+    expected_protected_phrases: [ORDER_ID]
+    expected_generic_attributes: [IDENTIFIER_SHAPE]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: [MISSING_INFORMATION]
+    forbidden_semantic_inferences: [confirmed_order_identity]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-018
+    physical_field: TITANS_TRADEFLOW.TRD_FAST_TRS_HMS_POS_SUM.POSITION_TOTAL_QTY
+    object_comment_raw: "HMS持仓汇总表-日终(来源acp_hms.hms_position_summary)"
+    object_context_normalized: "HMS持仓汇总表-日终(来源acp_hms.hms_position_summary)"
+    column_comment_raw: "全部证券余额"
+    expected_tokens: [POSITION, TOTAL, QTY]
+    expected_protected_phrases: []
+    expected_generic_attributes: [QUANTITY]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: [COMPETING_MEASURE_INTERPRETATION]
+    forbidden_semantic_inferences: [business_concept=数量, business_concept=余额, confirmed_position]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+  - case_id: FEP-019
+    physical_field: TITANS_TRADEFLOW.ADM_UPDATE_AUDIT_LOG.CREATED_BY
+    object_comment_raw: "运营-TRS更新日志 "
+    object_context_normalized: "运营-TRS更新日志"
+    column_comment_raw: "创建人"
+    expected_tokens: [CREATED_BY]
+    expected_protected_phrases: [CREATED_BY]
+    expected_generic_attributes: []
+    expected_technical_class: AUDIT_ACTOR
+    expected_technical_status: CANDIDATE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_party, reader_navigation_member]
+    expected_handoff_status: TECHNICAL_ISOLATED
+
+  - case_id: FEP-020
+    physical_field: TITANS_TRADEFLOW.ACCOUNT_AMT_FAILED_EVENT_INFO.UPDATED_DATETIME
+    object_comment_raw: "账户操作失败处理信息"
+    object_context_normalized: "账户操作失败处理信息"
+    column_comment_raw: "修改时间"
+    expected_tokens: [UPDATED_DATETIME]
+    expected_protected_phrases: [UPDATED_DATETIME]
+    expected_generic_attributes: []
+    expected_technical_class: AUDIT_TIME
+    expected_technical_status: CANDIDATE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_event_time, reader_navigation_member]
+    expected_handoff_status: TECHNICAL_ISOLATED
+
+  - case_id: FEP-021
+    physical_field: TITANS_TRADEFLOW.TRD_OPTION_TRANS_DEAL.PUSH_BATCH_NO
+    object_comment_raw: "Option 原始流水表"
+    object_context_normalized: "Option 原始流水表"
+    column_comment_raw: "推送批次号"
+    expected_tokens: [PUSH_BATCH_NO]
+    expected_protected_phrases: [PUSH_BATCH_NO]
+    expected_generic_attributes: []
+    expected_technical_class: BATCH_METADATA
+    expected_technical_status: CANDIDATE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_batch_concept, reader_navigation_member]
+    expected_handoff_status: TECHNICAL_ISOLATED
+
+  - case_id: FEP-022
+    physical_field: TITANS_TRADEFLOW.REF_OTC_OPTION_DEAL.DATA_SOURCE
+    object_comment_raw: "场外交易-期权交易合同要素表"
+    object_context_normalized: "场外交易-期权交易合同要素表"
+    column_comment_raw: "数据源"
+    expected_tokens: [DATA, SOURCE]
+    expected_protected_phrases: []
+    expected_generic_attributes: [SOURCE_TARGET_TERM]
+    expected_technical_class: INGESTION_METADATA
+    expected_technical_status: CANDIDATE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [business_source_party, flow_side=SOURCE]
+    expected_handoff_status: TECHNICAL_ISOLATED
+
+  - case_id: FEP-023
+    physical_field: TITANS_TRADEFLOW.TRD_LS_DEAL.CTPTY_SHORT_NAME
+    identity_isolation_group: CTPTY_SHORT_NAME_DISTINCT_PHYSICAL_IDS
+    expected_identity_relation: DISTINCT_FROM_FEP_001
+    object_comment_raw: "意向成交流水原始转义表"
+    object_context_normalized: "意向成交流水原始转义表"
+    column_comment_raw: "交易对手短名"
+    expected_tokens: [CTPTY, SHORT_NAME]
+    expected_protected_phrases: [SHORT_NAME]
+    expected_generic_attributes: [NAME_VARIANT_OBSERVATION]
+    expected_technical_class: NOT_APPLICABLE
+    expected_conflicts: []
+    forbidden_semantic_inferences: [position_side=SHORT, same_physical_identity_as_FEP_001]
+    expected_handoff_status: SEMANTIC_LAYER_REQUIRED
+
+coverage_assertions:
+  - SHORT_NAME and LONG_NAME never generate position_side from a naked token.
+  - Explicit Chinese 空头 or 多头 may generate only candidate_qualifier_observation.
+  - SHORT name with 多头 comment is represented as conflict, not resolved.
+  - SOURCE_TYPE and TARGET_CTPTY_ID never generate flow_side directly.
+  - Source-target mapping context is TRADEFLOW-only and remains a technical candidate.
+  - ID STATUS TYPE AMOUNT and CURRENCY remain generic attributes rather than business concepts.
+  - CREATED UPDATED and PUSH_BATCH are isolated from business navigation.
+  - FEP-001 and FEP-023 anchor equal column names to distinct physical identities through their full physical_field values.
+  - Empty comments preserve MISSING_INFORMATION and prohibit confirmation.
+  - No explicit extension-slot field is asserted; extension-slot observation is NOT_OBSERVED in this frozen sample.

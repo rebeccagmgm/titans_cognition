@@ -1,0 +1,27 @@
+{
+  "schema_version": "case-learning-profile-v1",
+  "case_id": "case-learn-86840",
+  "task_id": "86840",
+  "task_role": "T98_OPTION_BRANCH",
+  "target_field": "dyna_nom_prin",
+  "dialect": "databricks",
+  "source_sql": ".evidence-cache/tasksql-86840-20260816122735.txt",
+  "schema_evidence": "output/indicator-processing-graph-rgstcomp-mthend/szdata-schema-evidence.json",
+  "graph_output": "output/indicator-processing-graph-rgstcomp-mthend",
+  "stages": [
+    { "stage_no": 1, "stage_id": "input", "title": "输入与证据" },
+    { "stage_no": 2, "stage_id": "parse", "title": "SQL 解析" },
+    { "stage_no": 3, "stage_id": "ir", "title": "IR / 关系结构" },
+    { "stage_no": 4, "stage_id": "scope", "title": "Scope 作用域" },
+    { "stage_no": 5, "stage_id": "binding", "title": "Binding 列绑定" },
+    { "stage_no": 6, "stage_id": "lineage", "title": "Lineage 字段血缘" },
+    { "stage_no": 7, "stage_id": "plan-facts", "title": "Logical Plan Facts" },
+    { "stage_no": 8, "stage_id": "graph-slice", "title": "Processing Graph 切片" }
+  ],
+  "boundaries": [
+    "只分析任务 86840，不声称完整指标链路",
+    "不执行 SQL，不读取业务数据行",
+    "Binding 和 lineage 是静态证据，不是业务正确性验收",
+    "阶段 8 只保留 86840 相关图切片，不替代消费者任务和完整因果路径"
+  ]
+}

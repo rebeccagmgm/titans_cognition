@@ -1,0 +1,115 @@
+# 链路跳点：从指标表逆向到 TITANS 源系统
+# 每跳记录：任务、SQL 关键变换、输入输出、口径变化、证据
+schemaVersion: indicator-journey-hops-v1
+
+hops:
+  - hopNo: 1
+    layer: 指标层
+    taskId: "162610"
+    taskName: dm_index_n.index_grp1_CompScal_OtcDeriRgstComp_MthEnd
+    targetTable: dm_index_n.index_grp1_CompScal_OtcDeriRgstComp_MthEnd
+    partition: [busi_mon, tag_id]
+    inputs:
+      - pdata_n.T98_OTC_DERI_COMP_SALE_INFO (a)
+      - pdata_n.T05_OTC_COMP_RGST_SAC_EVT (c)
+      - dm_index_n.tag_def (t, tag_partition_id=tagdim101742)
+      - dm_index_n.grp_def (grp, grp_type_code=COMPANY)
+    transformations:
+      - 剔除无需报备: "a LEFT JOIN c ON a.Inr_Seri_No=c.Otc_Comp_Agt_Id WHERE c.Rgst_Stat_Cd='SKIP_REPORT' AND c.Otc_Comp_Agt_Id IS NULL"
+      - 金额: "SUM(a.dyna_nom_prin)"
+      - 时点: "busi_date='${yyyy-MM-dd}'（月末快照）→ busi_mon='${yyyyMM}'"
+      - 分组: "段1: tag999999999（全部）；段2: 按 tag_def.dim_val=a.busi_type（tagdim101742 期权/互换）"
+      - 组合: "grp_val='8888' JOIN grp_def(COMPANY) → 广发证券"
+    caliberChanges:
+      - 统计范围: 全量场外衍生品合约 → 报备合约（剔除无需报备）
+      - 统计对象: 合约 → 组合级（8888 广发证券）
+    evidence: tasksql-162610-20260816122434.txt
+
+  - hopNo: 2
+    layer: 模型层
+    taskId: "86840"
+    taskName: PDATA_N.T98_OTC_DERI_COMP_SALE_INFO_TIT110
+    targetTable: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=01)
+    inputs: [odata_n_tit.d_trd_otc_trade, odata_n_tit.d_ref_otc_option_deal, odata_n_tit.d_ref_book, d_ref_option_deal_structure, d_ref_ctpty_mapping, d_ref_instrument, d_ref_basket_constituent, d_ref_future_properties, d_ref_rmb_midrate, d_margin_plan, d_pos_eod_calc_metrics 等]
+    transformations:
+      - 范围: "d_trd_otc_trade WHERE busi_date 且 key_book_id 不在(10022,10019)，d_ref_book 限 OTC/OTC_HK 部门"
+      - 动态名义本金: "CASE WHEN 业务日期 BETWEEN start_date AND coalesce(Early_Term_Date,end_date) THEN coalesce(deal.Notional,0) ELSE 0 END"
+      - 币种: 未折算（Notional 原值）
+    caliberChanges:
+      - 金额口径: 合约要素 Notional → 动态名义本金（有效期判定）
+      - 币种: 原币（潜在疑点）
+    evidence: tasksql-86840-20260816122735.txt
+
+  - hopNo: 3
+    layer: 模型层
+    taskId: "86841"
+    taskName: PDATA_N.T98_OTC_DERI_COMP_SALE_INFO_TIT111
+    targetTable: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=02)
+    inputs: [odata_n_tit.d_ref_trs, odata_n_tit.d_ks_trs_eod_postion, odata_n_tit.d_ref_book, d_ref_ctpty_mapping, d_ref_instrument 等]
+    transformations:
+      - 动态名义本金: "coalesce(his_dy.Nom_Prin,0) * CASE WHEN RT.CURRENCY='CNY' THEN 1 WHEN RT.BASE_CURRENCY='CNY' THEN RT.BASE_INIT_EXCHANGE_RATE WHEN RT.SETTLEMENT_CURRENCY='CNY' THEN RT.SETTLE_INIT_EXCHANGE_RATE END"
+      - 币种: 折算为人民币
+    caliberChanges:
+      - 金额口径: 历史动态名义本金 × 汇率 → 人民币动态名义本金
+    evidence: tasksql-86841-20260816122832.txt
+
+  - hopNo: 4
+    layer: 模型层
+    taskId: "86842"
+    taskName: PDATA_N.T98_OTC_DERI_COMP_SALE_INFO_TIT112
+    targetTable: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=03)
+    inputs: [odata_n_tit.d_ks_trade_comfirm_info, odata_n_tit.d_ks_trs_eod_postion, odata_n_ois.o_otc_derivative_counterparty, d_ref_instrument]
+    transformations:
+      - 动态名义本金: "a.dynamic_notional（成交确认表直接取值，未折算）"
+    caliberChanges:
+      - 币种: 原币（潜在疑点，与 hop3 不一致）
+    evidence: tasksql-86842-20260816122925.txt
+
+  - hopNo: 5
+    layer: 模型层
+    taskId: "220650"
+    taskName: PDATA_N.T98_OTC_DERI_COMP_SALE_INFO_TIT293
+    targetTable: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=04)
+    inputs: [odata_n_tit.d_trd_otc_trade, odata_n_tit.d_ref_fast_trs, odata_n_tit.d_pos_fast_trs_leg_his_pos, odata_n_tit.d_ref_book, odata_n_tit.d_trd_otc_contr_report, d_ref_ctpty_mapping 等]
+    transformations:
+      - 动态名义本金: "coalesce(np.Dyna_Nom_Prin,'0')（极速互换腿历史持仓，未折算）"
+      - 范围: "d_trd_otc_contr_report 参与（报备登记信息）"
+    caliberChanges:
+      - 币种: 原币/结算币（潜在疑点）
+    evidence: tasksql-220650-20260816122926.txt
+
+  - hopNo: 6
+    layer: 模型层
+    taskId: "106204"
+    taskName: PDATA_N.T05_OTC_COMP_RGST_SAC_EVT_TIT184
+    targetTable: pdata_n.T05_OTC_COMP_RGST_SAC_EVT (src_tbl=ODATA_N_TIT.D_TRD_OTC_CONTR_REPORT)
+    inputs: [odata_n_tit.d_trd_otc_contr_report, odata_n_tit.d_ref_trs, odata_n_tit.d_ref_otc_option_deal]
+    transformations:
+      - 报备状态: "REPORT_STATUS → Rgst_Stat_Cd；INTEROTC_CODE → Sac_Rgst_Cd；REPORT_DATE → Rgst_Date"
+      - 合约类型判定: "LEFT JOIN d_ref_trs/d_ref_otc_option_deal → Otc_Comp_Agt_Modifr（20206=TRS, 20207=OPTION）"
+      - 展期: "HAS_ROLLOVERED → Renw_Flag"
+    caliberChanges:
+      - 无金额变化；引入"报备状态"语义（SKIP_REPORT=无需报备）
+    evidence: tasksql-106204-20260816122833.txt
+
+  - hopNo: 7
+    layer: 贴源层（记录任务ID，未逐字段核对）
+    taskIds:
+      d_trd_otc_contr_report: "78476"
+      d_ref_trs: "78473"
+      d_ref_otc_option_deal: "78472"
+      d_ks_trade_comfirm_info: "79952"
+      d_ks_trs_eod_postion: "79953"
+      d_ref_book: "78348"
+      d_ref_ctpty_mapping: "78346"
+      d_ref_instrument: "78349"
+      d_ref_basket_constituent: "88267"
+      d_ref_future_properties: "105007"
+      d_margin_plan: "78574"
+      d_pos_eod_calc_metrics: "78590"
+      d_pos_trs_leg_his_pos: "78592"
+    sourceSystems:
+      TITANS_DM.TRD_OTC_CONTR_REPORT: 报备合约登记（REPORT_STATUS 含 SKIP_REPORT）
+      TITANS_DM.REF_TRS: 互换合约要素
+      TITANS_DM.REF_OTC_OPTION_DEAL: 期权合约要素（Notional）
+      SETTLE_CFG_GF.V_KS_TRADE_COMFIRM_INFO: 成交确认视图

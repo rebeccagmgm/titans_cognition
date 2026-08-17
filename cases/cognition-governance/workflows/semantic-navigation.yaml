@@ -12,7 +12,6 @@ required_artifact_roles:
   - SEMANTIC_CONFIG
   - FIELD_MANIFEST
   - CONTEXT_MANIFEST
-  - TABLE_MANIFEST
   - SURROGATE_REVIEW
   - STATUS_BASELINE
 mandatory_checkpoints:

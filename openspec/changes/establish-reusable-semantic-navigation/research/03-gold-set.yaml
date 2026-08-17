@@ -1,0 +1,499 @@
+# Gold Set — 字段语义消歧与反例审计
+# 每条记录包含一个物理字段实例的预期语义判定。
+# 状态: CONFIRMED_CANDIDATE / AMBIGUOUS / UNKNOWN
+# 本 Gold Set 仅覆盖 TRADEFLOW Schema，不适用于其他 Schema。
+
+metadata:
+  gold_set_id: 03-gold-set
+  source_run: stage3-tradeflow-context-semantic-map-v1-20260812
+  navigation_run: stage5-tradeflow-semantic-navigation-v1-20260813
+  audit_date: "2026-08-14"
+  auditor_role: 字段语义消歧和反例审计师
+  schema_scope: TITANS_TRADEFLOW
+  total_entries: 27
+
+# ─── 反例组 A: 短名/简称误判为空头 SHORT ───
+
+entries:
+  - id: gold-A01
+    input_field_name: CTPTY_SHORT_NAME
+    chinese_comment: 交易对手短名
+    table_context: TRD_LS_DEAL
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将"短名"中的"短"解释为空头持仓方向（position_side: SHORT）
+      - 禁止将此字段归类为"交易对手短名（空头）"属性表达
+      - 禁止将物理列名中的英文 token SHORT 作为持仓方向的证据
+    evidence_and_reasoning: |
+      中文注释"交易对手短名"明确表达"交易对手的简称属性"。
+      物理列名 CTPTY_SHORT_NAME 中的 SHORT 是"short name"（简称）的英文缩写，
+      不是"short position"（空头持仓）。raw_facets 提取 direction: SHORT 来自
+      列名 token 匹配，与中文注释的业务语义冲突。同表 CTPTY_NAME（不含 SHORT）
+      的 raw_facets 为空，证明系统对不含 SHORT token 的同义字段未误判。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-A02
+    input_field_name: CTPTY_SHORT_NAME
+    chinese_comment: 交易对手简称
+    table_context: TRD_OPTION_MANUAL_TRADE_DEAL
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将"简称"解释为空头持仓方向
+      - 禁止将此字段归类为"交易对手简称（空头）"属性表达
+    evidence_and_reasoning: |
+      中文注释"交易对手简称"与"短名"同义，均指交易对手的缩写名称属性。
+      物理列名 CTPTY_SHORT_NAME 中的 SHORT 导致 direction: SHORT 误提取，
+      经 qualifier_axes 映射为 position_side: SHORT（空头），严重错误。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-A03
+    input_field_name: CTPTY_SHORT_NAME
+    chinese_comment: 客户短名
+    table_context: TRD_CLN_TRADE_DEAL
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将"短名"解释为空头持仓方向
+      - 禁止同时附加 party_role: CLIENT 和 position_side: SHORT
+    evidence_and_reasoning: |
+      中文注释"客户短名"表达"客户的简称属性"。
+      系统同时提取了 party_role: CLIENT（来自"客户"）和 direction: SHORT
+      （来自列名 SHORT token），后者被误映射为 position_side: SHORT。
+      "客户"角色限定正确，但"短名"不是"空头"。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-A04
+    input_field_name: SHORT_NAME
+    chinese_comment: 交易对手简称
+    table_context: TRD_PRE_TRADE_VALIDATION_LOG
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将列名 SHORT_NAME 中的 SHORT 作为持仓方向证据
+    evidence_and_reasoning: |
+      列名 SHORT_NAME 是"简称"的标准英文命名，中文注释"交易对手简称"进一步确认。
+      direction: SHORT 的 raw_fragment 为 "SHORT"（来自列名），但业务语义为简称属性。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-A05
+    input_field_name: CTPTY_SHTNAME
+    chinese_comment: 交易对手短名
+    table_context: TRANS_HKFT_ORIGINAL_DEAL
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将缩写形式 SHTNAME 中的 SHT 解释为任何方向限定
+    evidence_and_reasoning: |
+      物理列名使用缩写形式 CTPTY_SHTNAME（非完整 SHORT），因此 raw_facets 为空。
+      这是正确的——系统未误提取方向限定。作为正例确认：当列名不含完整 SHORT
+      token 时，不发生误判。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 反例组 B: 长名误判为多头 LONG ───
+
+  - id: gold-B01
+    input_field_name: CTPTY_LONG_NAME
+    chinese_comment: 交易对手长名
+    table_context: TRD_TRS_ORDER
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将"长名"中的"长"解释为多头持仓方向（position_side: LONG）
+      - 禁止将此字段归类为"交易对手长名（多头）"属性表达
+      - 禁止将物理列名中的英文 token LONG 作为持仓方向的证据
+    evidence_and_reasoning: |
+      中文注释"交易对手长名"表达"交易对手的全称属性"。
+      物理列名 CTPTY_LONG_NAME 中的 LONG 是"long name"（全称）的英文，
+      不是"long position"（多头持仓）。raw_facets 提取 direction: LONG
+      来自列名 token 匹配，与中文注释冲突。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 正例组 C: 正确的 SHORT/LONG 持仓方向限定 ───
+
+  - id: gold-C01
+    input_field_name: SHORT_DYNAMIC_NOTIONAL
+    chinese_comment: 空头动态名义本金（结算币种）
+    table_context: REF_FAST_TRS
+    expected_base_concept: 名义本金
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:notional
+    forbidden_misinterpretations:
+      - 禁止将此正确分类的空头持仓名义本金降级为"简称"属性
+    evidence_and_reasoning: |
+      中文注释"空头动态名义本金"明确使用"空头"表示持仓方向。
+      物理列名 SHORT_DYNAMIC_NOTIONAL 中的 SHORT 与注释一致。
+      raw_facets: direction: SHORT + currency_basis: SETTLEMENT_CURRENCY
+      + measure_state: DYNAMIC，三重限定完整且自洽。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-C02
+    input_field_name: LONG_DYNAMIC_NOTIONAL
+    chinese_comment: 多头动态名义本金（标的币种）
+    table_context: REF_FAST_TRS
+    expected_base_concept: 名义本金
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:notional
+    forbidden_misinterpretations:
+      - 禁止将此正确分类的多头持仓名义本金降级为"全称"属性
+    evidence_and_reasoning: |
+      中文注释"多头动态名义本金"明确使用"多头"表示持仓方向。
+      物理列名 LONG_DYNAMIC_NOTIONAL 中的 LONG 与注释一致。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-C03
+    input_field_name: SHORT_INNER_VALUE_RATIO
+    chinese_comment: 空头内在价值系数
+    table_context: REF_OTC_CONTR_MARGIN_PARAM
+    expected_base_concept: 多头内在价值系数
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:margin
+    forbidden_misinterpretations:
+      - 禁止将此正确分类的空头系数误判为简称属性
+    evidence_and_reasoning: |
+      中文注释"空头内在价值系数"明确使用"空头"表示持仓方向。
+      物理列名 SHORT_INNER_VALUE_RATIO 与注释一致。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-C04
+    input_field_name: INTEREST_INTERVAL_S
+    chinese_comment: 计息起止（空头）
+    table_context: REF_FAST_TRS
+    expected_base_concept: 计息起止
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:position
+    forbidden_misinterpretations:
+      - 禁止将注释中的"空头"限定误判为非业务语义
+    evidence_and_reasoning: |
+      中文注释"计息起止（空头）"明确标注这是空头持仓方向的计息区间。
+      物理列名后缀 _S 与 _L 对应空头/多头，注释进一步确认。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 反例组 D: SOURCE/TARGET 数据流向与业务主体混淆 ───
+
+  - id: gold-D01
+    input_field_name: TARGET_CTPTY_ID
+    chinese_comment: 目标交易对手
+    table_context: TRS_CONTRACT_MAPPING_CONFIG
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将"目标"解释为数据流方向（flow_side: TARGET）
+      - 禁止将业务映射关系中的"目标交易对手"归类为数据流属性
+    evidence_and_reasoning: |
+      中文注释"目标交易对手"表达"映射关系中的目标方交易对手"，
+      是业务主体角色而非数据流方向。物理列名 TARGET_CTPTY_ID 中的
+      TARGET 被提取为 party_role: TARGET，经 qualifier_axes 映射为
+      flow_side: TARGET，但此处"目标"是业务映射语义。
+    status: AMBIGUOUS
+
+  - id: gold-D02
+    input_field_name: SOURCE_CTPTY_ID
+    chinese_comment: 源侧交易对手ID
+    table_context: TRS_FAST_MAPPING_CONFIG
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将数据流方向的"源侧"限定提升为交易对手实体的业务角色
+    evidence_and_reasoning: |
+      "源侧交易对手ID"中的"源侧"确实是数据流方向，但该字段的核心业务概念
+      是"交易对手"（实体），flow_side: SOURCE 是对该实体在映射中的角色限定，
+      不应改变基础概念。当前系统将 party_role: SOURCE 映射到 flow_side: SOURCE
+      导致维度混淆。
+    status: AMBIGUOUS
+
+# ─── 反例组 E: 泛化词被提升为业务概念 ───
+
+  - id: gold-E01
+    input_field_name: —
+    chinese_comment: 状态
+    table_context: 多表（泛化词概念）
+    expected_base_concept: 无独立业务概念
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries: []
+    forbidden_misinterpretations:
+      - 禁止将"状态"发布为 DOMAIN scope 业务概念
+      - 禁止将字段属性分类词提升为业务对象
+    evidence_and_reasoning: |
+      "状态"在 field-semantics-v2.yaml 的 broad_categories 中定义为"状态"分类
+      （terms: [STATUS, STATE, FLAG, 状态, 标志, 是否]），是字段属性分类而非
+      独立业务实体。但 business_concepts.jsonl 将其发布为 DOMAIN scope 概念。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-E02
+    input_field_name: —
+    chinese_comment: 类型
+    table_context: 多表（泛化词概念）
+    expected_base_concept: 无独立业务概念
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries: []
+    forbidden_misinterpretations:
+      - 禁止将"类型"发布为 DOMAIN scope 业务概念
+    evidence_and_reasoning: |
+      "类型"在 broad_categories 中定义为"代码"分类的一部分
+      （terms 含"类型"），是字段属性分类。发布为 DOMAIN 概念属层次混淆。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-E03
+    input_field_name: —
+    chinese_comment: 金额
+    table_context: 多表（泛化词概念）
+    expected_base_concept: 无独立业务概念
+    expected_hierarchy: 字段族
+    allowed_navigation_entries: []
+    forbidden_misinterpretations:
+      - 禁止将 field_family AMOUNT 提升为 DOMAIN scope 业务概念
+    evidence_and_reasoning: |
+      "金额"在 field_families 中定义为 AMOUNT 族
+      （[金额, AMOUNT, AMT]），是字段族而非业务实体。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-E04
+    input_field_name: —
+    chinese_comment: 简称
+    table_context: 多表（泛化词概念）
+    expected_base_concept: 名称
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries: []
+    forbidden_misinterpretations:
+      - 禁止将"简称"发布为独立于"名称"的 DOMAIN scope 业务概念
+      - 禁止将"简称"与"交易对手"在概念层并列
+    evidence_and_reasoning: |
+      "简称"是"名称"的限定变体（abbreviated name），属于字段属性层。
+      在 context-enriched-field-semantic-map.yaml 的 attribute_types 中，
+      "简称"被正确归类为"名称"属性类型（"*简称"）。但 business_concepts
+      将其发布为 DOMAIN scope 独立概念。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 反例组 F: 列名/注释方向冲突 ───
+
+  - id: gold-F01
+    input_field_name: SHORT_DYNAMIC_NOTIONAL_ORG
+    chinese_comment: 多头动态名义本金（结算币种）
+    table_context: REF_LS_TRS
+    expected_base_concept: 名义本金
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:notional
+    forbidden_misinterpretations:
+      - 禁止在列名 token（SHORT）与注释中文（多头）冲突时，自动归属到空头表达
+      - 禁止将列名 token 的优先级高于中文注释
+    evidence_and_reasoning: |
+      物理列名 SHORT_DYNAMIC_NOTIONAL_ORG 含 SHORT token，但中文注释为
+      "多头动态名义本金（结算币种）"。系统同时提取 direction: SHORT（列名）
+      和 direction: LONG（注释"多头"），形成冲突。最终归属到"空头动态名义本金
+      （结算币种）"表达，但注释优先级应高于列名 token。
+    status: AMBIGUOUS
+
+# ─── 正例组 G: 正确的买方/卖方交易方向 ───
+
+  - id: gold-G01
+    input_field_name: —
+    chinese_comment: 卖方
+    table_context: 多表（5 个实例）
+    expected_base_concept: 交易对手
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将 trade_side: SELL 限定误判为 position_side: SHORT
+    evidence_and_reasoning: |
+      "卖方"作为 trade_side: SELL 是正确的交易方向限定。
+      系统正确地将其映射到 trade_side 维度而非 position_side。
+      买方/卖方是交易方向（trade_side），多头/空头是持仓方向（position_side），
+      二者不应混淆。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-G02
+    input_field_name: —
+    chinese_comment: 买入数量
+    table_context: —
+    expected_base_concept: 数量
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:trade-order
+    forbidden_misinterpretations:
+      - 禁止将"买入"的 trade_side: BUY 限定误判为 position_side: LONG
+    evidence_and_reasoning: |
+      "买入数量"中的"买入"正确映射为 trade_side: BUY。
+      买入是交易行为方向，不等于多头持仓方向。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 反例组 H: 订单与交易概念合并 ───
+
+  - id: gold-H01
+    input_field_name: —
+    chinese_comment: 订单编号
+    table_context: 多表
+    expected_base_concept: 订单
+    expected_hierarchy: 概念
+    allowed_navigation_entries:
+      - reader:trade-order
+    forbidden_misinterpretations:
+      - 禁止将"订单"与"交易"在概念层合并为同一业务对象
+      - 禁止将订单标识属性归类为交易标识属性
+    evidence_and_reasoning: |
+      "订单编号"和"交易内部编号"是两个不同业务对象的标识属性。
+      订单（Order）是委托阶段的产物，交易（Trade/Deal）是成交阶段的产物。
+      导航配置将二者合并到 reader:trade-order 是可接受的导航简化，
+      但概念层应保持分离。
+    status: AMBIGUOUS
+
+# ─── 正例组 I: 正确的名称属性（无 SHORT/LONG token 干扰） ───
+
+  - id: gold-I01
+    input_field_name: CTPTY_NAME
+    chinese_comment: 交易对手短名
+    table_context: REF_GOATS_DEAL
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将不含 SHORT token 的列名误判为任何方向限定
+    evidence_and_reasoning: |
+      物理列名 CTPTY_NAME 不含 SHORT token，因此 raw_facets 为空。
+      这是正确的——系统未误提取方向限定。作为正例确认：
+      当列名不含方向 token 时，不发生误判。
+    status: CONFIRMED_CANDIDATE
+
+  - id: gold-I02
+    input_field_name: COUNTERPARTY
+    chinese_comment: 交易对手短名
+    table_context: TRD_FICC_TRADING_BOND_ORI_DEAL
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将 COUNTERPARTY 列名中的 party_role: COUNTERPARTY 限定提升为独立业务概念
+    evidence_and_reasoning: |
+      物理列名 COUNTERPARTY 被正确提取了 party_role: COUNTERPARTY，
+      但该字段的核心业务概念是"交易对手"（实体），party_role 是限定。
+      系统在此处处理正确——raw_facets 仅含 party_role 限定。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 反例组 J: 事件来源误标为数据流方向 ───
+
+  - id: gold-J01
+    input_field_name: —
+    chinese_comment: 事件来源类型
+    table_context: —
+    expected_base_concept: 事件来源类型
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries: []
+    forbidden_misinterpretations:
+      - 禁止将"来源"解释为数据流方向（flow_side: SOURCE）
+      - 禁止将业务来源语义与数据流 ETL 语义混淆
+    evidence_and_reasoning: |
+      "事件来源类型"中的"来源"指业务事件的来源（如市场事件、公司行为等），
+      不是数据 ETL 的源侧方向。系统将其提取为 flow_side: SOURCE 是错误的。
+    status: AMBIGUOUS
+
+  - id: gold-J02
+    input_field_name: —
+    chinese_comment: 估值汇率来源
+    table_context: —
+    expected_base_concept: 估值汇率
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries: []
+    forbidden_misinterpretations:
+      - 禁止将"来源"解释为数据流方向（flow_side: SOURCE）
+    evidence_and_reasoning: |
+      "估值汇率来源"中的"来源"指汇率数据的业务来源（如万得、彭博），
+      不是数据流的源侧方向。
+    status: AMBIGUOUS
+
+# ─── 正例组 K: 名义本金的正确限定 ───
+
+  - id: gold-K01
+    input_field_name: —
+    chinese_comment: 初始名义本金
+    table_context: 多表
+    expected_base_concept: 名义本金
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:notional
+    forbidden_misinterpretations:
+      - 禁止将 temporal_stage: INITIAL 限定误判为独立业务概念
+      - 禁止将"初始"限定从"名义本金"基础概念中分离
+    evidence_and_reasoning: |
+      "初始名义本金"正确归属到"名义本金"基础概念，temporal_stage: INITIAL
+      是限定条件。系统在此处处理正确——限定条件保留在属性表达层，
+      不提升为独立概念。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 反例组 L: 背靠背交易对手缩写概念层次 ───
+
+  - id: gold-L01
+    input_field_name: —
+    chinese_comment: 背靠背交易对手缩写
+    table_context: —
+    expected_base_concept: 交易对手
+    expected_hierarchy: 字段属性
+    allowed_navigation_entries:
+      - reader:counterparty
+    forbidden_misinterpretations:
+      - 禁止将"背靠背交易对手缩写"发布为独立于"交易对手"的 DOMAIN scope 业务概念
+      - 禁止将"缩写"属性提升为概念层实体
+    evidence_and_reasoning: |
+      "背靠背交易对手缩写"是"交易对手"概念的限定属性表达（背靠背 + 缩写），
+      不是独立业务实体。business_concepts.jsonl 将其发布为独立概念属层次混淆。
+    status: CONFIRMED_CANDIDATE
+
+# ─── 正例组 M: 保证金方向限定 ───
+
+  - id: gold-M01
+    input_field_name: —
+    chinese_comment: 保证金方向
+    table_context: 多表
+    expected_base_concept: 保证金
+    expected_hierarchy: 属性表达
+    allowed_navigation_entries:
+      - reader:margin
+    forbidden_misinterpretations:
+      - 禁止将"保证金方向"中的"方向"误判为 position_side 或 trade_side
+      - 禁止将方向属性提升为独立业务概念
+    evidence_and_reasoning: |
+      "保证金方向"指保证金的收付方向（PAY/RECEIVE），是保证金概念的属性表达。
+      系统应将其归属为 cashflow_direction 限定，不应误判为持仓方向或交易方向。
+    status: UNKNOWN
+
+# ─── 统计汇总 ───
+
+summary:
+  total_entries: 27
+  by_status:
+    CONFIRMED_CANDIDATE: 20
+    AMBIGUOUS: 6
+    UNKNOWN: 1
+  by_error_type:
+    short_name_misclassified_as_short_position: 4
+    long_name_misclassified_as_long_position: 1
+    source_target_flow_side_confusion: 4
+    generic_word_promoted_to_concept: 5
+    column_name_comment_conflict: 1
+    order_trade_concept_merge: 1
+    correct_positive_control: 10
+    other_ambiguous: 1

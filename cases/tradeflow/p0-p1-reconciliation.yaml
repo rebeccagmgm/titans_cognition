@@ -1,0 +1,67 @@
+profile_id: tradeflow-p0-p1-reconciliation-v1-20260814
+run_id: tradeflow-p0-p1-reconciliation-20260814
+schema_name: TITANS_TRADEFLOW
+gate_version: v1
+
+canonical_workspace_root: E:/02_area/股衍数据-数据cookbook/titans-cognition
+canonical_output_root: E:/02_area/股衍数据-数据cookbook/titans-cognition/output
+
+stage1:
+  directory: output/stage1-tradeflow-field-evidence-p0p1-v1-final-20260814
+  manifest_path: output/stage1-tradeflow-field-evidence-p0p1-v1-final-20260814/manifest.json
+  manifest_sha256: 4991cdb185b22ffb776b8d3418031cd89ec09756c60c46b0925d1db72ac0a5ce
+  pack_path: output/stage1-tradeflow-field-evidence-p0p1-v1-final-20260814/field-evidence-packs.jsonl
+  pack_sha256: 0fa37a92d0c2250c78f0589fc625e4404c1316f9703186f9354356b80887c43e
+  expected_physical_objects: 477
+  expected_physical_columns: 13611
+  expected_dispositions:
+    PREPARED: 5512
+    EXCLUDED: 8099
+    DEFERRED: 0
+
+source_artifacts:
+  columns:
+    path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/columns.json
+    sha256: a7b783781e53ccce713d43af3a177e8790d8a37c0455a2a4f2e1ce54d490f4b7
+  objects:
+    path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/objects.json
+    sha256: 3b196bf1b02e6edeafa0b604406b879dceb27edc978d053dea891d6ad969889c
+
+gold_set:
+  path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-gold-set.yaml
+  sha256: db804025bc3d311912fd854cf34abcc83d3ec676ecbe90a3c0fb00d4d04e1f5c
+
+integration_contract:
+  validation_plan_path: openspec/changes/establish-reusable-semantic-navigation/research/07-integrated-validation-plan.yaml
+  contract_path: openspec/changes/establish-reusable-semantic-navigation/research/07-integrated-semantic-navigation-contract.yaml
+  design_path: openspec/changes/establish-reusable-semantic-navigation/research/07-integrated-semantic-navigation-design.md
+  candidate_bundle_sha256: b213b5d97575bbcd5b3dec9cd094f6426eade55081b8f58f4b986ac463a335b7
+
+authorization:
+  review_path: openspec/changes/establish-reusable-semantic-navigation/research/10-independent-preimplementation-review-round2.md
+  review_sha256: c85d4ddda44a2a08c88b6a249d2a3a3d155e646c12e4746102cf9f4c2c5c1805
+  predecessor_status: REWORK_BOUNDED_AUTHORIZATION
+  allowed_steps:
+    - 07c:step:01-provider
+    - 07c:step:02-full-evidence-pack
+    - 07c:step:03-suite-a
+  prohibited_steps:
+    - 07c:step:04-handoff
+    - P2
+    - P3
+    - P4
+    - reader-page
+    - second-schema
+
+result_schema:
+  path: schemas/p0-p1-reconciliation.schema.json
+  schema_id: https://titans-cognition.local/schemas/p0-p1-reconciliation-gate-result-v1.json
+
+controls:
+  model_calls: 0
+  model_token_budget: 0
+  model_token_usage: NOT_USED
+  external_egress: false
+  business_rows_read: false
+  database_writes: 0
+  handoff_executed: false

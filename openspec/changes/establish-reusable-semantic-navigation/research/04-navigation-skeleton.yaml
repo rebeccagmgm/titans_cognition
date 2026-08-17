@@ -1,0 +1,727 @@
+# OTC 衍生品字段语义导航候选骨架
+# =====================================================================
+# 状态: candidate / provisional
+# 本文件是研究草稿，不是已发布业务本体、Canonical 结论或正式配置。
+# 不修改实现代码、当前配置 (cases/tradeflow/reusable-semantic-navigation.yaml)
+# 和正式输出。不提交 Git。
+#
+# 整合来源:
+#   01-domain-skeleton.md          (自顶向下领域骨架)
+#   02-field-corpus-analysis.md    (自底向上字段语料验证)
+#   03-disambiguation-audit.md      (反例审计与消歧)
+#
+# 本骨架应用了 01 报告所有 ACCEPT 差异 (L1-L5, A1-A5, N1-N3, B1-B3)。
+# 记录了 03 报告的已知缺陷作为 known_defects，不修复但标注。
+# =====================================================================
+
+metadata:
+  skeleton_id: otc-derivatives-navigation-v2-candidate
+  status: candidate
+  provisional: true
+  version: v2-candidate
+  proposal_date: "2026-08-14"
+  designer_role: 语义导航整合设计师
+  source_reports:
+    - 01-domain-skeleton.md
+    - 02-field-corpus-analysis.md
+    - 02-field-shapes.json
+    - 03-disambiguation-audit.md
+    - 03-gold-set.yaml
+  boundary_statement: |
+    本骨架是版本化导航候选/配置，不构成已发布业务本体。
+    任何落地概念仍需物理和 Wiki 证据。
+    不设置 business_acceptance=ACCEPTED，不授权规模化。
+  data_egress: |
+    外部调研仅使用公开权威资料术语 (ISDA CDM, FpML)。
+    未提交或上传任何内部字段名、表名、注释和 Wiki 内容。
+
+# ─── 生命周期主线 (六阶段，正交于业务区域) ───
+# 来源: 01 报告第 2 节，ISDA CDM 原始操作 + FpML 核心过程
+# 差异: L1-L5 已应用 (见 01 报告第 7.1 节)
+
+lifecycle_stages:
+  - id: trade-preparation
+    label: 交易准备
+    definition: 一笔 OTC 衍生品交易在法律和合规层面可以发生之前的全部准备工作
+    cdm_primitives: [Workflow 间接支撑]
+    cdm_types: [Party, CreditLimitInformation]
+    fpml_processes: []
+    core_object_terms: [客户, 交易对手, 产品, 标的, 准入, 限额]
+    business_event_terms: []
+    cross_stage_terms: [参数]
+
+  - id: trade-agreement
+    label: 交易达成
+    definition: 从询价/报价到交易执行、簿记和确认的全过程
+    cdm_primitives: [Execution, ContractFormation, Split]
+    cdm_types: [Trade, ExecutionDetails, ContractDetails]
+    fpml_processes: [trading, confirmation, allocation]
+    core_object_terms: [询价, 报价, 订单, 交易, 合约]  # L1: 合约从 cross_stage 移入 core_object
+    business_event_terms: [询价, 报价, 成交, 确认]
+    cross_stage_terms: [合约]  # 合约保留多入口引用
+
+  - id: contract-lifecycle
+    label: 合同存续
+    definition: 合约在法律上形成后、到期或终止前的全部生命周期事件和状态变迁
+    cdm_primitives: [QuantityChange, TermsChange, PartyChange, Exercise, Reset, Split]
+    cdm_types: [TradeState, State, Reset, ClosedStateEnum]
+    fpml_processes: [novation, increase, amendment, termination]
+    core_object_terms: [合约, 合约腿, 经济条款, 名义本金, 持仓]
+    business_event_terms: [建立, 生效, 重置, 行权, 修订, 平仓, 增仓, 更替, 到期, 终止]  # L2: +行权; L3: +更替
+    cross_stage_terms: [估值, 风险, 现金流]  # L4: 结算→现金流
+
+  - id: valuation-risk
+    label: 估值风控
+    definition: 合约存续期间的持续计量、风险度量和履约保障管理
+    cdm_primitives: [Reset 产生估值输入]
+    cdm_types: [State, Reset, Observation]
+    fpml_processes: [valuation]
+    core_object_terms: [估值, 风险敞口, 保证金, 抵押品, 对冲, 价格]
+    business_event_terms: [盯市, 追保]
+    cross_stage_terms: [名义本金, 持仓, 现金流]  # L4: 结算→现金流
+
+  - id: clearing-settlement
+    label: 清算结算
+    definition: 由交易、生命周期事件或估值结果触发的实际资金和证券交割过程
+    cdm_primitives: [Transfer]
+    cdm_types: [TransferState, Transfer]
+    fpml_processes: [cash flow matching]
+    core_object_terms: [现金流, 清算, 交割, 结算结果]
+    business_event_terms: [清算, 交割, 结算, 支付]  # L5: +支付
+    cross_stage_terms: [合约, 持仓]
+
+  - id: operations-governance
+    label: 运营治理
+    definition: 横跨全生命周期的后运营、报表、报送、对账、审计和数据治理活动
+    cdm_primitives: [Workflow 间接支撑]
+    cdm_types: [WorkflowStep, EventTimestamp]
+    fpml_processes: [position reporting]
+    core_object_terms: [对账, 报表, 报送, 参考数据, 数据加工]
+    business_event_terms: [批处理, 对账, 报送]
+    cross_stage_terms: [交易, 合约, 结算]
+
+# ─── 业务区域地图 (十个区域) ───
+# 差异: N1 (改名合同与结构→合约与经济条款), N2/N3 (移除市场执行, ID 改名)
+
+business_areas:
+  - id: participants
+    label: 参与主体
+    definition: OTC 交易涉及的法律实体和自然人及其标识、分类和关系
+    business_area_terms: [客户, 交易对手, 交易员, 机构, 部门, 联系人, client, customer, counterparty, trader, institution, department, party]
+    excludes: [买方, 卖方, 甲方, 乙方]  # → ROLE 属性轴
+
+  - id: products-underlyings
+    label: 产品与标的
+    definition: 衍生品产品类型定义和标的资产信息
+    business_area_terms: [产品, 标的, 品种, 股票, 指数, ETF, 债券, 产品类型, product, underlying, instrument, asset, stock, index]
+    excludes: [合约具体经济条款, 标的行情数据]
+
+  - id: inquiry-order-trade
+    label: 询价、订单与交易
+    definition: 从询价到成交执行的交易前链路及其记录
+    business_area_terms: [询价, 报价, 订单, 委托, 成交, 执行, 交易, inquiry, quote, quotation, order, trade, deal, execution]
+    excludes: [合约经济条款, 交易后清算结算]
+
+  - id: contract-structure  # N1: 原 "合同与结构" 改名
+    label: 合约与经济条款
+    definition: 合约的静态定义和结构化经济条款
+    business_area_terms: [合约, 合同, 经济条款, 方案, 组合, 合约腿, contract, structure, strategy, portfolio, basket, leg, terms]
+    excludes: [交易订单本身, 合约动态生命周期事件]
+
+  - id: lifecycle
+    label: 合同生命周期
+    definition: 合约法律形成后到期满/终止前的全部生命周期事件和状态变迁
+    business_area_terms: [生效, 重置, 行权, 修订, 平仓, 增仓, 更替, 到期, 终止, 提前终止, effective, activation, reset, exercise, amendment, unwind, close, novation, terminate, maturity, lifecycle]
+    excludes: [日终估值, 实际资金转移]
+
+  - id: position-risk
+    label: 持仓与风险
+    definition: 合约存续期间的持仓状态和风险度量
+    business_area_terms: [持仓, 头寸, 敞口, 对冲, 风险, position, holding, exposure, hedge, risk]
+    excludes: [估值金额, 持仓的清算交割]
+    # A4 DEFER: "限额" 暂不加入 area_terms，待第二批验证
+    deferred_terms: [限额, limit]
+
+  - id: valuation-collateral-cashflow
+    label: 估值、履约保障与现金流
+    definition: 合约的估值/盯市方法、履约保障管理和现金流计算
+    business_area_terms: [名义本金, 估值, 市值, 价格, 保证金, 抵押品, 现金流, 权利金, notional, valuation, price, premium, margin, collateral, cashflow]
+    excludes: [重置/fixing 事件本身, 实际资金转移]
+    # A1: 移除 "金额""费用""利息" (MEASURE 属性轴词)
+    removed_attribute_words: [金额, 费用, 利息, amount, fee, interest]
+
+  - id: clearing-settlement  # N3: 原 execution-clearing-settlement 改名
+    label: 清算与结算  # N2: 移除 "市场执行"
+    definition: 由交易、生命周期事件或估值结果触发的实际清算、交割和资金转移
+    business_area_terms: [清算, 结算, 交割, 支付, 现金流, Transfer, settlement, clearing, delivery, payment, cash, transfer]
+    excludes: [交易执行本身, 对账和报表]
+
+  - id: reference-configuration
+    label: 参考数据与配置
+    definition: 支撑 OTC 衍生品业务的市场参考数据、产品参数模板和系统配置
+    business_area_terms: [市场, 交易所, 参考数据, 产品参数, 系统配置, 规则, 映射, 数据字典, market, exchange, reference, parameter, configuration, rule, mapping]
+    excludes: [币种/时间等通用限定维度, 交易/合约/持仓等业务对象]
+    # A2: 移除 "币种" (CURRENCY 属性轴)
+    removed_attribute_words: [币种, currency]
+
+  - id: operations-reporting-data
+    label: 运营、报表与数据加工
+    definition: 横切全生命周期的后运营、报表、报送、对账和数据治理活动
+    business_area_terms: [报表, 对账, 报送, 批处理, 数据加工, 运行状态, report, reconciliation, batch, process, job, status]
+    excludes: [具体业务事件语义, 审计字段]
+    # A3: 移除 "created""updated" (AUDIT 属性轴词)
+    removed_attribute_words: [created, updated, 审计, audit]
+
+# ─── Reader 概念 (导航入口锚点) ───
+# 当前 5 个已验证 reader 保持不变; 3 个候选 reader 为 PROVISIONAL
+
+reader_concepts:
+  # ── 已验证 reader (第一批) ──
+  - id: reader:notional
+    label: 名义本金
+    status: validated
+    source_labels: [名义本金]
+    lifecycle_entries:
+      - {stage_id: contract-lifecycle, role: CORE_OBJECT, seed_reason: 合同经济条款中的基准金额}
+      - {stage_id: valuation-risk, role: CROSS_STAGE, seed_reason: 估值与对账使用的金额基准}
+    business_area: contract-structure
+    corpus_evidence: 55 字段 / 19 表
+    excluded_expression_labels: []
+
+  - id: reader:counterparty
+    label: 交易对手
+    status: validated
+    source_labels:
+      [交易对手, 交易对手主键, 交易对手备注, 交易对手所属部门, 交易对手短名, 交易对手简称,
+       交易对手缩写, 交易对手长名, 原交易对手类型, 原始交易对手, 源侧交易对手, 目标交易对手,
+       背靠背交易对手, 背靠背交易对手缩写]
+    lifecycle_entries:
+      - {stage_id: trade-preparation, role: CORE_OBJECT, seed_reason: 交易参与主体及其标识属性}
+    business_area: participants
+    corpus_evidence: 60 字段 / 60 表 (KEY_CTPTY_ID 58 表)
+    notes: |
+      03 审计: "交易对手短名"等不应在概念层与"交易对手"本体并列。
+      导航层合并可接受，概念层应标记为属性表达。
+
+  - id: reader:trade-order
+    label: 交易 / 订单
+    status: validated
+    source_labels:
+      [交易, 交易ID, 交易内部编号, 交易状态, 交易日期, 交易时间, 订单编号, 交易台订单编号,
+       内部订单编号, 用户子订单, 用户订单, 系统内部订单, 系统算法订单编号, 订单业务主键,
+       订单唯一, 订单日期, 订单时间]
+    excluded_expression_labels: [NET_TOTAL_VALUE_TRADE]
+    lifecycle_entries:
+      - {stage_id: trade-agreement, role: CORE_OBJECT, seed_reason: 订单标识与交易达成记录}
+    business_area: inquiry-order-trade
+    corpus_evidence: KEY_OTC_TRADE_ID 57 表
+    notes: |
+      03 审计 (LOW): 导航层合并交易和订单可接受，但概念层应保持分离。
+      订单 = 委托阶段; 交易 = 成交阶段。
+
+  - id: reader:position
+    label: 持仓
+    status: validated
+    source_labels: [持仓, 持仓数量, 持仓日期, 持仓来源, 持仓类型]
+    lifecycle_entries:
+      - {stage_id: contract-lifecycle, role: CORE_OBJECT, seed_reason: 合同存续期间的持仓身份与属性}
+      - {stage_id: valuation-risk, role: CROSS_STAGE, seed_reason: 风险与估值使用持仓口径}
+    business_area: position-risk
+    corpus_evidence: 4 字段 / 15 表
+    notes: 当前持仓 vs 历史持仓是 STATE 限定 (current vs history)，不是两个概念。
+
+  - id: reader:margin
+    label: 保证金
+    status: validated
+    source_labels:
+      [保证金, 保证金余额, 保证金初始线, 保证金提取线, 保证金提取维持线, 保证金方向, 保证金比例,
+       保证金追保线, 保证金追保维持线, 保证金金额, 保证金预警线, 基础保证金率]
+    lifecycle_entries:
+      - {stage_id: valuation-risk, role: CORE_OBJECT, seed_reason: 履约保障及风险管理度量}
+    business_area: valuation-collateral-cashflow
+    corpus_evidence: 8 字段 / 19 表
+
+  # ── 候选 reader (PROVISIONAL, 第二批评估) ──
+  - id: reader:price
+    label: 价格
+    status: provisional
+    source_labels: [价格, 全价, 净价, 交易全价, 交易净价]
+    lifecycle_entries:
+      - {stage_id: valuation-risk, role: CORE_OBJECT, seed_reason: 估值与盯市的核心计量}
+    business_area: valuation-collateral-cashflow
+    corpus_evidence: 27 字段 / 24 表
+    validation_status: DEFER
+    validation_reason: 净价(CLEAN_PRICE 29表)与全价(FULL_PRICE 12表)未区分语义变体
+    notes: 不自动发布，第二批先区分 CleanPrice vs FullPrice 再决定。
+
+  - id: reader:settlement
+    label: 现金流 / 结算
+    status: provisional
+    source_labels: [现金流, 清算, 结算, 交割, 支付, Transfer]
+    lifecycle_entries:
+      - {stage_id: clearing-settlement, role: CORE_OBJECT, seed_reason: 实际资金和证券交割}
+    business_area: clearing-settlement
+    corpus_evidence: 50 概念 / 50 表，无 reader 匹配
+    validation_status: DEFER
+    validation_reason: 概念碎片化严重，分散在 50 张不同产品线表
+    notes: 不自动发布，第二批先评估聚合可能性。
+
+  - id: reader:lifecycle-event
+    label: 生命周期事件
+    status: provisional
+    source_labels: [事件类型, 事件日期, 事件状态, 事件金额, 重置记录, 行权记录]
+    lifecycle_entries:
+      - {stage_id: contract-lifecycle, role: CORE_OBJECT, seed_reason: 合约存续期事件和状态变迁}
+    business_area: lifecycle
+    corpus_evidence: 事件类型 5 表 / 事件日期 6 表
+    validation_status: DEFER
+    validation_reason: 事件金额是 MEASURE 属性轴而非独立概念，需验证事件类型枚举覆盖
+
+# ─── 属性轴 (正交于业务树，独立投影) ───
+# 来源: 01 报告第 6.2 节，与 CDM 数据模型一致
+# 语料验证: 02 报告 qualifiers.jsonl (32 条限定词)
+
+attribute_axes:
+  - id: IDENTIFIER
+    label: 标识
+    definition: 用于引用和区分业务对象的字段
+    cdm_reference: TradeIdentifier, Identifier
+    typical_modifiers: [交易编号, 合约编号, 持仓编号, 事件编号]
+    corpus_validation: KEY_CTPTY_ID(58表), KEY_OTC_TRADE_ID(57表), KEY_PLAN_ID(39表)
+
+  - id: ROLE
+    label: 角色
+    definition: 字段在交易/合约中承担的参与方角色
+    cdm_reference: PartyRole
+    typical_modifiers: [买方, 卖方, 甲方, 乙方, 源侧, 目标侧]
+    corpus_validation: 'party_role 限定词仅含 CLIENT/INTERNAL (缺口: 缺少 SELLER/BUYER)'
+    known_gap: party_role 缺少 OTC 交易角色 SELLER/BUYER，这些角色以独立概念出现
+
+  - id: STATE
+    label: 状态
+    definition: 业务对象或交易的状态
+    cdm_reference: State, ClosedStateEnum, PositionStatusEnum
+    typical_modifiers: [当前, 历史, 已终止, 已到期, 已行权]
+    corpus_validation: lifecycle_stage 限定词 (POSITION/EXECUTION 等)
+
+  - id: DIRECTION
+    label: 方向
+    definition: 交易方向或持仓方向
+    cdm_reference: 隐含在 quantity direction
+    typical_modifiers: [多头, 空头, 买入, 卖出, 支付, 收取]
+    corpus_validation: position_side(LONG/SHORT), trade_side(BUY/SELL), cashflow_direction(PAY/RECEIVE)
+    known_defect: DEFECT-SHORT-LONG (见 known_defects)
+
+  - id: MEASURE
+    label: 计量
+    definition: 金额、数量、比率等度量值
+    cdm_reference: Price, Quantity, PriceQuantity
+    typical_modifiers: [金额, 数量, 比率, 价格, 余额, 市值]
+    corpus_validation: 605 个概念被判定为 field_attribute
+
+  - id: CURRENCY
+    label: 币种
+    definition: 度量值的计价货币
+    cdm_reference: Currency
+    typical_modifiers: [原币, 本币, 标的币种, 结算币种]
+    corpus_validation: currency_basis 限定词 (4 值全部验证)
+
+  - id: TIME
+    label: 时间
+    definition: 业务时点
+    cdm_reference: date, dateTime, TimeZone
+    typical_modifiers: [交易日期, 成交时间, 到期日, 重置日]
+    corpus_validation: temporal_stage 限定词 (5 值全部验证)
+
+  - id: CONFIGURATION
+    label: 配置
+    definition: 分类、模式、参数、规则
+    cdm_reference: 隐含在 product/contract attributes
+    typical_modifiers: [类型, 类别, 模式, 参数, 规则]
+    corpus_validation: 业务类型(36表), 互换类型(17表) 为候选
+
+  - id: AUDIT
+    label: 审计
+    definition: 数据创建/更新/来源追踪
+    cdm_reference: EventTimestamp, WorkflowStepApproval
+    typical_modifiers: [创建人, 创建时间, 更新人, 更新时间, 数据来源]
+    corpus_validation: CREATED_DATETIME(222), UPDATED_DATETIME(213), CREATED_BY(185), UPDATED_BY(189)
+
+  - id: OPEN
+    label: 开放
+    definition: 语料发现的新属性形态
+    cdm_reference: 不对应，CDM 不预设封闭枚举
+    typical_modifiers: 由语料发现驱动
+    corpus_validation: 状态 OPEN_CANDIDATE
+
+# ─── 限定维度 (正交于业务树，修饰属性表达) ───
+# 来源: 01 报告第 6.3 节 + 02 报告第 1.4 节 (qualifier_dimensions)
+# 语料验证: 14 个限定词维度覆盖方向、时态、币种基准等核心属性轴
+
+qualifier_dimensions:
+  - axis: temporal_stage
+    values: [INITIAL, CURRENT, END, BEFORE_ADJUSTMENT, AFTER_ADJUSTMENT]
+    example: 初始名义本金、当前名义本金
+    corpus_status: validated
+
+  - axis: position_side
+    values: [LONG, SHORT]
+    example: 多头动态名义本金、空头动态名义本金
+    corpus_status: validated_with_defect
+    defect_ref: DEFECT-SHORT-LONG
+
+  - axis: trade_side
+    values: [BUY, SELL]
+    example: 买入成交、卖出成交
+    corpus_status: validated
+
+  - axis: cashflow_direction
+    values: [PAY, RECEIVE]
+    example: 保证金支付方向、保证金收取方向
+    corpus_status: validated
+
+  - axis: currency_basis
+    values: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+    example: 原币金额、本币金额、标的币种金额、结算币种金额
+    corpus_status: validated
+
+  - axis: party_role
+    values: [CLIENT, INTERNAL]  # 语料仅含 2 值
+    example: 客户角色、内部角色
+    corpus_status: partial
+    known_gap: 缺少 COUNTERPARTY, SELLER, BUYER (这些以独立概念出现而非限定词)
+    defect_ref: DEFECT-SOURCE-TARGET
+
+  - axis: lifecycle_stage
+    values: [ORDER, EXECUTION, POSITION, CLEARING, TERMINATION]
+    example: 委托阶段、成交阶段、持仓阶段、清算阶段、终止阶段
+    corpus_status: validated
+
+  - axis: measure_state
+    values: [DYNAMIC, FIXED, AVAILABLE, FROZEN, ACCUMULATED, ESTIMATED]
+    example: 动态名义本金、冻结保证金、累计已提取现金流
+    corpus_status: validated
+
+  - axis: flow_side
+    values: [SOURCE, TARGET]
+    example: 源侧数据流、目标侧数据流
+    corpus_status: validated_with_defect
+    defect_ref: DEFECT-SOURCE-TARGET
+    notes: 仅用于数据流方向，不覆盖业务映射角色 (如"目标交易对手")
+
+  - axis: variability
+    values: [DYNAMIC, FIXED]
+    example: 动态名义本金、固定名义本金
+    corpus_status: validated
+    notes: 与 measure_state 的 DYNAMIC/FIXED 部分重叠
+
+  - axis: aggregation_state
+    values: [ACCUMULATED]
+    example: 累计已提取现金流
+    corpus_status: validated
+
+  - axis: availability_state
+    values: [AVAILABLE, FROZEN]
+    example: 可用保证金、冻结保证金
+    corpus_status: validated
+
+  - axis: estimation_status
+    values: [ESTIMATED]
+    example: 估算金额
+    corpus_status: validated
+
+  - axis: attribute_kind
+    values: [IDENTIFIER]
+    example: 标识属性
+    corpus_status: validated
+
+# ─── 边界规则 ───
+# 来源: 01 报告第 7.4 节 (B1-B3) + 当前配置已有规则
+
+boundary_rules:
+  lifecycle_and_settlement:  # 已有规则
+    primary_area: lifecycle
+    alternate_area: clearing-settlement
+    rule: keep_both_contexts_until_evidence_distinguishes_event_and_result
+
+  participant_and_role:  # 已有规则
+    primary_area: participants
+    role_axis: ROLE
+    rule: do_not_publish_role_as_new_business_subject
+
+  lifecycle_vs_valuation:  # B1: 新增
+    primary_area: lifecycle
+    alternate_area: valuation-collateral-cashflow
+    rule: |
+      重置(reset)属于合同存续的事件触发，估值(valuation)属于估值风控的计量结果。
+      CDM 将 Reset 和 Transfer 分开，但 Reset 本身不是估值。
+      需区分"重置事件"和"估值计算"。
+
+  cashflow_boundary:  # B2: 新增
+    primary_area: valuation-collateral-cashflow
+    alternate_area: clearing-settlement
+    rule: |
+      现金流计算(valuation)与现金流执行(settlement)需区分。
+      CDM 的 Transfer 是执行，不是计算。
+      字段名含"现金流"不能自动归入清算结算——需区分计算侧和执行侧。
+
+  event_vs_measure:  # B3: 新增
+    primary_area: lifecycle
+    rule: |
+      仅因字段名包含"重置""结算""平仓"等生命周期词，不能判定为业务事件。
+      需区分事件记录(是事件)和事件金额/汇率(是 MEASURE 属性轴 + 上下文限定)。
+
+  order_vs_trade:  # 03 审计 LOW
+    rule: |
+      导航层合并"订单"和"交易"到 reader:trade-order 可接受(用户视角)。
+      概念层应保持分离: 订单=委托阶段产物, 交易=成交阶段产物。
+
+  name_token_vs_semantics:  # 03 审计 CRITICAL
+    rule: |
+      物理列名中的英文 token (SHORT/LONG/SOURCE/TARGET) 不能直接作为业务语义。
+      当列名 token 与中文注释冲突时，注释优先。
+      冲突标记为 CONFLICT 而非自动消解。
+
+# ─── 多入口矩阵 (生命周期 × 业务区域) ───
+# 来源: 本提案第 3 节
+# ✓ = 核心入口, ◇ = 跨阶段引用
+
+multi_entry_matrix:
+  participants:
+    trade-preparation: {role: CORE_OBJECT, reason: 准入和限额设置}
+    trade-agreement: {role: CROSS_STAGE, reason: 交易引用}
+    contract-lifecycle: {role: CROSS_STAGE, reason: 引用}
+    valuation-risk: {role: CROSS_STAGE, reason: 对手方敞口计算}
+
+  products-underlyings:
+    trade-preparation: {role: CORE_OBJECT, reason: 产品准入}
+    trade-agreement: {role: CORE_OBJECT, reason: 产品选择}
+    contract-lifecycle: {role: CROSS_STAGE, reason: 条款定义}
+    valuation-risk: {role: CROSS_STAGE, reason: 定价}
+
+  inquiry-order-trade:
+    trade-agreement: {role: CORE_OBJECT, reason: 交易达成}
+    contract-lifecycle: {role: CROSS_STAGE, reason: 被生命周期事件修改}
+    clearing-settlement: {role: CROSS_STAGE, reason: 产生结算义务}
+
+  contract-structure:
+    trade-agreement: {role: CORE_OBJECT, reason: 合约形成}
+    contract-lifecycle: {role: CORE_OBJECT, reason: 条款引用}
+    valuation-risk: {role: CROSS_STAGE, reason: 估值基准}
+
+  lifecycle:
+    contract-lifecycle: {role: CORE_OBJECT, reason: 生命周期事件}
+    valuation-risk: {role: CROSS_STAGE, reason: 重置产生估值输入}
+    clearing-settlement: {role: CROSS_STAGE, reason: 事件触发结算}
+
+  position-risk:
+    contract-lifecycle: {role: CORE_OBJECT, reason: 持仓身份与属性}
+    valuation-risk: {role: CORE_OBJECT, reason: 风险与估值使用持仓口径}
+    clearing-settlement: {role: CROSS_STAGE, reason: 交割量计算}
+
+  valuation-collateral-cashflow:
+    trade-preparation: {role: CROSS_STAGE, reason: 限额参数设置}
+    contract-lifecycle: {role: CROSS_STAGE, reason: 名义本金基准}
+    valuation-risk: {role: CORE_OBJECT, reason: 估值/保证金/现金流计算}
+    clearing-settlement: {role: CROSS_STAGE, reason: 保证金收付}
+
+  clearing-settlement:
+    contract-lifecycle: {role: CROSS_STAGE, reason: 事件触发}
+    valuation-risk: {role: CROSS_STAGE, reason: 估值触发}
+    clearing-settlement: {role: CORE_OBJECT, reason: 实际交割}
+
+  reference-configuration:
+    trade-preparation: {role: CORE_OBJECT, reason: 参数设置}
+    valuation-risk: {role: CROSS_STAGE, reason: 估值输入}
+    operations-governance: {role: CORE_OBJECT, reason: 参考数据维护}
+
+  operations-reporting-data:
+    operations-governance: {role: CORE_OBJECT, reason: 批处理/报表/对账/报送}
+
+# ─── 概念—属性表达—物理字段关系模型 ───
+
+relationship_model:
+  layers:
+    - name: navigation_entry
+      description: 生命周期阶段 × 业务区域 = 多入口矩阵
+    - name: business_concept
+      description: 稳定的业务实体或度量，有唯一身份
+      children: [attribute_expression]
+    - name: attribute_expression
+      description: 概念在物理字段中的具体观察形式
+      modifiers: [attribute_axes, qualifier_dimensions]
+    - name: physical_implementation
+      description: Schema/Table/Column + 证据
+
+  rules:
+    - concept_to_expression: one_to_many
+    - expression_to_field: one_to_many
+    - concept_to_entry: many_to_many
+    - axis_to_concept: many_to_many
+    - qualifier_to_expression: one_to_many
+
+  prohibitions:
+    - 禁止将属性表达提升为独立业务概念
+    - 禁止将字段属性轴词提升为业务概念
+    - 禁止将限定维度值提升为业务概念
+    - 禁止将物理列名 token 直接作为业务语义
+    - 禁止将关系表外键误归类为被引用实体的标识
+
+# ─── 1375 概念覆盖分布 ───
+# 来源: 02 报告第 2 节
+
+concept_coverage:
+  total: 1375
+  distribution:
+    direct_attach: {count: 57, pct: 4.1, batch: first}
+    multi_entry: {count: 0, pct: 0.0, note: 匹配逻辑限制}
+    attribute_expr: {count: 377, pct: 27.4, batch: second}
+    field_attribute: {count: 605, pct: 44.0, batch: third}
+    qualifier_cond: {count: 0, pct: 0.0}
+    tech_audit: {count: 1, pct: 0.1, batch: third}
+    insufficient: {count: 2, pct: 0.1}
+    unexplained: {count: 333, pct: 24.2, batch: subsequent}
+  key_principle: 范围外 ≠ 未知
+
+# ─── 填充批次 ───
+
+filling_batches:
+  - batch: first
+    name: 核心概念验证
+    target: 57 个 direct_attach + reader 种子
+    concepts: [名义本金(7), 交易对手(18), 交易/订单(16), 持仓(5), 保证金(14)]
+    acceptance: 每个概念能从正确入口进入; 属性表达正确归类; 物理字段可追溯
+
+  - batch: second
+    name: 属性表达归拢 + 候选 reader 评估
+    target: 377 attribute_expr + 3 候选 reader + 48 真概念候选
+    acceptance: 候选 reader 经正例/反例验证后才发布; 48 候选逐一裁定
+
+  - batch: third
+    name: 字段属性归拢 + 模糊地带裁定
+    target: 605 field_attribute + 117 模糊地带
+    acceptance: 审计字段归入 AUDIT 轴; 模糊地带逐一裁定
+
+  - batch: subsequent
+    name: 剩余 unexplained + 跨 Schema 验证
+    target: ~168 低覆盖概念 + 第二 Schema 验证 + 03 审计缺陷修复
+    acceptance: 低覆盖概念保留 OPEN_CANDIDATE; 第二 Schema 验证骨架复用性
+
+# ─── 不会自动挂接的内容 ───
+
+no_auto_attach:
+  concepts:
+    - '48 个可能真业务概念候选 (需逐一裁定)'
+    - '117 个模糊地带概念'
+    - '333 unexplained 中除 48 候选外的剩余'
+    - '7 个泛化词概念 (状态/类型/金额/币种/日期/简称/缩写) — 应降级为 ATTRIBUTE'
+    - '7 个简称/缩写类概念 — 交易对手的属性表达'
+    - '客户作为独立业务节点 — 证据不足'
+    - '抵押品作为独立实体 — 语料中无独立概念'
+  attributes:
+    - '新属性轴 (OPEN 候选不自动成为正式属性轴)'
+    - '新限定维度值 (flow_side SOURCE/TARGET 消歧修复前不用于业务映射)'
+    - 'SHORT/LONG 英文 token 作为方向限定 (注释不含空头/多头时不提取)'
+  relations:
+    - 'Wiki 目录结构 (不能单独形成业务层级)'
+    - '关系表外键 (不能误归类为被引用实体的标识)'
+    - '字段名拼接概念 (属于自动归类噪声)'
+    - '英文原样注释 (注释缺失，不自动判断)'
+  cross_schema:
+    - 'TRADEFLOW 验证的深规则 (不自动推广到其他 Schema)'
+    - '第二 Schema 骨架调整 (依赖 D-010 待决事项)'
+
+# ─── 已知缺陷 (来自 03 审计报告) ───
+# 不修复，但标注为后续修订输入
+
+known_defects:
+  - id: DEFECT-SHORT-LONG
+    severity: CRITICAL
+    description: 英文 token SHORT/LONG 在列名中歧义爆炸
+    impact: 18 字段误判 position_side:SHORT, 1 字段误判 LONG
+    root_cause: direction facet 英文 pattern 匹配列名 SHORT/LONG token
+    min_fix_principle: |
+      direction facet 的英文 pattern 仅在中文注释含"空头"/"多头"时匹配，
+      或将 SHORT/LONG 从 direction facet 英文 pattern 中移除，仅保留中文 pattern。
+    gold_set_refs: [gold-A01, gold-A02, gold-A03, gold-A04, gold-B01, gold-C01, gold-C02, gold-C03, gold-C04, gold-F01]
+
+  - id: DEFECT-SOURCE-TARGET
+    severity: MODERATE
+    description: SOURCE/TARGET 数据流向与业务主体角色混淆
+    impact: 15 个属性表达被附加 flow_side 限定
+    root_cause: party_role SOURCE/TARGET 经 qualifier_axes 映射到 flow_side
+    min_fix_principle: |
+      party_role 的 SOURCE/TARGET 与 flow_side 分离为两个独立维度，
+      或在 qualifier_axes 映射中不再将 party_role:SOURCE/TARGET 映射到 flow_side。
+    gold_set_refs: [gold-D01, gold-D02, gold-J01, gold-J02]
+
+  - id: DEFECT-GENERIC-WORD
+    severity: MODERATE
+    description: 泛化词被提升为 DOMAIN scope 业务概念
+    impact: 7 个概念 (状态/类型/金额/币种/日期/简称/缩写)
+    root_cause: 概念提升逻辑未将 field_families/broad_categories 概念降级为 ATTRIBUTE
+    min_fix_principle: |
+      field_families 和 broad_categories 中已定义的泛化词在 context 投影中
+      标记为 ATTRIBUTE 或 TECHNICAL scope，不进入业务概念树。
+    gold_set_refs: [gold-E01, gold-E02, gold-E03, gold-E04, gold-L01]
+
+  - id: DEFECT-NAME-COMMENT-CONFLICT
+    severity: LOW
+    description: 列名 token 与中文注释方向冲突时优先级错误
+    impact: 1 字段 (SHORT_DYNAMIC_NOTIONAL_ORG)
+    root_cause: facet 提取不区分列名来源与注释来源的优先级
+    min_fix_principle: |
+      当列名 token 与注释中文词义冲突时，注释优先；
+      冲突标记为 CONFLICT 状态而非自动归属。
+    gold_set_refs: [gold-F01]
+
+  - id: DEFECT-ORDER-TRADE-MERGE
+    severity: LOW
+    description: 订单与交易在导航层合并
+    impact: reader:trade-order source_labels
+    root_cause: 导航配置将订单和交易概念合并
+    min_fix_principle: 导航层合并可接受，概念层应保持分离
+    gold_set_refs: [gold-H01]
+
+# ─── 扩展策略 ───
+
+extension_policy:
+  unknown_business_area: OPEN_CANDIDATE
+  unknown_attribute_axis: OPEN_CANDIDATE
+  unknown_qualifier: UNKNOWN
+  wiki_only_hierarchy: NOT_PUBLISHED
+  structure_only_relation: INVESTIGATION_LEAD
+  range_outside_not_unknown: true  # 范围外 ≠ 未知
+
+# ─── 发布策略 ───
+
+publication:
+  candidate_layer: true
+  review_decision_layer: true
+  published_projection: true
+  canonical_write_back: false
+  business_rows_read: false
+  business_acceptance: false  # 不设置 ACCEPTED
+  scale_authorization: false  # 不授权规模化
+
+# ─── Gold Set 引用 ───
+# 来源: 03-gold-set.yaml (27 条, 状态 CONFIRMED_CANDIDATE/AMBIGUOUS/UNKNOWN)
+
+gold_set_ref:
+  file: 03-gold-set.yaml
+  total_entries: 27
+  by_status:
+    CONFIRMED_CANDIDATE: 20
+    AMBIGUOUS: 6
+    UNKNOWN: 1
+  by_error_type:
+    short_name_misclassified_as_short_position: 4
+    long_name_misclassified_as_long_position: 1
+    source_target_flow_side_confusion: 4
+    generic_word_promoted_to_concept: 5
+    column_name_comment_conflict: 1
+    order_trade_concept_merge: 1
+    correct_positive_control: 10
+    other_ambiguous: 1
+  schema_scope: TITANS_TRADEFLOW
+  note: Gold Set 中的状态标记为审计师独立判定，需用户确认后才能升级为正式 Gold Set。

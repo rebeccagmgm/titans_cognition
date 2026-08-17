@@ -1,0 +1,1779 @@
+metadata:
+  contract_id: '07c:integrated-semantic-navigation-v1-candidate'
+  artifact_kind: INTEGRATED_RESEARCH_CONTRACT
+  version: v1-candidate-rework-2
+  status: REWORKED_INTEGRATED_RESEARCH_CANDIDATE
+  scope: TITANS_TRADEFLOW
+  proposal_date: '2026-08-14'
+  layer_count: 6
+  core_concept_count: 22
+  supporting_identity_count: 3
+  first_reader_count: 6
+  boundary_statement: >-
+    This is a research integration contract. It is not an implemented Provider,
+    current runtime configuration, Reader publication, independent-review
+    disposition, business acceptance, cross-schema validation, or scale authorization.
+  current_status_preserved:
+    reader_delivery: NOT_DELIVERED
+    business_acceptance: NOT_ACCEPTED
+    scale_authorization: PROHIBITED
+    formal_independent_review: REWORK
+    integrated_independent_review: REWORK
+    integrated_review_ref: research/09-independent-preimplementation-review.md
+    integrated_review_round: 1
+    current_implementation_authorization: STEPS_01_TO_02_ONLY
+  schema_namespace:
+    current_config_schema_ref: reusable-semantic-navigation-v1
+    current_result_schema_refs: [semantic-navigation-reader-v1, semantic-navigation-review-manifest-v1]
+    integrated_target_schema_ref: TO_BE_UNIQUELY_NAMED
+    resolution_status: DEFERRED
+    invariant: Configuration schema identity and result-bundle schema identities must be unique and must not be used interchangeably.
+  declaration_id_keys:
+    - contract_id
+    - contract_set_id
+    - source_id
+    - interface_id
+    - provider_id
+    - handoff_id
+    - layer_set_id
+    - layer_id
+    - topology_id
+    - topology_node_id
+    - area_id
+    - registry_id
+    - concept_id
+    - attribute_id
+    - qualifier_id
+    - mapping_set_id
+    - mapping_id
+    - prohibition_id
+    - reader_id
+    - entry_contract_id
+    - entry_id
+    - evidence_contract_id
+    - evidence_type_id
+    - conflict_contract_id
+    - conflict_type_id
+    - state_id
+    - count_id
+    - projection_contract_id
+    - gate_registry_id
+    - qualifier_candidate_check_set_id
+    - step_id
+    - deferred_registry_id
+    - issue_id
+  declaration_registry:
+    declaration_count: 335
+    unique_declaration_count: 335
+    counting_scope: This contract plus 07-integrated-validation-plan.yaml, traversing only declaration_id_keys from both metadata blocks.
+    duplicate_declaration_effect: STOP
+    unregistered_declaration_effect: STOP
+    reference_or_runtime_identity_keys_not_declarations:
+      - physical_column_id
+      - run_id
+      - candidate_id
+      - decision_id
+      - expression_id
+      - overlay_ref
+      - manifest_source_ref
+      - review_case_ref
+    physical_column_id_rule: physical_column_id is a scoped physical reference/runtime identity and is never counted as a semantic declaration.
+
+source_contracts:
+  contract_set_id: '07c:sources:ab-runtime-governance'
+  agent_a:
+    status: RESEARCH_SKELETON_CANDIDATE
+    sources:
+      - source_id: '07c:source:a-proposal'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/06-reworked-navigation-proposal.md
+        role: BUSINESS_NAVIGATION_RESEARCH
+      - source_id: '07c:source:a-skeleton'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/06-navigation-skeleton.yaml
+        role: BUSINESS_SKELETON_CANDIDATE
+      - source_id: '07c:source:a-gold'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/06-gold-set.yaml
+        role: SEMANTIC_NAVIGATION_REGRESSION_INPUT
+        case_count: 27
+        execution_status: PENDING_RERUN
+  agent_b:
+    status: FIELD_EVIDENCE_PREPARATION_CANDIDATE
+    sources:
+      - source_id: '07c:source:b-proposal'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-preparation-proposal.md
+        role: FIELD_EVIDENCE_RESEARCH
+      - source_id: '07c:source:b-contract'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-preparation-contract.yaml
+        role: FIELD_EVIDENCE_PROVIDER_CANDIDATE
+        implementation_status: REQUIRES_IMPLEMENTATION
+      - source_id: '07c:source:b-gold'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-gold-set.yaml
+        role: FIELD_EVIDENCE_REGRESSION_INPUT
+        case_count: 23
+        source_anchor_status: SOURCE_ANCHOR_VERIFIED
+        rule_execution_status: RULE_EXECUTION_NOT_PERFORMED
+  governance:
+    sources:
+      - source_id: '07c:source:formal-review-05'
+        path: openspec/changes/establish-reusable-semantic-navigation/research/05-independent-review.md
+        role: PREVIOUS_FORMAL_REWORK_BASELINE
+        disposition: REWORK
+      - source_id: '07c:source:current-status-baseline'
+        path: docs/current-status-baseline.md
+        role: DELIVERY_AND_ACCEPTANCE_BASELINE
+  runtime_facts:
+    sources:
+      - source_id: '07c:source:stage0-columns'
+        path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/columns.json
+        sha256: a7b783781e53ccce713d43af3a177e8790d8a37c0455a2a4f2e1ce54d490f4b7
+        role: COLUMN_PHYSICAL_FACT
+        source_locator: column_id
+      - source_id: '07c:source:stage0-objects'
+        path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/objects.json
+        sha256: 3b196bf1b02e6edeafa0b604406b879dceb27edc978d053dea891d6ad969889c
+        role: OBJECT_PHYSICAL_FACT
+        source_locator: asset_id
+      - source_id: '07c:source:stage3-manifest'
+        path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map/manifest.json
+        sha256: 98fb504349b7c0570b4317439f8698c7d9972a5459988c7fbe318b2137f1218b
+        role: CURRENT_CANDIDATE_SEMANTIC_RUNTIME_FACT
+      - source_id: '07c:source:stage5-manifest'
+        path: output/stage5-tradeflow-semantic-navigation-v1-20260813/semantic-navigation-review/manifest.json
+        sha256: 24dfa77c412d587cef3ad834ce9df0986d417b7dec922289fb7e8c5442cb9273
+        role: CURRENT_CANDIDATE_READER_RUNTIME_FACT
+  implementation_review_source_manifest:
+    manifest_version: v1-rework-2
+    algorithm: SHA-256
+    mutation_policy: ALLOWLISTED_HASHED_INPUTS_ONLY
+    entries:
+      - {manifest_source_ref: agent-a-proposal, path: openspec/changes/establish-reusable-semantic-navigation/research/06-reworked-navigation-proposal.md, content_sha256: ed9a95261ee0e6b78eabb281af197e29346388aa19be698abe6dd82cc1e6db83, role: BUSINESS_NAVIGATION_RESEARCH}
+      - {manifest_source_ref: agent-a-skeleton, path: openspec/changes/establish-reusable-semantic-navigation/research/06-navigation-skeleton.yaml, content_sha256: d23479acbcb0f93dc303279bfa99ba72a72d3bfc340f2eec9a65af402740759a, role: BUSINESS_SKELETON_CANDIDATE}
+      - {manifest_source_ref: agent-a-gold, path: openspec/changes/establish-reusable-semantic-navigation/research/06-gold-set.yaml, content_sha256: cbe07e7bc61bfd8f4167fc740805219f92c9122c7f0ab82d7deb8cec42828df0, role: SEMANTIC_NAVIGATION_REGRESSION_INPUT}
+      - {manifest_source_ref: agent-b-proposal, path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-preparation-proposal.md, content_sha256: 7d455c4db7ec8308f6a6ddd55492f6e74bfa6dd2572329f57c2383cfa5ea31c7, role: FIELD_EVIDENCE_RESEARCH}
+      - {manifest_source_ref: agent-b-contract, path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-preparation-contract.yaml, content_sha256: 99efa074b614477a7e32b334e20738fdf247f4861820572b3f3e6d77c53d0d8a, role: FIELD_EVIDENCE_PROVIDER_CANDIDATE}
+      - {manifest_source_ref: agent-b-gold, path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-gold-set.yaml, content_sha256: db804025bc3d311912fd854cf34abcc83d3ec676ecbe90a3c0fb00d4d04e1f5c, role: FIELD_EVIDENCE_REGRESSION_INPUT}
+      - {manifest_source_ref: formal-review-05, path: openspec/changes/establish-reusable-semantic-navigation/research/05-independent-review.md, content_sha256: 79961978fd733ce992760ee27d2200c3bd707e300646d793f9ba012d355a38b4, role: PREVIOUS_FORMAL_REWORK_BASELINE}
+      - {manifest_source_ref: current-status-baseline, path: docs/current-status-baseline.md, content_sha256: 325e19c0d10eacb397c2ff9ddae884a6c14d0b9970d8fd0eb78b784e9311de7a, role: DELIVERY_AND_ACCEPTANCE_BASELINE}
+      - {manifest_source_ref: integrated-review-08, path: openspec/changes/establish-reusable-semantic-navigation/research/08-independent-review-of-integrated-design.md, content_sha256: e346e6294da63824ae96e47f1e84322af1829c804114e208087f5d24d6c04024, role: PREDECESSOR_INTEGRATED_DESIGN_REVIEW}
+      - {manifest_source_ref: preimplementation-review-09, path: openspec/changes/establish-reusable-semantic-navigation/research/09-independent-preimplementation-review.md, content_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c, role: CURRENT_PREIMPLEMENTATION_REWORK_AUTHORIZATION}
+      - {manifest_source_ref: stage0-columns, path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/columns.json, content_sha256: a7b783781e53ccce713d43af3a177e8790d8a37c0455a2a4f2e1ce54d490f4b7, role: COLUMN_PHYSICAL_FACT}
+      - {manifest_source_ref: stage0-objects, path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/objects.json, content_sha256: 3b196bf1b02e6edeafa0b604406b879dceb27edc978d053dea891d6ad969889c, role: OBJECT_PHYSICAL_FACT}
+      - {manifest_source_ref: stage3-manifest, path: output/stage3-tradeflow-context-semantic-map-v1-20260812/context-enriched-field-semantic-map/manifest.json, content_sha256: 98fb504349b7c0570b4317439f8698c7d9972a5459988c7fbe318b2137f1218b, role: CURRENT_CANDIDATE_SEMANTIC_RUNTIME_FACT}
+      - {manifest_source_ref: stage5-manifest, path: output/stage5-tradeflow-semantic-navigation-v1-20260813/semantic-navigation-review/manifest.json, content_sha256: 24dfa77c412d587cef3ad834ce9df0986d417b7dec922289fb7e8c5442cb9273, role: CURRENT_CANDIDATE_READER_RUNTIME_FACT}
+    gate:
+      expected_manifest_source_refs_exact: [agent-a-proposal, agent-a-skeleton, agent-a-gold, agent-b-proposal, agent-b-contract, agent-b-gold, formal-review-05, current-status-baseline, integrated-review-08, preimplementation-review-09, stage0-columns, stage0-objects, stage3-manifest, stage5-manifest]
+      zero_omission_required: true
+      hash_mismatch_or_extra_input_effect: STOP
+    execution_safety_envelope:
+      model_calls: 0
+      model_token_budget: 0
+      model_token_usage: NOT_USED
+      external_egress: false
+      business_rows_read: false
+      database_writes: 0
+      violation_effect: STOP
+    canonical_path_boundary:
+      platform: WINDOWS
+      canonical_workspace_root: 'E:/02_area/股衍数据-数据cookbook/titans-cognition'
+      canonical_output_root: 'E:/02_area/股衍数据-数据cookbook/titans-cognition/output'
+      allowed_read_roots_exact: ['E:/02_area/股衍数据-数据cookbook/titans-cognition']
+      allowed_write_roots_exact: ['E:/02_area/股衍数据-数据cookbook/titans-cognition/output']
+      resolution_order: [resolve_absolute_path, resolve_symlink_and_junction_target, normalize_separators, casefold_for_windows_comparison, enforce_relative_to_allowlisted_root]
+      symlink_or_junction_escape_allowed: false
+      path_escape_effect: STOP
+  reviewed_07_bundle:
+    bundle_version: v1-rework-2
+    predecessor_reviewed_bundle_sha256: 689230de6524a629f1162a9a310e62b536ce8d5529c30b33b533b7a5721f7e71
+    predecessor_review_ref: preimplementation-review-09
+    predecessor_review_content_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c
+    candidate_bundle_sha256: b213b5d97575bbcd5b3dec9cd094f6426eade55081b8f58f4b986ac463a335b7
+    exact_relative_paths_in_order:
+      - openspec/changes/establish-reusable-semantic-navigation/research/07-integrated-semantic-navigation-design.md
+      - openspec/changes/establish-reusable-semantic-navigation/research/07-integrated-semantic-navigation-contract.yaml
+      - openspec/changes/establish-reusable-semantic-navigation/research/07-integrated-validation-plan.yaml
+    stable_hash_algorithm:
+      name: SHA-256
+      file_bytes: EXACT_WORKSPACE_BYTES_NO_LINE_ENDING_NORMALIZATION
+      self_reference_rule: In the contract bytes only, replace the scalar value on the unique candidate_bundle_sha256 line with SELF_EXCLUDED before hashing.
+      per_file_payload: UTF8(relative_path) + NUL + ASCII(normalized_byte_length) + NUL + normalized_file_bytes + NUL
+      bundle_payload: Concatenate per_file_payload values in exact_relative_paths_in_order.
+      path_case: exact listed UTF-8 path bytes
+      duplicate_or_missing_path_effect: STOP
+    review_binding:
+      current_candidate_status: REWORK_PENDING_NEW_PREIMPLEMENTATION_REVIEW
+      reuse_predecessor_review_as_candidate_acceptance: false
+      allowed_steps_from_review_09: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+  reconciliation_invariants:
+    - Agent A and Agent B statuses remain candidates.
+    - The Agent A self-reported independent ACCEPT is not inherited.
+    - Current Stage 3 and Stage 5 artifacts are observed counterevidence, not outputs of this contract.
+    - Source contracts remain unchanged and are referenced rather than copied or rewritten.
+
+canonical_physical_identity:
+  interface_id: '07c:interface:physical-identity'
+  record_name: CanonicalPhysicalIdentity
+  fields:
+    - field_name: run_id
+      type: string
+      required: true
+      role: RUNTIME_SCOPE_NOT_SEMANTIC_DECLARATION
+    - field_name: profile_ref
+      type: string
+      required: true
+      role: PROFILE_SCOPE
+    - field_name: schema_name
+      type: string
+      required: true
+      source: objects.json.schema_name
+    - field_name: object_name
+      type: string
+      required: true
+      source: objects.json.object_name
+    - field_name: object_type
+      type: enum
+      required: true
+      allowed_values: [TABLE, VIEW, MATERIALIZED_VIEW, SYNONYM]
+      source: objects.json.object_type
+    - field_name: physical_column_id
+      type: string
+      required: true
+      source: columns.json.column_id
+      mapping: DETERMINISTIC_RENAME_VALUE_UNCHANGED
+  source_join:
+    locator: asset_id
+    role: JOIN_COLUMNS_TO_OBJECTS_ONLY
+    canonical_identity_member: false
+  prohibited_alias_fields:
+    - Agent A table display name is not a stored identity field.
+    - Agent A duplicate column display name is not a stored identity field.
+    - Agent A duplicate raw-name and raw-comment fields are not emitted.
+    - Stage 0 column_id is not emitted beside physical_column_id.
+  invariants:
+    - One physical_column_id identifies exactly one schema-object-column instance only within one run_id plus profile/schema scope.
+    - Equal raw column names in different objects never merge physical identity.
+    - object_name may be labeled as 表名 in the UI only when object_type is TABLE.
+    - Any source locator remains provenance and cannot become a second identity.
+  uniqueness_scope: [run_id, profile_ref, schema_name, physical_column_id]
+  new_profile_collision_policy:
+    required_before_any_new_profile_run: true
+    scan_key: [profile_ref, schema_name, physical_column_id]
+    preserve_failures: [ENCODING_FAILURE, PARSER_FAILURE, SOURCE_LOCATOR_FAILURE]
+    on_non_unique:
+      action: CREATE_TRACEABLE_SURROGATE_WITHOUT_REWRITING_PHYSICAL_FACT
+      surrogate_components: [asset_id, ordinal_position, source_artifact_ref, source_locator]
+      prohibited_actions: [merge, silent_drop, rename_source_identity, reuse_colliding_identity]
+    gate_effect: STOP_BEFORE_P1_WHEN_COLLISION_IS_UNRESOLVED
+
+canonical_raw_physical_fact:
+  interface_id: '07c:interface:raw-physical-fact'
+  record_name: CanonicalRawPhysicalFact
+  fields:
+    - {field_name: column_name_raw, type: string, required: true, source: columns.json.column_name}
+    - {field_name: column_comment_raw, type: 'string|null', required: true, source: columns.json.column_comment}
+    - {field_name: object_comment_raw, type: 'string|null', required: true, source: objects.json.object_comment}
+    - {field_name: data_type_raw, type: string, required: true, source: columns.json.data_type}
+    - {field_name: nullable, type: boolean, required: true, source: columns.json.nullable_declared}
+    - {field_name: ordinal_position, type: integer, required: true, minimum: 1, source: columns.json.ordinal_position}
+  immutability: BYTE_FOR_BYTE_BEFORE_NORMALIZATION
+  verified_raw_overlays:
+    - overlay_ref: suite-b:A03
+      physical_column_ref: 'testdb:TITANS_TRADEFLOW:TABLE:TRD_CLN_TRADE_DEAL:COLUMN:CTPTY_SHORT_NAME'
+      object_comment_raw: ' CLN 认购流水'
+      whitespace_assertion: ONE_LEADING_U0020
+    - overlay_ref: suite-b:B01
+      physical_column_ref: 'testdb:TITANS_TRADEFLOW:TABLE:TRD_TRS_ORDER:COLUMN:CTPTY_LONG_NAME'
+      column_comment_raw: '交易对手长名 '
+      object_comment_raw: '交易- 交易指令'
+      whitespace_assertion: ONE_TRAILING_U0020_IN_COLUMN_COMMENT_AND_ONE_INTERNAL_U0020_AFTER_HYPHEN
+  normalization_rule: Normalized values may trim or collapse whitespace only in derived comparison forms; raw values and spans remain unchanged.
+  overlay_integrity_contract:
+    concrete_overlay_ref: 07-integrated-validation-plan.yaml#suite_b_semantic_navigation.canonical_expectation_overlays
+    required_fields_per_overlay: [overlay_ref, version, source_suite_ref, source_case_ref, historical_value, canonical_comparison_value, authority, content_sha256]
+    currency_overlay_rule: Historical short values remain visible as historical_value; only the full Canonical enum may appear in canonical_comparison_value.
+    currency_enum_exact: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+    mutation_or_hash_mismatch_effect: STOP_ALL_SUITE_EXECUTION_AND_REESTABLISH_FROZEN_INPUT
+
+field_evidence_provider:
+  provider_id: '07c:provider:field-evidence-preparation'
+  status: REQUIRES_IMPLEMENTATION
+  scope:
+    schema_ref: TITANS_TRADEFLOW
+    physical_object_count: 477
+    physical_column_count: 13611
+    downstream_current_workset_field_count: 5512
+    rule: The downstream workset does not bound Provider input.
+  rule_inventory:
+    unique_rule_id_count: 77
+    generic_rule_count: 69
+    tradeflow_profile_rule_count: 8
+    execution_status: RULE_EXECUTION_NOT_PERFORMED
+  one_record_per: [run_id, profile_ref, schema_name, physical_column_id]
+  output_block_count: 16
+  required_output_blocks:
+    - physical_identity
+    - raw_physical_fact
+    - preparation_disposition
+    - normalized_lexical_form
+    - tokens
+    - protected_phrases
+    - abbreviation_observations
+    - generic_attribute_observations
+    - technical_observations
+    - contextual_evidence
+    - candidate_qualifier_observations
+    - conflicts
+    - unresolved_items
+    - applied_rule_ids
+    - provenance
+    - evidence_status
+  preparation_dispositions:
+    PREPARED: Complete Evidence Pack; eligible for an explicitly named downstream selection.
+    EXCLUDED: Evidence Pack retained, but a named downstream profile excludes it with a reason.
+    DEFERRED: Available facts retained, but a source or encoding gap blocks a complete Pack.
+  evidence_status_values: [SUPPORT, CONTRADICT, CONTEXT_ONLY, NOT_APPLICABLE, NOT_OBSERVED]
+  technical_observation_status_values: [CANDIDATE, UNRESOLVED]
+  technical_class_values:
+    - TECHNICAL_IDENTIFIER
+    - AUDIT_ACTOR
+    - AUDIT_TIME
+    - INGESTION_METADATA
+    - BATCH_METADATA
+    - LINEAGE_METADATA
+    - EXTENSION_SLOT
+    - SOFT_DELETE
+    - VERSION_CONTROL
+    - UNRESOLVED_TECHNICAL
+  provenance:
+    source_artifacts_cardinality: '1..*'
+    current_tradeflow_required_roles: [COLUMN_PHYSICAL_FACT, OBJECT_PHYSICAL_FACT]
+    derived_item_required_fields:
+      - observation_id
+      - physical_column_ref
+      - source_span
+      - rule_refs
+      - source_artifact_refs
+    current_source_artifact_refs:
+      - '07c:source:stage0-columns'
+      - '07c:source:stage0-objects'
+  protected_phrase_arbitration:
+    phase_1: Longest registered outer phrase creates a GUARD span and suppresses naked semantic-sensitive tokens.
+    phase_2: A registered nested phrase may be emitted as OBSERVATION_UNIT with its own span and provenance.
+    examples:
+      - outer_guard: CTPTY_SHORT_NAME
+        nested_observation_unit: SHORT_NAME
+        forbidden_naked_token: SHORT
+      - outer_guard: SOURCE_CTPTY_ID
+        nested_observation_unit: SOURCE_CTPTY
+        forbidden_naked_token: SOURCE
+  test_sentinel_adapter:
+    NOT_APPLICABLE_TECHNICAL_CLASS: Interpret as an empty technical_observations array, not a Provider enum value.
+    TECHNICAL_ISOLATED: Interpret as a semantic handoff route, not a P1 unresolved code.
+    COMPETING_MEASURE_INTERPRETATION: Route to P2 semantic conflict typing; do not add it silently to the P1 rule inventory.
+  invariants:
+    - Raw facts are immutable.
+    - Every physical field produces a retained package or an explicit blocking record.
+    - EXCLUDED never means deleted.
+    - Technical observations remain CANDIDATE or UNRESOLVED until rule execution and validation.
+    - No output block contains a formal business concept, formal qualifier, Reader identity, or publication decision.
+
+semantic_handoff:
+  handoff_id: '07c:handoff:p1-to-p2'
+  status: REQUIRES_IMPLEMENTATION
+  consumes:
+    layer_ref: '07c:layer:p1-prepared-evidence'
+    required_blocks: all_16_provider_blocks
+  join_key: physical_column_id
+  input_cardinality: ONE_EVIDENCE_PACK_PER_PHYSICAL_COLUMN
+  output_cardinality: ZERO_OR_MORE_MUTUALLY_VISIBLE_CANDIDATES_PER_PHYSICAL_COLUMN
+  input_block_routes:
+    physical_identity: IDENTITY_ANCHOR_ONLY
+    raw_physical_fact: EVIDENCE_ONLY
+    preparation_disposition: DOWNSTREAM_ELIGIBILITY_ONLY
+    normalized_lexical_form: EVIDENCE_ONLY
+    tokens: EVIDENCE_ONLY_CANNOT_CREATE_CANDIDATE
+    protected_phrases: RULE_SUPPRESSION_AND_EVIDENCE_ONLY
+    abbreviation_observations: ABBREVIATION_CONTEXT_OR_REQUIRED_NEXT_EVIDENCE_ONLY
+    generic_attribute_observations: ROUTE_BY_EXPLICIT_GENERIC_ATTRIBUTE_MAPPING
+    technical_observations: ROUTE_TO_TECHNICAL_GOVERNANCE
+    contextual_evidence: SUPPORT_COUNTEREVIDENCE_OR_CONTEXT_ONLY
+    candidate_qualifier_observations: ROUTE_BY_EXPLICIT_QUALIFIER_MAPPING
+    conflicts: EMIT_CONFLICT_REFS_AND_CONFLICT_STATUS
+    unresolved_items: EMIT_REQUIRED_NEXT_EVIDENCE_AND_DEFERRED_STATUS
+    applied_rule_ids: TRACEABILITY_ONLY
+    provenance: TRACEABILITY_ONLY
+    evidence_status: EVIDENCE_ROLE_ONLY
+  input_vocabulary:
+    generic_attribute_observation_values:
+      - IDENTIFIER_SHAPE
+      - NUMERIC_SHAPE
+      - CODE_SHAPE
+      - NAME_VARIANT_OBSERVATION
+      - BUSINESS_OBJECT_STATE
+      - CLASSIFICATION
+      - MEASURE
+      - QUANTITY
+      - RATE
+      - TIME
+      - CURRENCY
+      - DESCRIPTION
+      - SOURCE_TARGET_TERM
+    generic_attribute_status_values: [CANDIDATE, UNBOUND_ATTRIBUTE_OBSERVATION]
+    abbreviation_status_values: [CANDIDATE, UNRECOGNIZED_ABBREVIATION]
+    technical_status_values: [CANDIDATE, UNRESOLVED]
+    technical_class_values:
+      - TECHNICAL_IDENTIFIER
+      - AUDIT_ACTOR
+      - AUDIT_TIME
+      - INGESTION_METADATA
+      - BATCH_METADATA
+      - LINEAGE_METADATA
+      - EXTENSION_SLOT
+      - SOFT_DELETE
+      - VERSION_CONTROL
+      - UNRESOLVED_TECHNICAL
+    candidate_qualifier_values:
+      position_side: [LONG, SHORT]
+      trade_side: [BUY, SELL]
+      cashflow_direction: [PAY, RECEIVE]
+      variability: [DYNAMIC, FIXED]
+      currency_basis: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+  required_output:
+    collections:
+      - business_object_anchor_candidates
+      - attribute_expression_ownership_candidates
+      - field_attribute_candidates
+      - qualifier_candidates
+      - counterevidence_refs
+      - conflict_refs
+      - required_next_evidence
+    candidate_record_required_fields:
+      - candidate_id
+      - candidate_version
+      - run_id
+      - profile_ref
+      - schema_name
+      - physical_column_ref
+      - candidate_type
+      - candidate_value_ref
+      - input_observation_refs
+      - context_refs
+      - counterevidence_refs
+      - conflict_refs
+      - rule_refs
+      - required_next_evidence
+      - semantic_resolution_status
+    candidate_identity:
+      deterministic_key: [run_id, profile_ref, schema_name, physical_column_id, candidate_type, candidate_value_ref, evidence_hash, candidate_version]
+      candidate_id_derivation: SHA256_CANONICAL_SERIALIZATION_OF_DETERMINISTIC_KEY
+      idempotency: Equal deterministic keys must produce one content-equivalent candidate version.
+      duplicate_effect: STOP
+    semantic_resolution_status_values: [CANDIDATE, UNBOUND, CONFLICT, DEFERRED, NOT_APPLICABLE]
+    prohibited_semantic_resolution_status_values: [ACCEPTED, REJECTED, PUBLISHED]
+    unregistered_candidate_contract:
+      discovery_layers_open: [P1, P2]
+      formal_registry_layer_closed: P3
+      record_type: UNREGISTERED_CANDIDATE
+      required_fields: [run_id, profile_ref, schema_name, candidate_version, physical_column_ref, raw_span, provenance_refs, observed_value_raw, suggested_dimension, deferred_reason, evidence_hash]
+      semantic_resolution_status: DEFERRED
+      allowed_destination: GOVERNANCE_QUEUE_ONLY
+      p3_eligibility: false
+      reader_eligibility: false
+      new_dimension_counterexample:
+        observed_value_raw: NOVEL_PAYMENT_TIMING_BASIS
+        suggested_dimension: payment_timing_basis
+        expected_result: UNREGISTERED_CANDIDATE
+        prohibited_result: silent_drop_or_dynamic_P3_registry_extension
+  p1_to_p2_candidate_formation_gate:
+    direction: P1_TO_P2_ONLY
+    p3_input_allowed: false
+    formation_phases:
+      - phase: BASE_CANDIDATES
+        consumes: [p1_provider_blocks]
+        outputs: [business_object_anchor_candidates, attribute_expression_ownership_candidates, direct_and_composite_field_attribute_candidates, direct_provider_qualifier_candidates]
+      - phase: COMPOSITE_QUALIFIER_CANDIDATES
+        consumes: [immutable_p1_evidence, immutable_base_candidates]
+        outputs: [semantic_only_qualifier_candidates]
+        p3_input_allowed: false
+    qualifier_candidate_check_set_id: '07c:checkset:p1-to-p2-qualifier-candidate'
+    qualifier_candidate_source_modes:
+      DIRECT_PROVIDER_OBSERVATION:
+        dimensions: [position_side, trade_side, cashflow_direction, variability, currency_basis]
+        source_block: candidate_qualifier_observations
+      COMPOSITE_SEMANTIC_EVIDENCE:
+        dimensions: [observation_time_role, party_relationship_role, aggregation_state, availability_condition, estimation_status, measure_basis, flow_side]
+        source_blocks: [generic_attribute_observations, abbreviation_observations, raw_physical_fact, contextual_evidence, provenance, conflicts]
+        requires: [declared_composite_mapping, immutable_base_candidate, explicit_non_token_evidence]
+    qualifier_candidate_checks:
+      - source_mode_is_declared
+      - source_dimension_and_value_are_in_canonical_qualifier_registry
+      - candidate_route_is_declared
+      - object_applicability_candidate_is_bounded
+      - independent_comment_or_context_is_cited
+      - qualifier_dimension_is_compatible_with_candidate_expression
+    generic_attribute_status_routes:
+      CANDIDATE: APPLY_THE_EXPLICIT_ATTRIBUTE_VALUE_MAPPING
+      UNBOUND_ATTRIBUTE_OBSERVATION: EMIT_REQUIRED_NEXT_EVIDENCE_WITH_UNBOUND_STATUS
+    open_conflict_behavior: Emit all interpretations with semantic_resolution_status CONFLICT and retain conflict_refs; do not emit a promotable qualifier candidate.
+    missing_object_applicability_behavior: Emit required_next_evidence and an UNBOUND assessment; do not emit a promotable qualifier candidate.
+    abbreviation_candidate_behavior: A resolved expansion may corroborate another candidate as context only; it cannot create an object, attribute, qualifier, or Reader candidate by itself.
+    unrecognized_abbreviation_behavior: Emit required_next_evidence with semantic_resolution_status DEFERRED; inventing an expansion is prohibited.
+  p2_to_p3_semantic_acceptance_gate:
+    direction: P2_TO_P3_ONLY
+    consumes: [p2_candidate_record, locatable_evidence, applicable_gold_expectation, semantic_adjudication]
+    formal_qualifier_acceptance_checks:
+      - p2_qualifier_candidate_exists
+      - object_applicability_is_confirmed
+      - independent_comment_or_context_is_confirmed
+      - no_blocking_conflict_remains_open
+      - qualifier_dimension_compatibility_is_confirmed
+      - applicable_gold_expectation_is_recorded_without_treating_NOT_EVALUABLE_as_success
+      - explicit_p3_semantic_decision_is_recorded
+    outputs: [accepted_qualifier_decision, rejected_qualifier_decision, deferred_qualifier_decision]
+    feedback_to_p2_allowed: false
+    rule: P3 may accept, reject, or defer the immutable P2 candidate; it never rewrites or regenerates that candidate.
+  record_grain_and_idempotency:
+    candidate:
+      identity_field: candidate_id
+      version_grain: [run_id, profile_ref, schema_name, candidate_id, candidate_version]
+      active_uniqueness: ONE_ACTIVE_VERSION_PER_CANDIDATE_GRAIN
+    decision:
+      identity_field: decision_id
+      deterministic_key: [run_id, profile_ref, schema_name, candidate_id, candidate_version, decision_version]
+      cardinality: EXACTLY_ONE_P3_DECISION_PER_CANDIDATE_VERSION_WHEN_ADJUDICATED
+      active_uniqueness: ONE_ACTIVE_DECISION_PER_CANDIDATE_VERSION
+    reader_expression:
+      identity_field: expression_id
+      deterministic_key: [run_id, profile_ref, schema_name, reader_ref, candidate_id, candidate_version, expression_key, expression_version]
+      cardinality: EXACTLY_ONE_EXPRESSION_PER_READER_EXPRESSION_KEY_AND_CANDIDATE_VERSION
+      active_uniqueness: ONE_ACTIVE_EXPRESSION_PER_GRAIN
+    reader_candidate:
+      identity_field: reader_candidate_id
+      deterministic_key: [run_id, profile_ref, schema_name, reader_ref, candidate_version, reader_candidate_version]
+      cardinality: EXACTLY_ONE_READER_CANDIDATE_PER_SCOPED_VERSION
+      active_uniqueness: ONE_ACTIVE_READER_CANDIDATE_PER_GRAIN
+    active_state:
+      deterministic_key: [run_id, profile_ref, schema_name, record_type, record_identity, candidate_version]
+      cardinality: ONE_ACTIVE_STATE_PER_COMPLETE_SCOPED_GRAIN
+    rerun_rule: Identical frozen inputs and rule versions produce identical IDs and content hashes.
+    duplicate_or_multiple_active_effect: STOP
+  technical_routing:
+    pre_validation_route: TECHNICAL_CANDIDATE
+    business_reader_eligibility_from_technical_observation_alone: false
+    after_rule_and_suite_a: ELIGIBLE_FOR_SEPARATE_TECHNICAL_PROJECTION
+    possible_dual_relevance: A separate P2 business candidate requires independent business evidence and cannot be derived from technical classification.
+    raw_retention: REQUIRED
+  prohibitions:
+    - No P1 observation becomes a P3 decision directly.
+    - No candidate overwrites physical or prepared evidence.
+    - No conflict or unresolved item is dropped because another interpretation is supported.
+    - No token, table name, Wiki path, score, or sibling-field vote creates a concept, formal qualifier, or Reader publication.
+
+semantic_layers:
+  layer_set_id: '07c:layers:p0-p5'
+  layers:
+    - layer_id: '07c:layer:p0-physical-fact'
+      ordinal: P0
+      name: Physical Fact
+      consumes: [frozen_stage0_objects, frozen_stage0_columns, independent_artifact_hashes]
+      outputs: [canonical_physical_identity, canonical_raw_physical_fact, source_locators]
+      prohibits: [business_rows, normalization_overwrite, semantic_inference, cross_schema_generalization]
+    - layer_id: '07c:layer:p1-prepared-evidence'
+      ordinal: P1
+      name: Prepared Evidence
+      consumes: ['07c:layer:p0-physical-fact', versioned_generic_rules, tradeflow_profile_rules]
+      outputs: [lexical_forms, tokens, protected_phrases, observations, contexts, conflicts, unresolved_items, provenance]
+      prohibits: [formal_concepts, formal_field_attributes, formal_qualifiers, readers, silent_deletion]
+    - layer_id: '07c:layer:p2-semantic-adjudication-candidate'
+      ordinal: P2
+      name: Semantic Adjudication Candidate
+      consumes: ['07c:layer:p1-prepared-evidence', business_skeleton_candidate, gold_constraints]
+      outputs: [object_anchor_candidates, expression_ownership_candidates, field_attribute_candidates, qualifier_candidates, counterevidence, next_evidence]
+      prohibits: [candidate_as_decision, token_as_concept, table_vote, reader_publication]
+    - layer_id: '07c:layer:p3-semantic-decision'
+      ordinal: P3
+      name: Semantic Decision
+      consumes: ['07c:layer:p2-semantic-adjudication-candidate', locatable_evidence, semantic_adjudication]
+      outputs: [accepted_or_rejected_concept_identity, accepted_expression, accepted_field_attribute, accepted_qualifier, deferred_decision]
+      prohibits: [evidence_rewrite, score_as_probability, inherited_expression_support]
+    - layer_id: '07c:layer:p4-reader-candidate'
+      ordinal: P4
+      name: Reader Candidate
+      consumes: ['07c:layer:p3-semantic-decision', visible_blockers]
+      outputs: [unique_reader_identity, entry_refs, expression_set, physical_implementations, expression_support, publication_blockers]
+      prohibits: [combined_order_trade_identity, duplicated_reader_identity, configuration_seed_as_evidence, published_claim]
+    - layer_id: '07c:layer:p5-reader-projection'
+      ordinal: P5
+      name: Reader Projection
+      consumes: ['07c:layer:p4-reader-candidate', p0_to_p3_refs, frozen_projection_bundle]
+      outputs: [single_page_navigation, expression_matrix, physical_details, evidence_and_conflicts, governance_queue, count_denominators]
+      prohibits: [independent_source_of_truth, canonical_write_back, hidden_unknowns, business_acceptance_claim]
+
+business_topology:
+  topology_id: '07c:topology:otc-navigation-compressed'
+  universal_sequence: false
+  page_level_group_count: 4
+  groups:
+    - group_kind: JOURNEY_ENTRIES
+      label_zh: 旅程入口
+      nodes:
+        - {topology_node_id: 'journey:trade-preparation', label_zh: 交易准备}
+        - {topology_node_id: 'journey:inquiry-quote-order', label_zh: 询价、报价与订单}
+        - {topology_node_id: 'journey:execution-trade-formation', label_zh: 执行与交易形成}
+        - {topology_node_id: 'journey:contract-formation', label_zh: 合同形成}
+    - group_kind: CONTRACT_EXISTENCE_DOMAIN
+      label_zh: 合同存续域
+      nodes:
+        - topology_node_id: 'envelope:contract-existence'
+          label_zh: 合同存续域
+          serial_stage: false
+    - group_kind: REPEATING_BUSINESS_ACTIVITIES
+      label_zh: 可重复业务活动
+      cardinality: ZERO_OR_MANY
+      nodes:
+        - {topology_node_id: 'activity:lifecycle-events', label_zh: 生命周期事件}
+        - {topology_node_id: 'activity:valuation-risk', label_zh: 估值与风险}
+        - {topology_node_id: 'activity:margin-collateral', label_zh: 保证金与抵押品}
+        - topology_node_id: 'activity:obligation-cashflow-group'
+          label_zh: 义务与现金流计算
+          grouping_only: true
+          distinct_concept_refs: ['concept:settlement-obligation', 'concept:cash-flow']
+          concept_identity_merge: false
+        - {topology_node_id: 'activity:clearing', label_zh: 清算}
+        - {topology_node_id: 'activity:payment-transfer-delivery', label_zh: 支付、转移与交割}
+        - {topology_node_id: 'activity:settlement-result', label_zh: 结算结果}
+    - group_kind: CROSSCUTTING_SUPPORT
+      label_zh: 横切支撑面
+      nodes:
+        - {topology_node_id: 'crosscut:market-reference-business-configuration', label_zh: 市场参考与业务配置}
+        - {topology_node_id: 'crosscut:operations-reconciliation-reporting', label_zh: 运营、对账与报表}
+        - {topology_node_id: 'crosscut:technical-processing-audit', label_zh: 技术加工与审计}
+  relationship_rules:
+    - Journey edges are candidate precedes-or-produces relations, not a universal lifecycle.
+    - Repeating activities may branch, overlap, repeat, or re-enter while the contract exists.
+    - Operations, reconciliation, reporting, technical processing, and audit remain crosscutting.
+    - Multiple entry paths resolve to one Reader identity.
+    - Obligation plus cash-flow is a page grouping only; obligation, cash-flow schedule/item, fulfillment event, and settlement result remain separate identities.
+
+business_areas:
+  - area_id: 'area:parties-relations'
+    label_zh: 参与主体与关系
+    projection_group: JOURNEY_ENTRIES
+    reader_refs: ['reader:counterparty']
+    boundary: Customer and Counterparty are relations and are not synonyms by default.
+  - area_id: 'area:products-underlyings'
+    label_zh: 产品与标的
+    projection_group: JOURNEY_ENTRIES
+    reader_refs: []
+    boundary: Product, Underlying, and Trade Contract remain distinct.
+  - area_id: 'area:inquiry-quote-order-trade'
+    label_zh: 询价、报价、订单与交易
+    projection_group: JOURNEY_ENTRIES
+    reader_refs: ['reader:order', 'reader:trade']
+    boundary: Order and Trade have separate identities.
+  - area_id: 'area:agreements-contracts-terms'
+    label_zh: 协议、合同与条款
+    projection_group: CONTRACT_EXISTENCE_DOMAIN
+    reader_refs: ['reader:notional']
+    boundary: Agreement, Trade Contract, Contract Leg, and Economic Terms remain layered candidates.
+  - area_id: 'area:lifecycle-events'
+    label_zh: 生命周期事件
+    projection_group: REPEATING_BUSINESS_ACTIVITIES
+    reader_refs: []
+    boundary: Event is not a time qualifier or technical task state.
+  - area_id: 'area:positions-risk'
+    label_zh: 持仓、头寸与风险
+    projection_group: REPEATING_BUSINESS_ACTIVITIES
+    reader_refs: ['reader:position']
+    boundary: Position is not Position View or Risk Exposure by default.
+  - area_id: 'area:valuation'
+    label_zh: 估值
+    projection_group: REPEATING_BUSINESS_ACTIVITIES
+    reader_refs: []
+    boundary: Valuation process is not its input, output, Margin, or Risk Exposure.
+  - area_id: 'area:margin-collateral'
+    label_zh: 保证金与抵押品
+    projection_group: REPEATING_BUSINESS_ACTIVITIES
+    reader_refs: ['reader:margin']
+    boundary: Margin requirement or measure is not Collateral asset.
+  - area_id: 'area:cashflow-clearing-settlement'
+    label_zh: 现金流、清算与结算
+    projection_group: REPEATING_BUSINESS_ACTIVITIES
+    reader_refs: []
+    boundary: Cash Flow, obligation, clearing, fulfillment, delivery, and result remain distinct.
+  - area_id: 'area:market-reference'
+    label_zh: 市场参考
+    projection_group: CROSSCUTTING_SUPPORT
+    reader_refs: []
+    boundary: Reference source is not data flow side or valuation result.
+  - area_id: 'area:business-configuration'
+    label_zh: 业务配置与控制
+    projection_group: CROSSCUTTING_SUPPORT
+    reader_refs: []
+    boundary: Generic type or flag and technical configuration are excluded.
+  - area_id: 'area:operations-reconciliation-reporting'
+    label_zh: 运营、对账与报表
+    projection_group: CROSSCUTTING_SUPPORT
+    reader_refs: []
+    boundary: Crosscutting operations cannot vote a business identity into existence.
+  - area_id: 'area:technical-processing-audit'
+    label_zh: 技术加工与审计
+    projection_group: CROSSCUTTING_SUPPORT
+    reader_refs: []
+    boundary: Technical candidates remain visible and do not enter business Readers automatically.
+
+concept_registry:
+  registry_id: '07c:registry:business-concepts'
+  core_count: 22
+  supporting_count_not_in_core: 3
+  concepts:
+    - concept_id: 'concept:customer'
+      label_zh: 客户
+      type: RELATION
+      stable_definition: 与本机构存在服务、准入或账户关系的 Party-in-relation。
+      excludes: [Counterparty by default, Party master identity]
+      status: DEFERRED
+    - concept_id: 'concept:counterparty'
+      label_zh: 交易对手
+      type: RELATION
+      stable_definition: 在协议、订单或交易关系中承担对手方关系的 Party-in-relation。
+      excludes: [Customer by default, SOURCE or TARGET, SHORT or LONG name form]
+      status: REWORKED_CANDIDATE
+    - concept_id: 'concept:product'
+      label_zh: 产品
+      type: OBJECT
+      stable_definition: 定义可交易经济结构和规则的产品类别或实例。
+      excludes: [Trade Contract, Underlying, generic type]
+      status: DEFERRED
+    - concept_id: 'concept:underlying'
+      label_zh: 标的
+      type: OBJECT
+      stable_definition: 决定衍生价值或交付内容的资产、指数或参考项。
+      excludes: [Product, market value, Valuation result]
+      status: DEFERRED
+    - concept_id: 'concept:inquiry'
+      label_zh: 询价
+      type: EVENT
+      stable_definition: 发起获取可交易条件的信息请求。
+      excludes: [Quote, Order, Trade]
+      status: DEFERRED
+    - concept_id: 'concept:quote'
+      label_zh: 报价
+      type: OBJECT
+      stable_definition: 针对询价或交易意图给出的价格和条款提议。
+      excludes: [Order, Trade, Valuation]
+      status: DEFERRED
+    - concept_id: 'concept:order'
+      label_zh: 订单
+      type: OBJECT
+      stable_definition: 指示拟执行交易的意图或指令，可撤销、拒绝或未成交。
+      excludes: [Trade, Trade Contract]
+      status: REWORKED_CANDIDATE
+    - concept_id: 'concept:trade'
+      label_zh: 交易
+      type: OBJECT
+      stable_definition: 已经执行并形成经济事实的交易记录。
+      excludes: [Order, Trade Contract]
+      status: REWORKED_CANDIDATE
+    - concept_id: 'concept:trade-contract'
+      label_zh: 合约
+      type: OBJECT
+      stable_definition: 合同形成后承载一笔或一组交易权利义务的合同身份。
+      excludes: [Agreement, Trade, Economic Terms collection]
+      status: DEFERRED
+    - concept_id: 'concept:contract-leg'
+      label_zh: 合约腿
+      type: OBJECT
+      stable_definition: 合约中具有独立付款、标的或计算安排的组成部分。
+      excludes: [Notional, leg identifier as concept]
+      status: DEFERRED
+    - concept_id: 'concept:economic-terms'
+      label_zh: 经济条款
+      type: CONTROL
+      stable_definition: 约束合同或合约腿经济结果的数值和条件集合。
+      excludes: [Trade Contract legal identity, Lifecycle Event]
+      status: DEFERRED
+    - concept_id: 'concept:position'
+      label_zh: 持仓
+      type: OBJECT
+      stable_definition: 某主体、账户或组合在指定时点与业务范围下的持有状态记录。
+      independent_expressions: [quantity, balance, direction, observation_time]
+      excludes: [Order quantity, quantity-only identity, technical sync count, Risk Exposure]
+      status: REWORKED_CANDIDATE
+    - concept_id: 'concept:position-view'
+      label_zh: 头寸
+      type: MEASURE
+      stable_definition: 对持仓按账户、组合、方向或净额口径形成的业务视图或度量。
+      excludes: [Position by default, Risk Exposure]
+      status: DEFERRED
+    - concept_id: 'concept:notional'
+      label_zh: 名义本金
+      type: MEASURE
+      stable_definition: 用于计算现金流、风险或条款规模的合同度量基准。
+      excludes: [Position, Margin, Valuation, Payment Amount]
+      status: REWORKED_CANDIDATE
+    - concept_id: 'concept:valuation'
+      label_zh: 估值
+      type: PROCESS
+      stable_definition: 在给定时点和方法下计算合同或持仓价值的过程。
+      excludes: [price input, Risk Exposure, Margin]
+      status: DEFERRED
+    - concept_id: 'concept:risk-exposure'
+      label_zh: 风险敞口
+      type: MEASURE
+      stable_definition: 基于风险方法、情景或净额计算的潜在损失或敏感度度量。
+      excludes: [Position, Notional]
+      status: DEFERRED
+    - concept_id: 'concept:margin'
+      label_zh: 保证金
+      type: MEASURE
+      stable_definition: 为覆盖履约风险而计算、要求或记录的保证金额度或状态。
+      excludes: [Collateral asset, Valuation, generic amount]
+      status: REWORKED_CANDIDATE
+    - concept_id: 'concept:collateral'
+      label_zh: 抵押品
+      type: OBJECT
+      stable_definition: 为满足保证金或信用支持义务而提供、占用或释放的资产。
+      excludes: [Margin amount, Notional]
+      status: DEFERRED
+    - concept_id: 'concept:cash-flow'
+      label_zh: 现金流
+      type: OBJECT
+      stable_definition: 由合同条款或事件计算出的计划收付日程或明细表达。
+      excludes: [Receivable or payable obligation identity, Payment event, Transfer event, Delivery event, Settlement Result]
+      status: DEFERRED
+    - concept_id: 'concept:delivery'
+      label_zh: 交割
+      type: EVENT
+      stable_definition: 按义务交付约定资产或标的的履行动作。
+      excludes: [Clearing, Settlement Result]
+      status: DEFERRED
+    - concept_id: 'concept:clearing'
+      label_zh: 清算
+      type: PROCESS
+      stable_definition: 对交易义务进行确认、匹配、净额化或形成结算指令的过程。
+      excludes: [Payment, Delivery, Settlement Result]
+      status: DEFERRED
+    - concept_id: 'concept:settlement-result'
+      label_zh: 结算结果
+      type: OBJECT
+      stable_definition: 记录结算义务履行成功、失败、部分完成或待处理的结果。
+      excludes: [Cash Flow, Settlement Obligation, technical task status]
+      status: DEFERRED
+  supporting_identities_not_in_core:
+    - concept_id: 'concept:agreement'
+      label_zh: 协议
+      type: OBJECT
+      purpose: Distinguish legal or master agreement from Trade Contract.
+      status: DEFERRED
+    - concept_id: 'concept:settlement-obligation'
+      label_zh: 结算义务
+      type: OBJECT
+      purpose: Represent payable or receivable responsibility independently from a calculated cash-flow schedule or item, fulfillment event, and result.
+      status: DEFERRED
+    - concept_id: 'concept:payment-transfer'
+      label_zh: 支付或转移
+      type: EVENT
+      purpose: Distinguish movement event from Delivery and Settlement Result.
+      status: DEFERRED
+  obligation_cashflow_settlement_boundary:
+    layers:
+      - {layer: OBLIGATION, concept_ref: 'concept:settlement-obligation', meaning: payable_or_receivable_responsibility}
+      - {layer: CASH_FLOW_SCHEDULE_OR_ITEM, concept_ref: 'concept:cash-flow', meaning: calculated_or_planned_expression}
+      - {layer: FULFILLMENT_EVENT, concept_refs: ['concept:payment-transfer', 'concept:delivery'], meaning: payment_transfer_or_delivery_occurrence}
+      - {layer: SETTLEMENT_RESULT, concept_ref: 'concept:settlement-result', meaning: success_failure_partial_or_pending_result}
+    boundary_counterexample:
+      observation: Planned payment amount and due date exist.
+      allowed_inference: CASH_FLOW_SCHEDULE_OR_ITEM_WITH_POSSIBLE_OBLIGATION_CONTEXT
+      prohibited_inferences: [PAYMENT_OCCURRED, DELIVERY_OCCURRED, SETTLEMENT_SUCCEEDED]
+
+field_attribute_registry:
+  registry_id: '07c:registry:field-attributes'
+  attributes:
+    - attribute_id: IDENTIFIER
+      definition: 在已裁定业务对象语境内标识实例。
+      prohibits: [bare identifier token, technical identifier promotion]
+    - attribute_id: DESCRIPTIVE_TEXT
+      definition: 名称、简称、描述和备注等可读表达。
+      prohibits: [name length as position side, abbreviation as concept]
+    - attribute_id: PARTY_RELATIONSHIP
+      definition: Party 与机构、协议、订单或交易之间的已裁定关系。
+      prohibits: [trade side, flow side, position side]
+    - attribute_id: BUSINESS_OBJECT_STATE
+      definition: 命名所属业务对象命名空间的状态属性。
+      prohibits: [bare state, technical job state, cross-object state merge]
+    - attribute_id: MEASURE
+      definition: 明确业务概念所有权下的数量、金额、比率或其他度量。
+      prohibits: [bare amount or quantity as concept]
+    - attribute_id: CURRENCY
+      definition: 币种 identity 或某度量的币种表达。
+      prohibits: [bare currency as concept, data source]
+    - attribute_id: TIME
+      definition: 业务日期、时点、区间或期限。
+      prohibits: [audit timestamps without business-time decision]
+    - attribute_id: AUDIT
+      definition: 经规则与 Gold 验证后的审计和处理追踪属性，仅进入技术投影。
+      prohibits: [automatic business Reader membership]
+
+qualifier_registry:
+  registry_id: '07c:registry:qualifiers'
+  qualifiers:
+    - qualifier_id: observation_time_role
+      values: [INITIAL, CURRENT, END, BEFORE_ADJUSTMENT, AFTER_ADJUSTMENT]
+      requires: [business_time_expression, object_applicability]
+    - qualifier_id: position_side
+      values: [LONG, SHORT]
+      requires: [position_or_applicable_measure_context, independent_direction_evidence]
+    - qualifier_id: trade_side
+      values: [BUY, SELL]
+      requires: [trade_or_order_context, explicit_buy_sell_evidence]
+    - qualifier_id: cashflow_direction
+      values: [PAY, RECEIVE]
+      requires: [cashflow_or_margin_payment_context, value_semantics]
+    - qualifier_id: currency_basis
+      values: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+      requires: [measure_expression, explicit_currency_basis_evidence]
+    - qualifier_id: party_relationship_role
+      values: [CUSTOMER, COUNTERPARTY, INTERNAL_PARTY, EXTERNAL_PARTY]
+      requires: [adjudicated_party_relation]
+    - qualifier_id: variability
+      values: [DYNAMIC, FIXED]
+      requires: [applicable_term_or_measure]
+    - qualifier_id: aggregation_state
+      values: [ACCUMULATED, NET, GROSS]
+      requires: [explicit_aggregation_semantics]
+    - qualifier_id: availability_condition
+      values: [AVAILABLE, FROZEN]
+      requires: [business_availability_semantics]
+    - qualifier_id: estimation_status
+      values: [ESTIMATED, OBSERVED]
+      requires: [measurement_provenance]
+    - qualifier_id: measure_basis
+      values: [ABSOLUTE, RATIO, PERCENTAGE]
+      requires: [measure_expression, explicit_basis_semantics]
+    - qualifier_id: flow_side
+      values: [SOURCE, TARGET]
+      portability: TRADEFLOW_ONLY
+      requires: [explicit_mapping_input_or_output_context, semantic_decision]
+  p2_to_p3_formal_promotion_gate:
+    direction: P2_TO_P3_ONLY
+    checks:
+      - object applicability checked
+      - Chinese comment or independent context present
+      - blocking conflict absent or adjudicated in the P3 decision record
+      - dimension compatible with expression
+      - applicable Gold expectation satisfied
+      - P3 semantic decision recorded
+    p2_feedback_allowed: false
+
+observation_to_semantic_mappings:
+  mapping_set_id: '07c:mappings:observation-to-semantic-candidates'
+  mappings:
+    - mapping_id: '07c:mapping:identifier-shape'
+      input_block: generic_attribute_observations
+      observation: IDENTIFIER_SHAPE
+      additional_conditions: [single_bounded_business_object_anchor_candidate, no_identity_blocking_conflict]
+      output: IDENTIFIER_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:numeric-shape'
+      input_block: generic_attribute_observations
+      observation: NUMERIC_SHAPE
+      additional_conditions: [none]
+      output: REQUIRED_NEXT_EVIDENCE_FOR_MEASURE_SEMANTICS
+      semantic_resolution_status: UNBOUND
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:code-shape'
+      input_block: generic_attribute_observations
+      observation: CODE_SHAPE
+      additional_conditions: [bounded_owning_object_candidate, explicit_code_role_evidence]
+      output: IDENTIFIER_OR_DESCRIPTIVE_TEXT_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:name-variant'
+      input_block: generic_attribute_observations
+      observation: NAME_VARIANT_OBSERVATION
+      additional_conditions: [single_bounded_owning_business_object_candidate]
+      output: DESCRIPTIVE_TEXT_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:business-object-state'
+      input_block: generic_attribute_observations
+      observation: BUSINESS_OBJECT_STATE
+      additional_conditions: [bounded_object_namespace_candidate, nontechnical_state_evidence]
+      output: BUSINESS_OBJECT_STATE_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:classification'
+      input_block: generic_attribute_observations
+      observation: CLASSIFICATION
+      additional_conditions: [bounded_owning_object_candidate, classification_semantics_present]
+      output: DESCRIPTIVE_TEXT_OR_DEFERRED_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:measure'
+      input_block: generic_attribute_observations
+      observation: MEASURE
+      additional_conditions: [bounded_business_concept_candidate, measure_semantic_evidence]
+      output: MEASURE_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:quantity'
+      input_block: generic_attribute_observations
+      observation: QUANTITY
+      additional_conditions: [bounded_business_concept_candidate, quantity_or_balance_interpretations_retained]
+      output: MEASURE_OR_CONFLICT_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:rate'
+      input_block: generic_attribute_observations
+      observation: RATE
+      additional_conditions: [bounded_business_concept_candidate, explicit_rate_or_ratio_semantics]
+      output: MEASURE_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:time'
+      input_block: generic_attribute_observations
+      observation: TIME
+      additional_conditions: [business_time_role_candidate, not_technical_audit_time]
+      output: TIME_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:currency'
+      input_block: generic_attribute_observations
+      observation: CURRENCY
+      additional_conditions: [currency_identity_or_measure_basis_evidence, bounded_owning_expression_candidate]
+      output: CURRENCY_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:description'
+      input_block: generic_attribute_observations
+      observation: DESCRIPTION
+      additional_conditions: [single_bounded_owning_business_object_candidate]
+      output: DESCRIPTIVE_TEXT_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:source-target'
+      input_block: generic_attribute_observations
+      observation: SOURCE_TARGET_TERM
+      profile_guard: {profile_ref_exact: TITANS_TRADEFLOW, schema_name_exact: TITANS_TRADEFLOW}
+      additional_conditions: [active_profile_is_TITANS_TRADEFLOW, active_schema_is_TITANS_TRADEFLOW, mapping_context, input_output_responsibility_evidence]
+      output: FLOW_SIDE_OR_LINEAGE_CANDIDATE
+      non_tradeflow_output: LINEAGE_CONTEXT_ONLY_NO_FLOW_SIDE_CANDIDATE
+      required_negative_case_ref: NON-TF-SOURCE-TARGET-001
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:abbreviation-candidate-context'
+      input_block: abbreviation_observations
+      selector: {status: CANDIDATE}
+      additional_conditions: [expansion_candidate_is_not_null, versioned_expansion_rule, corroborating_non_abbreviation_observation]
+      output: CONTEXT_ONLY_FOR_EXISTING_P2_CANDIDATE
+      sole_source_output: NO_SEMANTIC_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:abbreviation-unrecognized'
+      input_block: abbreviation_observations
+      selector: {status: UNRECOGNIZED_ABBREVIATION}
+      output: REQUIRED_NEXT_EVIDENCE
+      semantic_resolution_status: DEFERRED
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:qualifier-position-side'
+      input_block: candidate_qualifier_observations
+      selector: {dimension: position_side, value: [LONG, SHORT], status: [CANDIDATE, CONFLICT]}
+      additional_condition_set_ref: '07c:checkset:p1-to-p2-qualifier-candidate'
+      output: POSITION_SIDE_CANDIDATE
+      open_conflict_status: CONFLICT
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:qualifier-trade-side'
+      input_block: candidate_qualifier_observations
+      selector: {dimension: trade_side, value: [BUY, SELL], status: [CANDIDATE, CONFLICT]}
+      additional_condition_set_ref: '07c:checkset:p1-to-p2-qualifier-candidate'
+      output: TRADE_SIDE_CANDIDATE
+      open_conflict_status: CONFLICT
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:qualifier-cashflow-direction'
+      input_block: candidate_qualifier_observations
+      selector: {dimension: cashflow_direction, value: [PAY, RECEIVE], status: [CANDIDATE, CONFLICT]}
+      additional_condition_set_ref: '07c:checkset:p1-to-p2-qualifier-candidate'
+      output: CASHFLOW_DIRECTION_CANDIDATE
+      open_conflict_status: CONFLICT
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:qualifier-variability'
+      input_block: candidate_qualifier_observations
+      selector: {dimension: variability, value: [DYNAMIC, FIXED], status: [CANDIDATE, CONFLICT]}
+      additional_condition_set_ref: '07c:checkset:p1-to-p2-qualifier-candidate'
+      output: VARIABILITY_CANDIDATE
+      open_conflict_status: CONFLICT
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:qualifier-currency-basis'
+      input_block: candidate_qualifier_observations
+      selector:
+        dimension: currency_basis
+        value: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+        status: [CANDIDATE, CONFLICT]
+      additional_condition_set_ref: '07c:checkset:p1-to-p2-qualifier-candidate'
+      output: CURRENCY_BASIS_CANDIDATE
+      open_conflict_status: CONFLICT
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:technical-observation'
+      input_block: technical_observations
+      selector:
+        technical_class: [TECHNICAL_IDENTIFIER, AUDIT_ACTOR, AUDIT_TIME, INGESTION_METADATA, BATCH_METADATA, LINEAGE_METADATA, EXTENSION_SLOT, SOFT_DELETE, VERSION_CONTROL, UNRESOLVED_TECHNICAL]
+        status: [CANDIDATE, UNRESOLVED]
+      additional_conditions: [rule_execution_completed, suite_a_expectation_met]
+      output: TECHNICAL_PROJECTION_CANDIDATE
+      maximum_layer: P2
+  composite_field_attribute_mappings:
+    - mapping_id: '07c:mapping:semantic-field-attribute-party-relationship'
+      input_blocks: [generic_attribute_observations, abbreviation_observations, raw_physical_fact, contextual_evidence, conflicts]
+      additional_conditions: [bounded_party_relation_object_candidate, explicit_relationship_role_evidence, independent_comment_or_context]
+      output: {collection: field_attribute_candidates, field_attribute: PARTY_RELATIONSHIP}
+      abbreviation_or_token_only_output: NO_FIELD_ATTRIBUTE_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-field-attribute-audit'
+      input_blocks: [technical_observations, raw_physical_fact, contextual_evidence, provenance, conflicts]
+      additional_conditions: [provider_rule_execution_completed, applicable_suite_a_expectation_met, explicit_audit_responsibility_evidence]
+      output: {collection: field_attribute_candidates, field_attribute: AUDIT, projection_route: TECHNICAL_ONLY}
+      pre_validation_output: TECHNICAL_CANDIDATE_ONLY
+      business_reader_eligibility: false
+      maximum_layer: P2
+  composite_qualifier_mappings:
+    - mapping_id: '07c:mapping:semantic-qualifier-observation-time-role'
+      input_blocks: [generic_attribute_observations, raw_physical_fact, contextual_evidence, conflicts]
+      base_candidate_requirements:
+        bounded_owning_expression_candidate: REQUIRED
+        one_of: [TIME_CANDIDATE, MEASURE_CANDIDATE]
+      additional_conditions: [explicit_initial_current_end_or_adjustment_time_semantics, nontechnical_time_role, independent_comment_or_context]
+      output: {collection: qualifier_candidates, dimension: observation_time_role, allowed_values: [INITIAL, CURRENT, END, BEFORE_ADJUSTMENT, AFTER_ADJUSTMENT]}
+      bare_time_observation_output: NO_QUALIFIER_CANDIDATE
+      required_case_reachability: [K01]
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-qualifier-party-relationship-role'
+      input_blocks: [generic_attribute_observations, abbreviation_observations, raw_physical_fact, contextual_evidence, conflicts]
+      base_candidate_refs: [bounded_party_relation_object_candidate, 'field_attribute_candidate:PARTY_RELATIONSHIP']
+      additional_conditions: [explicit_relationship_role_evidence, independent_comment_or_context, customer_counterparty_conflict_retained]
+      output: {collection: qualifier_candidates, dimension: party_relationship_role, allowed_values: [CUSTOMER, COUNTERPARTY, INTERNAL_PARTY, EXTERNAL_PARTY]}
+      abbreviation_only_output: NO_QUALIFIER_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-qualifier-aggregation-state'
+      input_blocks: [generic_attribute_observations, raw_physical_fact, contextual_evidence, conflicts]
+      base_candidate_refs: [MEASURE_CANDIDATE, bounded_owning_expression_candidate]
+      additional_conditions: [explicit_accumulated_net_or_gross_semantics, independent_comment_or_context]
+      output: {collection: qualifier_candidates, dimension: aggregation_state, allowed_values: [ACCUMULATED, NET, GROSS]}
+      bare_numeric_observation_output: NO_QUALIFIER_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-qualifier-availability-condition'
+      input_blocks: [generic_attribute_observations, raw_physical_fact, contextual_evidence, conflicts]
+      base_candidate_refs: [BUSINESS_OBJECT_STATE_CANDIDATE, bounded_owning_expression_candidate]
+      additional_conditions: [explicit_available_or_frozen_business_semantics, nontechnical_state_evidence]
+      output: {collection: qualifier_candidates, dimension: availability_condition, allowed_values: [AVAILABLE, FROZEN]}
+      bare_state_observation_output: NO_QUALIFIER_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-qualifier-estimation-status'
+      input_blocks: [generic_attribute_observations, raw_physical_fact, contextual_evidence, provenance, conflicts]
+      base_candidate_refs: [MEASURE_CANDIDATE, bounded_owning_expression_candidate]
+      additional_conditions: [explicit_estimated_or_observed_measurement_semantics, measurement_provenance]
+      output: {collection: qualifier_candidates, dimension: estimation_status, allowed_values: [ESTIMATED, OBSERVED]}
+      inference_from_missing_provenance_output: NO_QUALIFIER_CANDIDATE
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-qualifier-measure-basis'
+      input_blocks: [generic_attribute_observations, raw_physical_fact, contextual_evidence, conflicts]
+      base_candidate_refs: [MEASURE_CANDIDATE, bounded_owning_expression_candidate]
+      additional_conditions: [explicit_absolute_ratio_or_percentage_semantics, numeric_or_unit_evidence, independent_comment_or_context]
+      output: {collection: qualifier_candidates, dimension: measure_basis, allowed_values: [ABSOLUTE, RATIO, PERCENTAGE]}
+      bare_rate_or_numeric_observation_output: NO_QUALIFIER_CANDIDATE
+      required_case_reachability: [C03]
+      maximum_layer: P2
+    - mapping_id: '07c:mapping:semantic-qualifier-flow-side'
+      input_blocks: [generic_attribute_observations, raw_physical_fact, contextual_evidence, conflicts]
+      base_candidate_refs: [FLOW_SIDE_OR_LINEAGE_CANDIDATE, bounded_mapping_expression_candidate]
+      profile_guard: {profile_ref_exact: TITANS_TRADEFLOW, schema_name_exact: TITANS_TRADEFLOW}
+      additional_conditions: [explicit_mapping_input_or_output_responsibility, active_profile_is_TITANS_TRADEFLOW, active_schema_is_TITANS_TRADEFLOW, independent_context]
+      output: {collection: qualifier_candidates, dimension: flow_side, allowed_values: [SOURCE, TARGET], portability: TRADEFLOW_ONLY}
+      bare_source_or_target_output: LINEAGE_CONTEXT_ONLY_NO_QUALIFIER_CANDIDATE
+      non_tradeflow_output: LINEAGE_CONTEXT_ONLY_NO_QUALIFIER_CANDIDATE
+      required_negative_case_ref: NON-TF-SOURCE-TARGET-001
+      maximum_layer: P2
+  exhaustiveness:
+    all_16_provider_blocks_have_routes: true
+    all_13_generic_attribute_values_have_explicit_routes: true
+    both_generic_attribute_status_values_have_explicit_routes: true
+    both_abbreviation_status_values_have_explicit_routes: true
+    all_10_technical_classes_and_both_status_values_have_explicit_routes: true
+    all_5_candidate_qualifier_dimensions_have_explicit_routes: true
+    both_semantic_only_field_attributes_have_explicit_composite_routes: true
+    all_8_canonical_field_attributes_are_reachable_at_p2: true
+    all_7_semantic_only_qualifier_dimensions_have_explicit_composite_routes: true
+    all_12_canonical_qualifier_dimensions_are_reachable_at_p2: true
+    undefined_observation_names_allowed: false
+    p3_dependency_in_p1_to_p2_mapping_allowed: false
+    static_route_presence_is_not_behavioral_coverage: true
+  behavioral_route_coverage_contract:
+    field_attribute_refs_exact: [IDENTIFIER, DESCRIPTIVE_TEXT, PARTY_RELATIONSHIP, BUSINESS_OBJECT_STATE, MEASURE, CURRENCY, TIME, AUDIT]
+    qualifier_refs_exact: [observation_time_role, position_side, trade_side, cashflow_direction, currency_basis, party_relationship_role, variability, aggregation_state, availability_condition, estimation_status, measure_basis, flow_side]
+    required_behavior_classes:
+      - PROMOTABLE_WITH_REQUIRED_EVIDENCE
+      - INSUFFICIENT_OR_UNBOUND
+      - MISLEADING_OR_CONFLICT_OR_EXPLICIT_NOT_APPLICABLE
+    concrete_matrix_ref: 07-integrated-validation-plan.yaml#behavioral_route_matrix
+    execution_gate:
+      exact_dimension_sets_required: true
+      every_behavior_class_nonempty_or_explicit_not_applicable: true
+      zero_omission_required: true
+      unexecuted_counts_as_pass: false
+      empty_match_set_counts_as_pass: false
+      static_route_declaration_counts_as_pass: false
+      failure_effect: STOP_BEFORE_SUITE_B_EXECUTION
+
+prohibited_auto_mappings:
+  registry_id: '07c:registry:prohibited-auto-mappings'
+  prohibitions:
+    - prohibition_id: '07c:prohibit:token-to-concept'
+      rule: A token cannot create a business concept identity.
+    - prohibition_id: '07c:prohibit:token-to-qualifier'
+      rule: A token cannot create a formal qualifier.
+    - prohibition_id: '07c:prohibit:token-to-reader'
+      rule: A token cannot create or publish a Reader.
+    - prohibition_id: '07c:prohibit:short-long-name-to-position-side'
+      rule: SHORT_NAME and LONG_NAME cannot create position_side.
+    - prohibition_id: '07c:prohibit:source-target-to-flow-side'
+      rule: SOURCE or TARGET cannot create flow_side without explicit mapping semantics and P3 decision.
+    - prohibition_id: '07c:prohibit:identifier-without-object'
+      rule: IDENTIFIER_SHAPE without an object anchor cannot become an IDENTIFIER decision.
+    - prohibition_id: '07c:prohibit:technical-to-audit-decision'
+      rule: A technical candidate cannot become AUDIT or be removed before rule execution and validation.
+    - prohibition_id: '07c:prohibit:table-name-vote'
+      rule: Table or object name cannot decide field meaning.
+    - prohibition_id: '07c:prohibit:wiki-context-decision'
+      rule: Wiki title or path remains weak context and cannot decide a concept or relation.
+    - prohibition_id: '07c:prohibit:same-name-merge'
+      rule: Equal field names in different objects retain different physical identities.
+    - prohibition_id: '07c:prohibit:order-trade-inheritance'
+      rule: Order and Trade cannot inherit each other's identifiers or Reader identity.
+    - prohibition_id: '07c:prohibit:reader-wide-support-inheritance'
+      rule: Support is computed per Reader expression and cannot be inherited from another expression or source concept.
+
+reader_contracts:
+  registry_id: '07c:registry:first-reader-contracts'
+  common_current_status:
+    reader_status: REWORKED_CANDIDATE
+    publication_status: BLOCKED_PENDING_INTEGRATION
+  common_publication_gate:
+    - Versioned Provider and complete 13,611-field Evidence Pack exist.
+    - Suite A rule execution has been performed and decisive failures reviewed.
+    - P1-to-P2 handoff is schema-valid and produces candidates only.
+    - Reader has at least one direct positive case and one misleading-name or boundary counterexample.
+    - Suite B and Suite C decisive expectations are met or explicitly NOT_EVALUABLE.
+    - No identity-critical, definition-critical, or qualifier-critical conflict remains open.
+    - Every expression computes its own evidence and publication state.
+    - Physical implementations trace to P0 and P1 by physical_column_id.
+    - Configuration-seed entries remain non-evidence until separately supported.
+    - Independent review is required before publication and cannot be replaced by this contract.
+  readers:
+    - reader_id: 'reader:counterparty'
+      concept_ref: 'concept:counterparty'
+      reader_status: REWORKED_CANDIDATE
+      publication_status: BLOCKED_PENDING_INTEGRATION
+      stable_definition: 在协议、订单或交易关系中承担对手方关系的 Party-in-relation。
+      exclusions: [Customer by default, Party master identity, name-length direction, naked source-target flow]
+      allowed_field_attributes: [IDENTIFIER, DESCRIPTIVE_TEXT, PARTY_RELATIONSHIP, BUSINESS_OBJECT_STATE, TIME]
+      allowed_qualifiers: [party_relationship_role, trade_side, flow_side]
+      qualifier_constraints:
+        flow_side: TRADEFLOW-only; explicit mapping input-output responsibility and a P3 decision are mandatory.
+      allowed_entry_refs: ['entry:counterparty:trade-preparation', 'entry:counterparty:trade-formation']
+      required_gold_refs:
+        suite_a: [FEP-001, FEP-002, FEP-003, FEP-005, FEP-006, FEP-019, FEP-020, FEP-021, FEP-022, FEP-023]
+        suite_b: [A01, A02, A03, A04, A05, B01, D01, D02, G01, I01, I02, L01]
+        suite_c: [CXL-001, CXL-003, CXL-005, CXL-006, CXL-010]
+      blocking_cases: [A03, D01, D02]
+      minimum_physical_evidence: [canonical_anchor, separate_name_and_comment_evidence, object_context, dual_artifact_provenance]
+      conflict_blocking_rules: [competing_party_anchor_blocks_reader, name_direction_conflict_blocks_expression, mapping_role_conflict_blocks_flow_side]
+      publication_gate: [COMMON_PUBLICATION_GATE, A03_OBJECT_IDENTITY_RESOLVED, MAPPING_ROLE_ADJUDICATED, NO_NAME_DIRECTION_LEAK]
+      current_blockers: [FIELD_EVIDENCE_NOT_IMPLEMENTED, A03_UNRESOLVED, MAPPING_ROLE_UNRESOLVED, GOLD_PENDING]
+    - reader_id: 'reader:order'
+      concept_ref: 'concept:order'
+      reader_status: REWORKED_CANDIDATE
+      publication_status: BLOCKED_PENDING_INTEGRATION
+      stable_definition: 指示拟执行交易的意图或指令，可撤销、拒绝或未成交。
+      exclusions: [Trade, Trade Contract, Trade identifier inheritance]
+      allowed_field_attributes: [IDENTIFIER, DESCRIPTIVE_TEXT, PARTY_RELATIONSHIP, BUSINESS_OBJECT_STATE, MEASURE, CURRENCY, TIME]
+      allowed_qualifiers: [trade_side, observation_time_role, currency_basis, aggregation_state]
+      allowed_entry_refs: ['entry:order:order-intent']
+      required_gold_refs:
+        suite_a: [FEP-017]
+        suite_b: [G02, H01]
+        suite_c: [CXL-004, CXL-007]
+      blocking_cases: [G02, H01]
+      minimum_physical_evidence: [order_specific_anchor, explicit_order_responsibility, distinction_from_trade]
+      conflict_blocking_rules: [order_trade_identity_conflict_blocks_reader, table_name_only_blocks_expression]
+      publication_gate: [COMMON_PUBLICATION_GATE, ORDER_TRADE_IDENTITIES_SEPARATE, ORDER_DIRECT_POSITIVE_PRESENT]
+      current_blockers: [FIELD_EVIDENCE_NOT_IMPLEMENTED, MERGED_RUNTIME_READER, GOLD_PENDING]
+    - reader_id: 'reader:trade'
+      concept_ref: 'concept:trade'
+      reader_status: REWORKED_CANDIDATE
+      publication_status: BLOCKED_PENDING_INTEGRATION
+      stable_definition: 已经执行并形成经济事实的交易记录。
+      exclusions: [Order, Trade Contract, Order identifier inheritance]
+      allowed_field_attributes: [IDENTIFIER, DESCRIPTIVE_TEXT, PARTY_RELATIONSHIP, BUSINESS_OBJECT_STATE, MEASURE, CURRENCY, TIME]
+      allowed_qualifiers: [trade_side, observation_time_role, currency_basis, aggregation_state]
+      allowed_entry_refs: ['entry:trade:trade-formation']
+      required_gold_refs:
+        suite_a: [FEP-016]
+        suite_b: [H01]
+        suite_c: [CXL-004, CXL-007, CXL-011]
+      blocking_cases: [H01, CXL-011]
+      minimum_physical_evidence: [trade_specific_anchor, execution_fact_responsibility, distinction_from_order_and_contract]
+      conflict_blocking_rules: [order_trade_identity_conflict_blocks_reader, token_only_blocks_expression]
+      publication_gate: [COMMON_PUBLICATION_GATE, ORDER_TRADE_IDENTITIES_SEPARATE, TRADE_DIRECT_POSITIVE_PRESENT]
+      current_blockers: [FIELD_EVIDENCE_NOT_IMPLEMENTED, MERGED_RUNTIME_READER, DIRECT_POSITIVE_GOLD_REQUIRED]
+    - reader_id: 'reader:notional'
+      concept_ref: 'concept:notional'
+      reader_status: REWORKED_CANDIDATE
+      publication_status: BLOCKED_PENDING_INTEGRATION
+      stable_definition: 用于计算现金流、风险或条款规模的合同度量基准。
+      exclusions: [Margin, Position, Valuation, Payment Amount, generic amount]
+      allowed_field_attributes: [MEASURE, CURRENCY, TIME, DESCRIPTIVE_TEXT]
+      allowed_qualifiers: [position_side, variability, currency_basis, observation_time_role, aggregation_state, availability_condition, estimation_status, measure_basis]
+      allowed_entry_refs: ['entry:notional:contract-terms', 'entry:notional:valuation-risk']
+      required_gold_refs:
+        suite_a: [FEP-007, FEP-008, FEP-009, FEP-010]
+        suite_b: [C01, C02, F01, K01]
+        suite_c: [CXL-002, CXL-006, CXL-010]
+      blocking_cases: [F01]
+      minimum_physical_evidence: [numeric_anchor, notional_or_contract_term_evidence, separate_qualifier_provenance]
+      conflict_blocking_rules: [direction_conflict_blocks_expression, concept_boundary_conflict_blocks_reader]
+      publication_gate: [COMMON_PUBLICATION_GATE, NOTIONAL_BOUNDARIES_SEPARATE, F01_CONFLICT_RESOLVED, CURRENCY_ENUM_CANONICAL]
+      current_blockers: [FIELD_EVIDENCE_NOT_IMPLEMENTED, RAW_OVERLAY_NOT_APPLIED, GOLD_PENDING]
+    - reader_id: 'reader:position'
+      concept_ref: 'concept:position'
+      reader_status: REWORKED_CANDIDATE
+      publication_status: BLOCKED_PENDING_INTEGRATION
+      stable_definition: 某主体、账户或组合在指定时点与业务范围下的持有状态记录。
+      expression_identity_rule: Quantity, balance, direction, and observation time are independent expressions under Position and never vote a field into Position identity.
+      exclusions: [Order quantity, quantity-only identity, technical sync count, Position View by default, Risk Exposure, Notional]
+      allowed_field_attributes: [IDENTIFIER, DESCRIPTIVE_TEXT, BUSINESS_OBJECT_STATE, MEASURE, CURRENCY, TIME]
+      allowed_qualifiers: [position_side, observation_time_role, currency_basis, aggregation_state, availability_condition, estimation_status, measure_basis]
+      allowed_entry_refs: ['entry:position:contract-envelope', 'entry:position:valuation-risk']
+      required_gold_refs:
+        suite_a: [FEP-018]
+        suite_b: [C04, G02]
+        suite_c: [CXL-001, CXL-012]
+        future_required_case_type: POSITION_DIRECT_POSITIVE
+        future_required_case_status: REQUIRED_NOT_YET_PROVIDED
+      blocking_cases: [CXL-012]
+      minimum_physical_evidence: [subject_account_or_portfolio_anchor, position_responsibility_anchor, quantity_or_balance_distinction, direction_and_time_provenance]
+      conflict_blocking_rules: [position_risk_exposure_conflict_blocks_reader, quantity_balance_conflict_blocks_expression]
+      publication_gate: [COMMON_PUBLICATION_GATE, POSITION_RISK_EXPOSURE_SEPARATE, POSITION_DIRECT_POSITIVE_PRESENT]
+      current_blockers: [FIELD_EVIDENCE_NOT_IMPLEMENTED, DIRECT_POSITIVE_GOLD_REQUIRED, POSITION_VIEW_BOUNDARY_DEFERRED]
+    - reader_id: 'reader:margin'
+      concept_ref: 'concept:margin'
+      reader_status: REWORKED_CANDIDATE
+      publication_status: BLOCKED_PENDING_INTEGRATION
+      stable_definition: 为覆盖履约风险而计算、要求或记录的保证金额度或状态。
+      exclusions: [Collateral, Notional, Position, Valuation, generic amount]
+      allowed_field_attributes: [DESCRIPTIVE_TEXT, BUSINESS_OBJECT_STATE, MEASURE, CURRENCY, TIME]
+      allowed_qualifiers: [cashflow_direction, currency_basis, observation_time_role, availability_condition, estimation_status, measure_basis, aggregation_state, position_side]
+      qualifier_constraints:
+        cashflow_direction: MARGIN_DIRECTION remains unresolved without value semantics.
+        position_side: Allowed only for an adjudicated Margin-owned parameter expression with object applicability evidence.
+      expression_kind_whitelist:
+        values_exact: [AMOUNT, BALANCE, THRESHOLD, RATIO, PARAMETER, DIRECTION]
+        AMOUNT: {identity_rule: monetary margin measure, cannot_merge_with: [BALANCE, THRESHOLD, RATIO, PARAMETER, DIRECTION]}
+        BALANCE: {identity_rule: margin balance at a stated scope and time, cannot_merge_with: [AMOUNT, THRESHOLD, RATIO, PARAMETER, DIRECTION]}
+        THRESHOLD: {identity_rule: trigger or maintenance threshold, cannot_merge_with: [AMOUNT, BALANCE, RATIO, PARAMETER, DIRECTION]}
+        RATIO: {identity_rule: dimensionless rate or percentage with explicit basis, cannot_merge_with: [AMOUNT, BALANCE, THRESHOLD, PARAMETER, DIRECTION]}
+        PARAMETER: {identity_rule: configured margin control value with explicit parameter semantics, cannot_merge_with: [AMOUNT, BALANCE, THRESHOLD, RATIO, DIRECTION]}
+        DIRECTION: {identity_rule: direction expression whose value semantics remain independently evidenced, cannot_merge_with: [AMOUNT, BALANCE, THRESHOLD, RATIO, PARAMETER]}
+        one_expression_kind_per_expression_version: true
+        unknown_or_competing_kind_effect: CONFLICT_AND_BLOCK_EXPRESSION
+        cross_kind_collapse_effect: STOP_READER_CANDIDATE
+      allowed_entry_refs: ['entry:margin:margin-collateral', 'entry:margin:valuation-risk']
+      required_gold_refs:
+        suite_a: [FEP-010, FEP-011]
+        suite_b: [C03, M01]
+        suite_c: [CXL-002, CXL-005, CXL-010]
+        future_required_case_type: MARGIN_DIRECT_POSITIVE
+        future_required_case_status: REQUIRED_NOT_YET_PROVIDED
+      blocking_cases: [C03, M01]
+      minimum_physical_evidence: [margin_semantic_anchor, expression_kind_evidence, separate_measure_threshold_ratio_direction_provenance]
+      conflict_blocking_rules: [unresolved_margin_direction_blocks_reader, collapsed_margin_expression_blocks_reader]
+      publication_gate: [COMMON_PUBLICATION_GATE, MARGIN_DIRECT_POSITIVE_PRESENT, MARGIN_EXPRESSIONS_SEPARATE, MARGIN_DIRECTION_ADJUDICATED]
+      current_blockers: [FIELD_EVIDENCE_NOT_IMPLEMENTED, MARGIN_DIRECT_POSITIVE_REQUIRED, MARGIN_DIRECTION_UNRESOLVED, GOLD_PENDING]
+
+reader_entry_contract:
+  entry_contract_id: '07c:entry-contract:first-reader-navigation'
+  entry_count: 10
+  identity_rule: Multiple entries reference one Reader identity; no entry creates or duplicates a Reader.
+  current_entry_status: CONFIGURATION_SEED
+  current_evidence_status: NO_INDEPENDENT_EVIDENCE_ID
+  publication_status: NOT_PUBLISHED
+  legacy_configuration_seed_inventory:
+    count: 31
+    status: DEFERRED
+    rule: The ten first-reader entries do not delete, replace, or prove migration of the 31 legacy seeds.
+    required_future_output: Versioned mapping with KEEP, MAP, MERGE, or RETIRE decision and evidence for every legacy seed.
+  entries:
+    - {entry_id: 'entry:counterparty:trade-preparation', reader_ref: 'reader:counterparty', concept_ref: 'concept:counterparty', topology_ref: 'journey:trade-preparation', evidence_ref: null}
+    - {entry_id: 'entry:counterparty:trade-formation', reader_ref: 'reader:counterparty', concept_ref: 'concept:counterparty', topology_ref: 'journey:execution-trade-formation', evidence_ref: null}
+    - {entry_id: 'entry:order:order-intent', reader_ref: 'reader:order', concept_ref: 'concept:order', topology_ref: 'journey:inquiry-quote-order', evidence_ref: null}
+    - {entry_id: 'entry:trade:trade-formation', reader_ref: 'reader:trade', concept_ref: 'concept:trade', topology_ref: 'journey:execution-trade-formation', evidence_ref: null}
+    - {entry_id: 'entry:notional:contract-terms', reader_ref: 'reader:notional', concept_ref: 'concept:notional', topology_ref: 'envelope:contract-existence', evidence_ref: null}
+    - {entry_id: 'entry:notional:valuation-risk', reader_ref: 'reader:notional', concept_ref: 'concept:notional', topology_ref: 'activity:valuation-risk', evidence_ref: null}
+    - {entry_id: 'entry:position:contract-envelope', reader_ref: 'reader:position', concept_ref: 'concept:position', topology_ref: 'envelope:contract-existence', evidence_ref: null}
+    - {entry_id: 'entry:position:valuation-risk', reader_ref: 'reader:position', concept_ref: 'concept:position', topology_ref: 'activity:valuation-risk', evidence_ref: null}
+    - {entry_id: 'entry:margin:margin-collateral', reader_ref: 'reader:margin', concept_ref: 'concept:margin', topology_ref: 'activity:margin-collateral', evidence_ref: null}
+    - {entry_id: 'entry:margin:valuation-risk', reader_ref: 'reader:margin', concept_ref: 'concept:margin', topology_ref: 'activity:valuation-risk', evidence_ref: null}
+
+evidence_contract:
+  evidence_contract_id: '07c:evidence:typed-claims'
+  evidence_types:
+    - evidence_type_id: '07c:evidence-type:physical-column'
+      source_layer: P0
+      allowed_roles: [SUPPORT, CONTRADICT, NOT_OBSERVED]
+    - evidence_type_id: '07c:evidence-type:physical-object'
+      source_layer: P0
+      allowed_roles: [SUPPORT, CONTRADICT, CONTEXT_ONLY]
+    - evidence_type_id: '07c:evidence-type:prepared-observation'
+      source_layer: P1
+      allowed_roles: [SUPPORT, CONTRADICT, CONTEXT_ONLY, NOT_APPLICABLE, NOT_OBSERVED]
+    - evidence_type_id: '07c:evidence-type:configuration-seed'
+      source_layer: CONFIGURATION
+      allowed_roles: [CONTEXT_ONLY]
+      counts_as_independent_evidence: false
+    - evidence_type_id: '07c:evidence-type:wiki-weak-context'
+      source_layer: EXTERNAL_CONTEXT
+      allowed_roles: [CONTEXT_ONLY]
+      counts_as_decisive_evidence: false
+    - evidence_type_id: '07c:evidence-type:semantic-review-decision'
+      source_layer: P3
+      allowed_roles: [DECISION_PROVENANCE]
+      is_evidence: false
+  claim_requirements:
+    - Every candidate identifies method, physical_column_ref, evidence refs, counterevidence refs, and required next evidence.
+    - Every decision retains rejected candidates and conflict refs.
+    - Human review is a decision and cannot rewrite physical evidence.
+    - Numeric scores remain method-local ranking signals and are not calibrated probabilities.
+
+conflict_contract:
+  conflict_contract_id: '07c:conflict:cross-layer'
+  required_fields: [conflict_ref, physical_column_ref, conflict_type_ref, evidence_a_ref, evidence_b_ref, candidate_interpretations, prohibited_auto_resolution, required_next_evidence, review_status]
+  conflict_types:
+    - {conflict_type_id: '07c:conflict-type:name-comment', layer: P1, publication_effect: BLOCK_EXPRESSION}
+    - {conflict_type_id: '07c:conflict-type:competing-object-anchor', layer: P2, publication_effect: BLOCK_READER_IF_IDENTITY_CRITICAL}
+    - {conflict_type_id: '07c:conflict-type:competing-qualifier', layer: P2, publication_effect: BLOCK_EXPRESSION_OR_READER_IF_DEFINITION_CRITICAL}
+    - {conflict_type_id: '07c:conflict-type:semantic-measure-interpretation', layer: P2, publication_effect: BLOCK_EXPRESSION}
+    - {conflict_type_id: '07c:conflict-type:order-trade-identity', layer: P3, publication_effect: BLOCK_BOTH_READERS}
+    - {conflict_type_id: '07c:conflict-type:missing-information', layer: P1, publication_effect: DEFER_DECISION}
+  blocking_rules:
+    - A conflict never auto-resolves to a single interpretation.
+    - A noncritical expression conflict does not mark unrelated expressions unsupported, but remains visible.
+    - An identity-critical or stable-definition conflict blocks the whole Reader candidate.
+    - An unresolved formal qualifier blocks that expression and blocks a Reader when the qualifier is definition-critical.
+
+governance_states:
+  registry_id: '07c:registry:governance-states'
+  states:
+    - {state_id: OUT_OF_SCOPE, meaning: Explicitly outside this research boundary; retain source and reason.}
+    - {state_id: NOT_IN_FIRST_READER_SCOPE, meaning: Semantically relevant but outside the first six Readers.}
+    - {state_id: ATTRIBUTE_LAYER, meaning: Attribute or expression rather than business concept identity.}
+    - {state_id: TECHNICAL_CANDIDATE, meaning: Candidate or unresolved technical observation retained outside business Readers.}
+    - {state_id: EVIDENCE_INSUFFICIENT, meaning: Evidence cannot support a P3 decision.}
+    - {state_id: CONFLICT, meaning: Locatable evidence disagrees and prohibits automatic resolution.}
+    - {state_id: NOT_EVALUABLE, meaning: Evaluation prerequisite is absent; no physical field may be fabricated.}
+    - {state_id: TRUE_UNKNOWN, meaning: Unknown after complete processing at a declared grain.}
+    - {state_id: NOT_YET_PROCESSED, meaning: The item has not reached the relevant layer.}
+  preparation_status_separation:
+    preparation_values: [PREPARED, EXCLUDED, DEFERRED]
+    rule: Preparation disposition is not a semantic, governance, or publication status.
+
+count_contract:
+  registry_id: '07c:registry:count-denominators'
+  counts:
+    - {count_id: '07c:count:physical-schema', label: physical schema, grain: Stage 0 schema identity, current_value: 1}
+    - {count_id: '07c:count:physical-object', label: physical object, grain: Stage 0 object identity, current_value: 477}
+    - {count_id: '07c:count:physical-column', label: physical column, grain: physical_column_id, current_value: 13611}
+    - {count_id: '07c:count:prepared-evidence-package', label: prepared field evidence package, grain: one package per physical_column_id, current_value: NOT_EXECUTED, target_value: 13611}
+    - {count_id: '07c:count:downstream-semantic-workset-field', label: downstream semantic workset field, grain: current selected physical_column_id, current_value: 5512}
+    - {count_id: '07c:count:source-concept-candidate', label: source concept candidate, grain: Stage 3 run-scoped candidate, current_value: 1375}
+    - {count_id: '07c:count:semantic-observation', label: semantic observation, grain: Stage 3 observation record, current_value: 5347}
+    - {count_id: '07c:count:attribute-expression', label: attribute expression, grain: Stage 3 candidate expression, current_value: 1559}
+    - {count_id: '07c:count:reader-identity', label: Reader identity, grain: first-scope unique Reader identity, current_value: 6, publication_value: 0}
+    - {count_id: '07c:count:reader-expression', label: Reader expression, grain: expression within one Reader, current_value: NOT_COMPUTED_FOR_07}
+    - {count_id: '07c:count:reader-physical-field-instance', label: Reader physical field instance, grain: unique physical_column_id within Reader projection, current_value: NOT_COMPUTED_FOR_07}
+    - {count_id: '07c:count:reader-table', label: Reader table, grain: unique TABLE object within Reader projection, current_value: NOT_COMPUTED_FOR_07}
+    - {count_id: '07c:count:unpublished-source-concept', label: unpublished source concept, grain: Stage 5 unattached source candidate, current_value: 1326}
+    - {count_id: '07c:count:out-of-scope-item', label: out-of-scope item, grain: explicit exclusion record, current_value: NOT_COMPUTED}
+    - {count_id: '07c:count:evidence-insufficient-item', label: evidence-insufficient item, grain: Stage 3 hypothesis, current_value: 618}
+    - {count_id: '07c:count:conflict-item', label: conflict item, grain: typed conflict record, current_value: 71}
+    - {count_id: '07c:count:conflict-hypothesis', label: conflict hypothesis, grain: Stage 3 hypothesis, current_value: 66}
+    - {count_id: '07c:count:true-unknown', label: true unknown, grain: completely processed item at declared scope, current_value: NOT_COMPUTED}
+  invariants:
+    - 13611 counts physical fields and never pending business concepts.
+    - 5512 counts the current downstream workset and never Provider total input.
+    - 1375 counts run-scoped source concept candidates and never total accepted business concepts.
+    - Six counts candidate Reader identities and never published concepts.
+    - Suite A 23 and Suite B 27 remain different layers and never become 50 business Gold passes.
+    - 1326 counts unpublished source concepts and never TRUE_UNKNOWN.
+    - PREPARED, EXCLUDED, and DEFERRED do not imply Reader publication.
+
+page_projection:
+  projection_contract_id: '07c:projection:single-page-reader-navigation'
+  status: NOT_GENERATED
+  page_count: 1
+  layout: THREE_COLUMN_WITH_GOVERNANCE_FOOTER
+  left_column:
+    rule: Show only business areas and concepts relevant to the current topology context.
+    groups: [JOURNEY_ENTRIES, CONTRACT_EXISTENCE_DOMAIN, REPEATING_BUSINESS_ACTIVITIES, CROSSCUTTING_SUPPORT]
+    prohibition: Do not flatten all 13 research areas into 13 first-level menus.
+  center_column:
+    required_fields: [unique_reader_identity, stable_definition, exclusions, expression_matrix, qualifier_filters, physical_field_count, table_count, expression_evidence_status, publication_status]
+  right_column:
+    grouping: Exact column_name_raw within one Reader expression; identity remains physical_column_id.
+    required_fields: [physical_field_name, implementation_count, table_count, schema_name, object_name, object_comment_raw, column_comment_raw, data_type_raw, object_detail_entry, evidence, conflicts, unresolved_items]
+  footer_governance_states: [OUT_OF_SCOPE, NOT_IN_FIRST_READER_SCOPE, ATTRIBUTE_LAYER, TECHNICAL_CANDIDATE, EVIDENCE_INSUFFICIENT, CONFLICT, NOT_EVALUABLE, TRUE_UNKNOWN, NOT_YET_PROCESSED]
+  display_invariants:
+    - Each Reader identity appears once even when reachable from several entries.
+    - Each expression computes support independently.
+    - Configuration seeds are visibly labeled non-evidence.
+    - Physical and table counts cite their grain and denominator.
+    - Conflict, unresolved, EXCLUDED, and NOT_EVALUABLE remain visible.
+    - Reader and object-detail links must resolve to concrete records.
+  reader_journey_matrix_contract:
+    required_reader_refs_exact: ['reader:counterparty', 'reader:order', 'reader:trade', 'reader:notional', 'reader:position', 'reader:margin']
+    required_checks_per_reader: [direct_positive, boundary_or_misleading_counterexample, blocker_visibility, concrete_physical_field_detail, concrete_object_detail, deep_link_restore, return_context_preservation]
+    rows:
+      - {reader_ref: 'reader:counterparty', direct_positive_case_ref: READER-POS-COUNTERPARTY-A01, boundary_refs: [A03, D02, CXL-001], blocker_refs: [A03, D02], physical_detail_required: true, deep_link_and_return_required: true}
+      - {reader_ref: 'reader:order', direct_positive_case_ref: READER-POS-ORDER-H01, boundary_refs: [CXL-007], blocker_refs: [H01], physical_detail_required: true, deep_link_and_return_required: true}
+      - {reader_ref: 'reader:trade', direct_positive_case_type: TRADE_DIRECT_POSITIVE, direct_positive_case_ref: READER-POS-TRADE-REQUIRED, direct_positive_status: REQUIRED_NOT_YET_PROVIDED, boundary_refs: [CXL-007, CXL-011], blocker_refs: [CXL-011], physical_detail_required: true, deep_link_and_return_required: true}
+      - {reader_ref: 'reader:notional', direct_positive_case_ref: READER-POS-NOTIONAL-C01, boundary_refs: [F01, CXL-006], blocker_refs: [F01], physical_detail_required: true, deep_link_and_return_required: true}
+      - {reader_ref: 'reader:position', direct_positive_case_type: POSITION_DIRECT_POSITIVE, direct_positive_case_ref: READER-POS-POSITION-REQUIRED, direct_positive_status: REQUIRED_NOT_YET_PROVIDED, boundary_refs: [CXL-012], blocker_refs: [CXL-012], physical_detail_required: true, deep_link_and_return_required: true}
+      - {reader_ref: 'reader:margin', direct_positive_case_type: MARGIN_DIRECT_POSITIVE, direct_positive_case_ref: READER-POS-MARGIN-REQUIRED, direct_positive_status: REQUIRED_NOT_YET_PROVIDED, boundary_refs: [C03, M01, CXL-005], blocker_refs: [M01], physical_detail_required: true, deep_link_and_return_required: true}
+    whole_page_stop_rules:
+      - Any Reader row is absent or any required check is unexecuted, empty, or hidden.
+      - TRADE_DIRECT_POSITIVE is not present and adjudicated.
+      - POSITION_DIRECT_POSITIVE is not present and adjudicated.
+      - MARGIN_DIRECT_POSITIVE is not present and adjudicated.
+  generation_gate:
+    - Implementation steps 1 through 7 are complete.
+    - All six Readers have a direct positive case and a boundary or misleading-name counterexample.
+    - Decisive Suite A, B, and C failures are closed without rewriting historical suites.
+    - P0-to-P4 bundle and source hashes are frozen in a Manifest.
+    - Configuration schema identity and result-bundle schema identities are uniquely named.
+    - Every displayed expression and physical instance is traceable.
+    - No publication blocker is hidden; generated page remains a candidate.
+  independent_review_readiness_gate:
+    - Candidate page has passed real click-journey validation.
+    - Review inputs are isolated and hashed.
+    - Positive, ambiguous, misleading-name, technical, conflict, and unknown cases are included.
+    - No decisive case is unexecuted and no Gate passes vacuously.
+    - A new reviewer can reproduce the projection without this conversation.
+
+gate_result_contract:
+  record_name: VersionedGateResult
+  required_fields:
+    - run_id
+    - profile_ref
+    - schema_name
+    - gate_ref
+    - gate_version
+    - step_ref
+    - predecessor_gate_ref
+    - predecessor_status
+    - predecessor_content_sha256
+    - input_manifest_ref
+    - input_manifest_content_sha256
+    - expected_case_refs_exact
+    - observed_case_refs_exact
+    - expected_direct_positive_case_types_exact
+    - observed_direct_positive_case_types_exact
+    - expected_direct_positive_case_refs_exact
+    - observed_direct_positive_case_refs_exact
+    - direct_positive_evidence_bindings
+    - status_distribution
+    - not_evaluable_case_refs
+    - zero_omission_assertion
+    - nonempty_execution_assertion
+    - content_sha256
+    - active
+    - model_calls
+    - model_token_budget
+    - model_token_usage
+    - external_egress
+    - business_rows_read
+    - database_writes
+    - canonical_workspace_root
+    - canonical_output_root
+    - path_allowlist_passed
+    - symlink_escape_detected
+  status_values: [PASS, FAIL, STOP, NOT_EXECUTED]
+  bounded_authorization_contract:
+    record_name: PreimplementationAuthorization
+    disposition_values: [ACCEPT, REWORK_BOUNDED_AUTHORIZATION, STOP, DEFER]
+    required_fields: [review_ref, review_content_sha256, reviewed_bundle_sha256, disposition, allowed_step_refs_exact, prohibited_step_refs_exact, content_sha256]
+    current_disposition: REWORK_BOUNDED_AUTHORIZATION
+    current_review_ref: preimplementation-review-09
+    current_review_content_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c
+    reviewed_bundle_sha256: 689230de6524a629f1162a9a310e62b536ce8d5529c30b33b533b7a5721f7e71
+    allowed_step_refs_exact: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+    prohibited_step_refs_exact: ['07c:step:03-suite-a', '07c:step:04-handoff', '07c:step:05-bounded-adjudication', '07c:step:06-suite-b-c', '07c:step:07-fix-decisive-failures', '07c:step:08-generate-page', '07c:step:09-click-journeys', '07c:step:10-independent-review', '07c:step:11-business-acceptance-request', '07c:step:12-second-schema']
+    is_gate_result_status: false
+    may_be_rewritten_as_pass: false
+  predecessor_rule:
+    step_01: A valid ACCEPT or REWORK_BOUNDED_AUTHORIZATION explicitly covering step 01 is required; no predecessor GateResult exists.
+    step_02: The same valid authorization must cover step 02, and step 01 GateResult must be PASS with exact content hash.
+    step_03_to_12: The immediately preceding execution-step GateResult must be PASS and a fresh preimplementation authorization bound to the candidate 07 bundle must explicitly cover the target step.
+  not_evaluable_whitelist_exact: [E02, E03, E04]
+  direct_positive_case_types_exact: [COUNTERPARTY_DIRECT_POSITIVE, ORDER_DIRECT_POSITIVE, TRADE_DIRECT_POSITIVE, NOTIONAL_DIRECT_POSITIVE, POSITION_DIRECT_POSITIVE, MARGIN_DIRECT_POSITIVE]
+  grain: [run_id, profile_ref, schema_name, step_ref, gate_version]
+  active_uniqueness: ONE_ACTIVE_GATE_RESULT_PER_GRAIN
+  zero_omission_required: true
+  nonempty_execution_required: true
+  unexecuted_or_empty_cannot_pass: true
+  safety_values_exact:
+    model_calls: 0
+    model_token_budget: 0
+    model_token_usage: NOT_USED
+    external_egress: false
+    business_rows_read: false
+    database_writes: 0
+    symlink_escape_detected: false
+    path_allowlist_passed: true
+  out_of_order_missing_relabel_or_duplicate_active_effect: STOP
+
+implementation_gates:
+  gate_registry_id: '07c:gates:implementation-sequence'
+  step_count: 12
+  preimplementation_checkpoint_count: 1
+  total_sequence_checkpoint_count: 13
+  steps:
+    - checkpoint_ref: '07c:step:00-preimplementation-review'
+      sequence: 0
+      action: Freeze the 07 contract, validation plan, source manifest, and hashes; consume an independent preimplementation disposition.
+      input: [reviewed_predecessor_07_bundle, candidate_07_bundle, implementation_review_source_manifest, preimplementation_review_09]
+      output: [preimplementation_review_gate_result, bounded_allowed_step_range]
+      gate: ACCEPT or REWORK_BOUNDED_AUTHORIZATION with an explicit bounded allowed-step range; this authorization is not a PASS GateResult
+      current_disposition: REWORK_BOUNDED_AUTHORIZATION
+      allowed_steps: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+      prohibited_steps_until_new_independent_review: ['07c:step:03-suite-a', '07c:step:04-handoff', '07c:step:05-bounded-adjudication', '07c:step:06-suite-b-c', '07c:step:07-fix-decisive-failures', '07c:step:08-generate-page', '07c:step:09-click-journeys', '07c:step:10-independent-review', '07c:step:11-business-acceptance-request', '07c:step:12-second-schema']
+      failure_stop: [review missing, hash mismatch, manifest omission, STOP, DEFER, attempted step outside allowed range]
+      status: REWORK_BOUNDED_AUTHORIZATION
+    - step_id: '07c:step:01-provider'
+      sequence: 1
+      action: Implement the field evidence preparation Provider.
+      input: [this_contract, stage0_schema]
+      output: [versioned_provider, output_schema]
+      gate: raw immutability, 16 blocks, rule versioning, no semantic output, unique config and result schema identities
+      failure_stop: [schema mismatch, schema identity collision, identity mismatch, provenance omission, semantic conclusion emitted]
+      status: NOT_STARTED
+      authorization: ALLOWED_BY_STEP_00_REWORK_SCOPE
+      predecessor_gate_result: NOT_APPLICABLE_FIRST_EXECUTION_STEP
+    - step_id: '07c:step:02-full-evidence-pack'
+      sequence: 2
+      action: Generate a versioned Evidence Pack for all 13611 fields.
+      input: [versioned_provider, frozen_stage0]
+      output: [full_evidence_pack, manifest]
+      gate: one package per physical_column_id, dual hashes, explicit disposition
+      failure_stop: [missing field, duplicate identity, hash mismatch, silent exclusion]
+      status: NOT_STARTED
+      authorization: ALLOWED_BY_STEP_00_REWORK_SCOPE
+      predecessor_gate_result: '07c:step:01-provider PASS plus exact content hash'
+    - step_id: '07c:step:03-suite-a'
+      sequence: 3
+      action: Execute Suite A and review failures.
+      input: [full_evidence_pack, suite_a]
+      output: [source_verification_result, rule_execution_result]
+      gate: all 23 cases executed at the preparation layer
+      failure_stop: [raw mismatch, identity merge, hash mismatch, prohibited inference]
+      status: NOT_STARTED
+      authorization: BLOCKED_PENDING_NEW_PREIMPLEMENTATION_REVIEW
+      predecessor_gate_result: '07c:step:02-full-evidence-pack PASS is necessary but not sufficient'
+    - step_id: '07c:step:04-handoff'
+      sequence: 4
+      action: Build the P1-to-P2 semantic handoff adapter.
+      input: [suite_a_reviewed_pack, semantic_handoff_contract]
+      output: [typed_p2_candidates]
+      gate: all 16 P1 blocks routed, all input enums closed, all 8 field attributes and 12 qualifier dimensions reachable at P2, candidates only, P2 status vocabulary closed, no P3 dependency, conflicts and unresolved retained
+      failure_stop: [unrouted input block, unreachable field attribute or qualifier, undefined observation vocabulary, P3-to-P2 cycle, observation becomes decision, provenance lost, technical leak]
+      status: NOT_STARTED
+    - step_id: '07c:step:05-bounded-adjudication'
+      sequence: 5
+      action: Run bounded semantic adjudication for the six Readers.
+      input: [typed_p2_candidates, six_reader_contracts]
+      output: [versioned_p3_decisions, p4_reader_candidates]
+      gate: one-way P2-to-P3 acceptance, immutable P2 candidates, six unique identities, expression-level state, visible blockers
+      failure_stop: [P3 rewrites or regenerates P2, combined identity, object anchor absent, entry seed treated as evidence]
+      status: NOT_STARTED
+    - step_id: '07c:step:06-suite-b-c'
+      sequence: 6
+      action: Execute Suite B and Suite C.
+      input: [p3_decisions, p4_candidates, suite_b, suite_c]
+      output: [semantic_adjudication_results, cross_layer_results]
+      gate: all 27 and 12 cases recorded; nonlocatable cases remain NOT_EVALUABLE
+      failure_stop: [unexecuted recorded as success, historical Gold rewritten, decisive failure]
+      status: NOT_STARTED
+    - step_id: '07c:step:07-fix-decisive-failures'
+      sequence: 7
+      action: Correct known misclassifications and all decisive failures.
+      input: [layered_failures, counterevidence]
+      output: [corrected_candidate_bundle]
+      gate: no weakened tests, hidden conflict, or missing direct Reader positive
+      failure_stop: [test weakened, evidence removed, Trade or Position positive absent]
+      status: NOT_STARTED
+    - step_id: '07c:step:08-generate-page'
+      sequence: 8
+      action: Generate the new single-page Reader candidate projection.
+      input: [frozen_p0_to_p4_bundle]
+      output: [candidate_page, page_manifest]
+      gate: traceability, expression-level status, governance queue, link integrity
+      failure_stop: [untraceable expression, open hidden blocker, broken object link]
+      status: NOT_STARTED
+    - step_id: '07c:step:09-click-journeys'
+      sequence: 9
+      action: Validate real user click journeys.
+      input: [candidate_page, defined_user_journeys]
+      output: [usability_validation_record]
+      gate: entry to Reader to expression to field to object detail and return
+      failure_stop: [aggregate-only dead end, broken link, denominator unclear]
+      status: NOT_STARTED
+    - step_id: '07c:step:10-independent-review'
+      sequence: 10
+      action: Hand an isolated review pack to a new independent Agent.
+      input: [candidate_page, page_manifest, layered_results, review_case_pack]
+      output: [separate_future_independent_review_file]
+      gate: positive, ambiguous, misleading-name, technical, and falsification cases present
+      failure_stop: [inputs not isolated, representative cases missing, vacuous gate]
+      status: NOT_STARTED
+    - step_id: '07c:step:11-business-acceptance-request'
+      sequence: 11
+      action: Request user business acceptance only after the independent review allows it.
+      input: [future_independent_review, candidate_page]
+      output: [user_owned_business_acceptance_decision]
+      gate: independent disposition is future ACCEPT and no user-owned issue remains
+      failure_stop: [future REWORK, future STOP, future DEFER, unresolved business decision]
+      status: NOT_STARTED
+    - step_id: '07c:step:12-second-schema'
+      sequence: 12
+      action: Continue with a second Schema only after separate authorization.
+      input: [D-010_user_authorization, independent_second_schema_case_pack, new_profile_identity_collision_scan, encoding_and_parser_failure_inventory]
+      output: [second_schema_research_results]
+      gate: separate Manifest, Gold, counterexamples, independent review, and collision-free or traceably surrogated physical identity within the new run/profile scope
+      failure_stop: [authorization absent, corpus absent, identity collision unresolved, parser failure hidden, encoding failure hidden, portability assumed]
+      status: DEFERRED
+  gate_result_case_contract_by_step:
+    registry_ref: 07-integrated-validation-plan.yaml#gate_expected_case_sets
+    required_step_refs_exact: ['07c:step:00-preimplementation-review', '07c:step:01-provider', '07c:step:02-full-evidence-pack', '07c:step:03-suite-a', '07c:step:04-handoff', '07c:step:05-bounded-adjudication', '07c:step:06-suite-b-c', '07c:step:07-fix-decisive-failures', '07c:step:08-generate-page', '07c:step:09-click-journeys', '07c:step:10-independent-review', '07c:step:11-business-acceptance-request', '07c:step:12-second-schema']
+    symbolic_expected_case_sources_allowed: false
+    exact_case_refs_required_per_step: true
+    exact_direct_positive_evidence_bindings_required_where_applicable: true
+    observed_must_equal_expected: true
+  sequence_enforcement:
+    predecessor_pass_and_hash_required: true
+    exact_expected_and_observed_case_refs_required: true
+    not_evaluable_whitelist_exact: [E02, E03, E04]
+    out_of_order_missing_or_relabel_effect: STOP
+
+deferred_issues:
+  deferred_registry_id: '07c:deferred:open-decisions'
+  issues:
+    - {issue_id: '07c:defer:provider-implementation', status: DEFERRED, owner: IMPLEMENTATION_AUTHORIZATION, blocks: all_new_outputs}
+    - {issue_id: '07c:defer:customer-counterparty', status: DEFERRED, owner: BUSINESS, blocks: customer_identity_and_A03}
+    - {issue_id: '07c:defer:agreement-contract-hierarchy', status: DEFERRED, owner: BUSINESS_OR_LEGAL, blocks: legal_hierarchy_publication}
+    - {issue_id: '07c:defer:position-view-risk', status: DEFERRED, owner: BUSINESS, blocks: position_boundary_and_positive_gold}
+    - {issue_id: '07c:defer:margin-expression-model', status: DEFERRED, owner: BUSINESS, blocks: margin_amount_balance_threshold_ratio_parameter_direction}
+    - {issue_id: '07c:defer:margin-direction', status: DEFERRED, owner: BUSINESS, blocks: formal_cashflow_direction}
+    - {issue_id: '07c:defer:flow-side-responsibility', status: DEFERRED, owner: BUSINESS_AND_DATA_MAPPING, blocks: formal_flow_side}
+    - {issue_id: '07c:defer:trade-positive-gold', status: DEFERRED, owner: BUSINESS_REVIEWER, blocks: trade_reader_page_generation}
+    - {issue_id: '07c:defer:position-positive-gold', status: DEFERRED, owner: BUSINESS_REVIEWER, blocks: position_reader_page_generation}
+    - {issue_id: '07c:defer:reader-entry-evidence', status: DEFERRED, owner: BUSINESS_REVIEWER, blocks: ten_entry_publication}
+    - {issue_id: '07c:defer:legacy-seed-migration', status: DEFERRED, owner: CONFIGURATION_GOVERNANCE, blocks: migration_or_retirement_of_31_legacy_seeds}
+    - {issue_id: '07c:defer:schema-identity-collision', status: DEFERRED, owner: IMPLEMENTATION_CONTRACT, blocks: result_bundle_implementation_and_page_generation}
+    - {issue_id: '07c:defer:gold-authority', status: DEFERRED, owner: USER_OR_BUSINESS_REVIEWER, blocks: adjudicated_business_gold}
+    - {issue_id: '07c:defer:wiki-and-egress', status: DEFERRED, owner: USER_SECURITY_DECISION, blocks: stronger_external_context}
+    - {issue_id: '07c:defer:map-sharing', status: DEFERRED, owner: USER_SECURITY_DECISION, blocks: shared_reader_delivery}
+    - {issue_id: '07c:defer:independent-review', status: DEFERRED, owner: FUTURE_INDEPENDENT_AGENT, blocks: business_acceptance_request}
+    - {issue_id: '07c:defer:second-schema', status: DEFERRED, owner: D-010_USER_DECISION, blocks: cross_schema_validity_and_scale}

@@ -30,6 +30,9 @@ PROFILE = "cases/cognition-governance/workflows/semantic-navigation.yaml"
 SYNTHETIC_CASE = "tests/fixtures/cognition_harness/nova-rates-case-pack.yaml"
 TRADEFLOW_CASE = "cases/tradeflow/semantic-navigation-case-pack.yaml"
 
+# Synthetic fixture roles are deliberately wider than the real field-navigation
+# Profile, which no longer requires TABLE_MANIFEST. Keeping the role here proves
+# the Runner still supports a table-semantic Case Pack for a future change.
 ROLES = (
     "CHANGE_SCOPE",
     "FROZEN_INPUTS",
@@ -226,6 +229,14 @@ def test_synthetic_case_is_deterministic_and_only_claims_contract_isolation() ->
     assert first["contract_isolation_check"] == "PASS"
     assert "CROSS_SCHEMA_VALIDATED" not in json.dumps(first)
     assert [item["operation_id"] for item in first["operations"]] == list(OPERATION_ORDER)
+
+
+def test_field_navigation_case_does_not_require_table_manifest() -> None:
+    profile = yaml.safe_load((ROOT / PROFILE).read_text(encoding="utf-8"))
+    assert "TABLE_MANIFEST" not in profile["required_artifact_roles"]
+
+    case = yaml.safe_load((ROOT / TRADEFLOW_CASE).read_text(encoding="utf-8"))
+    assert "TABLE_MANIFEST" not in {ref["role"] for ref in case["artifacts"]}
 
 
 def test_tradeflow_run_is_a_projection_and_does_not_promote_current_status() -> None:

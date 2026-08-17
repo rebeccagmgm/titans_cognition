@@ -24,7 +24,11 @@
 
 #### Scenario: 首次打开全量入口
 - **WHEN** 用户首次打开通过模型 Gate 的表语义审阅页
-- **THEN** 页面 SHALL 明确显示总表数、当前可见表数和关键状态分布，并 SHALL 明确人工审阅是否为空、读者交付是否已完成
+- **THEN** 页面 SHALL 明确显示总表数、默认主体表数、当前可见表数和关键状态分布，并 SHALL 明确人工审阅是否为空、读者交付是否已完成
+
+#### Scenario: 默认阅读业务主体表
+- **WHEN** 当前运行同时包含主体表和数字后缀、疑似变体或其他处置表
+- **THEN** 页面 SHALL 默认显示 Canonical `disposition=SUBJECT` 的主体表，并 SHALL 将其余表保留在可展开的完整物理清单或专项范围中；页面 SHALL NOT 仅凭数字后缀将表标记为备份、停用或可删除
 
 #### Scenario: 用户应用导航或筛选
 - **WHEN** 用户选择上下文、职责、Unknown、Conflict、物理形态或搜索条件
@@ -42,6 +46,10 @@
 - **WHEN** 用户打开业务协作组、调查卡、物理变体组或结构邻域
 - **THEN** 页面 SHALL 将该范围标记为专项复核并显示成员数，同时保留返回全量表矩阵的明确入口
 
+#### Scenario: 用户查看后缀或其他处置表
+- **WHEN** 用户展开后缀/变体或其他处置范围
+- **THEN** 页面 SHALL 显示该范围当前数量、全量总数以及 `LIKELY_VARIANT / UNKNOWN / STANDALONE` 处置，不得把该范围静默排除或统称为废弃表
+
 ### Requirement: 单表画像必须按候选解释字段辅助与证据边界
 
 单表画像 SHALL 分层显示物理事实、表级业务上下文候选、业务锚点候选、职责候选、表组和表间关系，并对每个表级 Assertion 展示直接 Evidence、Counterevidence、字段支持/区分/反证、方法与 Unknown。字段摘要 SHALL NOT 以字段数或概念数替代具体 Assertion 级作用；未被 Assertion 使用的字段候选 SHALL 标记为未使用。
@@ -53,6 +61,10 @@
 #### Scenario: 表级候选存在反证或未知
 - **WHEN** 一项上下文、锚点、职责或关系候选存在 Counterevidence、竞争候选或缺失证据
 - **THEN** 页面 SHALL 与支持证据并列显示该限制并保持候选或 Unknown 状态，不得通过推荐顺序隐藏
+
+#### Scenario: 普通读者不需要阅读原始JSON
+- **WHEN** 用户查看单表画像
+- **THEN** 页面 SHALL 通过断言、证据和边界解释主要语义；原始画像与字段辅助 JSON 如需保留，SHALL 默认收起并明确标记为“审计与调试数据（一般无需查看）”，不得称为读者必需的未使用字段摘要
 
 ### Requirement: 专项复核入口不得冒充全量分类
 

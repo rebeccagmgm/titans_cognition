@@ -30,6 +30,7 @@ from .context_semantics import (
     write_context_map_results,
 )
 from .indicator_catalog import build_indicator_catalog
+from .tag_catalog import build_tag_catalog
 from .table_semantics import (
     load_table_semantic_config,
     run_table_semantic_map,
@@ -254,6 +255,9 @@ def _build_parser() -> argparse.ArgumentParser:
     indicator_catalog = subparsers.add_parser("build-indicator-catalog-review")
     indicator_catalog.add_argument("--snapshot-dir", required=True, type=Path)
     indicator_catalog.add_argument("--output", required=True, type=Path)
+    tag_catalog = subparsers.add_parser("build-tag-catalog-review")
+    tag_catalog.add_argument("--snapshot-dir", required=True, type=Path)
+    tag_catalog.add_argument("--output", required=True, type=Path)
     table_map = subparsers.add_parser("build-table-semantic-map")
     table_map.add_argument("--config", required=True, type=Path)
     table_map.add_argument("--output", required=True, type=Path)
@@ -502,6 +506,11 @@ def main(argv: list[str] | None = None) -> int:
                 ensure_ascii=False,
             )
         )
+        return 0
+
+    if args.command == "build-tag-catalog-review":
+        result = build_tag_catalog(args.snapshot_dir, args.output)
+        print(json.dumps({key: str(value) if isinstance(value, Path) else value for key, value in result.items()}, ensure_ascii=False))
         return 0
 
     if args.command == "build-table-semantic-map":

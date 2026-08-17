@@ -126,12 +126,8 @@ def build_semantic_navigation_review(
         str(row["business_context_id"]): row
         for row in _read_jsonl(source / "business_contexts.jsonl")
     }
-    data_candidates = _read_jsonl(
-        source / "diagnostics/data_semantic_candidates.jsonl"
-    )
-    review_queue = _read_jsonl(
-        source / "diagnostics/semantic_review_queue.jsonl"
-    )
+    data_candidates = _read_jsonl(source / "diagnostics/data_semantic_candidates.jsonl")
+    review_queue = _read_jsonl(source / "diagnostics/semantic_review_queue.jsonl")
     hypotheses = _read_jsonl(source / "semantic_hypotheses.jsonl")
     assertions = _read_jsonl(source / "assertions.jsonl")
     evidence_by_id = {
@@ -194,7 +190,9 @@ def build_semantic_navigation_review(
         ]
         source_ids = {str(row["business_concept_id"]) for row in source_concepts}
         mapped_source_ids.update(source_ids)
-        excluded = {str(label) for label in reader.get("excluded_expression_labels", [])}
+        excluded = {
+            str(label) for label in reader.get("excluded_expression_labels", [])
+        }
         concept_expressions = [
             row
             for source_id in source_ids
@@ -233,13 +231,17 @@ def build_semantic_navigation_review(
             "status": "CANDIDATE",
             "supportStatus": (
                 "SUPPORTED"
-                if any(row.get("support_status") == "SUPPORTED" for row in source_concepts)
+                if any(
+                    row.get("support_status") == "SUPPORTED" for row in source_concepts
+                )
                 else "PROVISIONAL"
             ),
             "stageIds": stage_ids,
             "lifecycleEntries": lifecycle_entries,
             "areaIds": area_ids,
-            "areaLabels": [area_labels[item] for item in area_ids if item in area_labels],
+            "areaLabels": [
+                area_labels[item] for item in area_ids if item in area_labels
+            ],
             "areaStatus": area.get("status", "UNKNOWN"),
             "navigationRole": lifecycle_entries[0]["role"],
             "expressionCount": len(concept_expressions),
@@ -281,7 +283,10 @@ def build_semantic_navigation_review(
         for role, member_ids in groups.items():
             groups[role] = sorted(
                 set(member_ids),
-                key=lambda item: (-by_id[item]["fieldCount"], str(by_id[item]["label"])),
+                key=lambda item: (
+                    -by_id[item]["fieldCount"],
+                    str(by_id[item]["label"]),
+                ),
             )
 
     queue_items: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -301,7 +306,8 @@ def build_semantic_navigation_review(
                 ),
                 "methodId": row.get("method_id"),
                 "status": row.get("status"),
-                "sourceRef": row.get("source_concept_id") or (variant_refs[0] if variant_refs else None),
+                "sourceRef": row.get("source_concept_id")
+                or (variant_refs[0] if variant_refs else None),
                 "sourceRefs": variant_refs,
             }
         )
@@ -318,7 +324,9 @@ def build_semantic_navigation_review(
             }
         )
     queue_counts = Counter({reason: len(rows) for reason, rows in queue_items.items()})
-    queue_counts["NAVIGATION_CANDIDATE_NOT_PUBLISHED"] = len(concepts) - len(mapped_source_ids)
+    queue_counts["NAVIGATION_CANDIDATE_NOT_PUBLISHED"] = len(concepts) - len(
+        mapped_source_ids
+    )
     queue_items["NAVIGATION_CANDIDATE_NOT_PUBLISHED"] = [
         {
             "label": row.get("label"),
@@ -362,7 +370,11 @@ def build_semantic_navigation_review(
     )
     (review_root / "index.html").write_text(_review_html(catalog), encoding="utf-8")
 
-    output_files = [review_root / "index.html", data_root / "projection.js", *sorted(shard_root.glob("*.js"))]
+    output_files = [
+        review_root / "index.html",
+        data_root / "projection.js",
+        *sorted(shard_root.glob("*.js")),
+    ]
     manifest = {
         "schema_version": "semantic-navigation-review-manifest-v1",
         "source_root": source.as_posix(),
@@ -382,7 +394,9 @@ def build_semantic_navigation_review(
             "expression_count": sum(row["expressionCount"] for row in catalog),
             "source_concept_count": len(concepts),
             "stage_attached_count": len(catalog),
-            "navigation_unattached_count": queue_counts["NAVIGATION_CANDIDATE_NOT_PUBLISHED"],
+            "navigation_unattached_count": queue_counts[
+                "NAVIGATION_CANDIDATE_NOT_PUBLISHED"
+            ],
         },
         "outputs": [
             {
@@ -444,7 +458,7 @@ def _build_concept_shard(
         for item in data.get("physical_instances", []):
             asset_id = str(
                 item.get("asset_id")
-                or f'testdb:{item.get("schema_name")}:TABLE:{item.get("object_name")}'
+                or f"testdb:{item.get('schema_name')}:TABLE:{item.get('object_name')}"
             )
             physical_groups[str(item.get("column_name", ""))].append(
                 {
@@ -524,7 +538,9 @@ def _build_concept_shard(
                 "uncertainties": expression.get("uncertainties", []),
                 "sourceConceptIds": expression.get("source_concept_ids", []),
                 "assertions": assertion_rows,
-                "evidence": sorted(evidence_rows.values(), key=lambda row: str(row["id"])),
+                "evidence": sorted(
+                    evidence_rows.values(), key=lambda row: str(row["id"])
+                ),
             }
         )
     return {
@@ -624,7 +640,8 @@ def _review_html(catalog: list[dict[str, Any]]) -> str:
     shard_scripts = "".join(
         f'<script src="data/concepts/{row["shard"]}"></script>' for row in catalog
     )
-    return r'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+    return (
+        r"""<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>字段语义地图 · 业务主线</title>
 <style>
 :root{--ink:#15243a;--muted:#65758b;--line:#dce4ee;--soft:#f5f8fc;--blue:#1769aa;--blue2:#e9f2fb;--warn:#a26113;--bad:#a63b3b}*{box-sizing:border-box}body{margin:0;color:var(--ink);font:14px/1.5 system-ui,"Microsoft YaHei",sans-serif;background:#fff}header{display:flex;gap:22px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}h1{font-size:22px;margin:0;white-space:nowrap}input{width:min(760px,70vw);padding:10px 14px;border:1px solid #aebfd2;border-radius:8px}.spine{padding:13px 20px;border-bottom:1px solid var(--line);background:var(--soft)}.spine h2{font-size:13px;margin:0 0 8px}.stages{display:flex;align-items:center;gap:0}.stage{border:0;background:transparent;color:var(--muted);padding:7px 14px;cursor:pointer;font-weight:600}.stage.active{background:var(--blue);color:#fff;border-radius:16px}.arrow{color:#91a0b2}.layout{display:grid;grid-template-columns:minmax(240px,25%) minmax(420px,37%) 1fr;height:calc(100vh - 177px);min-height:560px}.panel{overflow:auto;border-right:1px solid var(--line);padding:16px}.panel:last-child{border-right:0}.panel h2{font-size:15px;margin:0 0 12px}.muted{color:var(--muted)}.technical-name{text-transform:lowercase}.section{margin:16px 0}.group-title{font-size:12px;color:var(--muted);font-weight:700;margin:16px 0 6px}.item{display:block;width:100%;text-align:left;border:0;background:transparent;padding:7px 9px;border-radius:6px;cursor:pointer}.item:hover,.item.active{background:var(--blue2);color:#0f568f}.count{float:right;color:var(--muted);font-size:12px}.chips{display:flex;gap:6px;flex-wrap:wrap}.chip,.tag{border:1px solid #bfd0e2;border-radius:999px;background:#fff;padding:3px 8px;font-size:12px}.chip{cursor:pointer}.chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}.facet-row{display:grid;grid-template-columns:76px 1fr;gap:8px;padding:4px 0}.facet-row+.facet-row{border-top:1px dashed #e3eaf2}.facet-label{color:var(--muted);padding-top:3px}.matrix-wrap{overflow:auto;margin-top:10px;border:1px solid var(--line);border-radius:8px}.expression-matrix{width:100%;border-collapse:collapse;min-width:620px}.expression-matrix th,.expression-matrix td{border-bottom:1px solid var(--line);padding:7px;text-align:left;white-space:nowrap}.expression-matrix th{background:var(--soft)}.expression-matrix tbody tr{cursor:pointer}.expression-matrix tbody tr:hover,.expression-matrix tbody tr.active{background:var(--blue2)}.expression-matrix td:first-child{font-weight:600;color:#174f7b}.matrix-count{text-align:right!important}.detail h3{font-size:13px;margin:18px 0 7px}.physical{border-left:2px solid #cbd8e6;padding:4px 0 4px 10px;margin:6px 0}.field{font-family:ui-monospace,Consolas,monospace;color:#174f7b}.status{font-size:12px;padding:2px 7px;border-radius:10px;background:#edf4eb;color:#3e6f3b}.status.provisional{background:#fff4df;color:var(--warn)}.queue{position:fixed;left:0;right:0;bottom:0;border-top:1px solid var(--line);background:#fff;padding:10px 20px;white-space:nowrap;overflow:auto}.queue strong{margin-right:12px}.queue span{margin-right:15px;color:var(--warn)}.empty{color:var(--muted);padding:30px 8px}.boundary{font-size:12px;color:var(--muted);margin-top:4px}@media(max-width:900px){.layout{grid-template-columns:1fr;height:auto}.panel{border-right:0;border-bottom:1px solid var(--line);min-height:320px}.queue{position:static}.stages{overflow:auto}}
@@ -632,17 +649,21 @@ def _review_html(catalog: list[dict[str, Any]]) -> str:
 </style></head><body><header><h1>字段语义地图</h1><input id="search" placeholder="搜索业务概念、中文注释、字段名、表名"></header>
 <section class="spine"><h2>OTC 业务主线</h2><div id="stages" class="stages"></div><div class="boundary">生命周期主线与业务区域正交；页面内容是当前运行候选，不是正式业务本体。</div></section>
 <main class="layout"><section class="panel"><h2>① 业务地图</h2><div id="map"></div></section><section class="panel"><h2>② 语义索引</h2><div id="index" class="empty">请选择业务概念</div></section><section class="panel"><h2>③ 语义详情</h2><div id="detail" class="empty">请选择属性表达</div></section></main><footer id="queue" class="queue"></footer>
-<script src="data/projection.js"></script>''' + shard_scripts + r'''<script>
+<script src="data/projection.js"></script>"""
+        + shard_scripts
+        + r"""<script>
 const P=window.SEMANTIC_NAV_PROJECTION,C=window.SEMANTIC_NAV_CATALOG,S=window.SEMANTIC_NAV_SHARDS||{};let stage=P.stages.find(x=>x.id==='contract-lifecycle')?.id||P.stages[0].id,concept=null,expr=null,filters=new Map();const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function stageRow(){const a=P.stages.map((x,i)=>`${i?'<span class="arrow">──</span>':''}<button class="stage ${x.id===stage?'active':''}" data-stage="${x.id}">${esc(x.label)}</button>`).join('');$('stages').innerHTML=a;$('stages').querySelectorAll('[data-stage]').forEach(b=>b.onclick=()=>{stage=b.dataset.stage;renderStages();renderMap()})}function renderStages(){stageRow()}
 function rowsForStage(){const q=$('search').value.trim().toUpperCase();return C.filter(x=>(!q||x.search.includes(q))&&(q||x.stageIds.includes(stage)))}
 function renderMap(){const rows=rowsForStage(),byId=Object.fromEntries(rows.map(x=>[x.id,x])),st=P.stages.find(x=>x.id===stage),names={CORE_OBJECT:'核心对象',BUSINESS_EVENT:'业务事件',CROSS_STAGE:'跨环节关联'};let html=`<h3>${esc(st.label)}</h3>`;for(const [key,label] of Object.entries(names)){let ids=$('search').value.trim()?rows.filter(x=>x.navigationRole===key).map(x=>x.id):st.groups[key].filter(id=>byId[id]);html+=`<div class="group-title">${label}</div>`+(ids.slice(0,80).map(id=>{const x=byId[id]||C.find(y=>y.id===id);return `<button class="item ${concept===id?'active':''}" data-concept="${id}">${esc(x.label)}<span class="count">${x.fieldCount}处</span></button>`}).join('')||'<div class="muted">当前无物理证据</div>')}if(!rows.length)html+='<div class="empty">没有匹配概念</div>';$('map').innerHTML=html;$('map').querySelectorAll('[data-concept]').forEach(b=>b.onclick=()=>loadConcept(b.dataset.concept))}
 function loadConcept(id){concept=id;expr=null;filters.clear();renderMap();const data=S[id];if(data)return showConcept(data);$('index').innerHTML='<div class="empty">概念明细加载失败，请重新生成页面。</div>';$('detail').innerHTML='<div class="empty">没有可展示的属性表达</div>'}
 function showConcept(d){const c=d.concept,grouped={};d.expressions.flatMap(e=>e.qualifiers).forEach(q=>(grouped[q.dimension]??=new Map()).set(q.value,q));const stageName=id=>P.stages.find(x=>x.id===id)?.label||id;const roleName={CORE_OBJECT:'核心对象',BUSINESS_EVENT:'业务事件',CROSS_STAGE:'跨环节关联'};$('index').innerHTML=`<h3>当前概念：${esc(c.label)}</h3><div class="muted">${c.fieldCount}个字段实例 · ${c.tableCount}张表 · ${c.expressionCount}种属性表达</div><div class="muted">候选定义</div><p>${esc(c.definition)}</p><div class="chips"><span class="tag">${esc(c.areaLabels.join(' / ')||'导航待挂接')}</span><span class="tag">${esc(c.supportStatus)}</span></div><div class="boundary">来源概念：${esc(c.sourceLabels.join('、'))}</div><div class="group-title">生命周期入口</div>${c.lifecycleEntries.map(x=>`<div class="physical"><div><span class="tag">CONFIGURATION_SEED｜非证据</span> ${esc(stageName(x.stage_id))} · ${esc(roleName[x.role]||x.role)}</div><div class="boundary">${esc(x.seed_reason)}；尚无独立 Evidence ID 证明该阶段挂接。</div></div>`).join('')}<div class="section"><div class="group-title">属性表达筛选</div><div id="filters"><button class="chip ${filters.size?'':'active'}" data-reset="1">全部表达 ${d.expressions.length}</button>${Object.entries(grouped).map(([dim,values])=>`<div class="facet-row"><div class="facet-label">${esc([...values.values()][0].dimensionLabel)}</div><div class="chips">${[...values.values()].map(q=>`<button class="chip ${filters.get(dim)?.has(q.value)?'active':''}" data-dim="${esc(dim)}" data-value="${esc(q.value)}">${esc(q.valueLabel)}</button>`).join('')}</div></div>`).join('')}</div></div><div class="group-title">属性表达矩阵</div><div id="expressions"></div>`;$('filters').querySelector('[data-reset]').onclick=()=>{filters.clear();showConcept(d)};$('filters').querySelectorAll('[data-dim]').forEach(b=>b.onclick=()=>{const set=filters.get(b.dataset.dim)||new Set();set.has(b.dataset.value)?set.delete(b.dataset.value):set.add(b.dataset.value);set.size?filters.set(b.dataset.dim,set):filters.delete(b.dataset.dim);showConcept(d)});renderExpressions(d)}
-function renderExpressions(d){const dims=[...new Set(d.expressions.flatMap(e=>e.qualifiers.map(q=>q.dimension)))];const rows=d.expressions.filter(e=>[...filters].every(([dim,values])=>e.qualifiers.some(q=>q.dimension===dim&&values.has(q.value)))).sort((a,b)=>(a.label===d.concept.label?-1:b.label===d.concept.label?1:a.label.localeCompare(b.label,'zh-CN')));$('expressions').innerHTML=rows.length?`<div class="matrix-wrap"><table class="expression-matrix"><thead><tr><th>属性表达</th>${dims.map(dim=>`<th>${esc(d.expressions.flatMap(e=>e.qualifiers).find(q=>q.dimension===dim)?.dimensionLabel||dim)}</th>`).join('')}<th>实现</th><th>表</th></tr></thead><tbody>${rows.map(e=>`<tr class="${expr===e.id?'active':''}" data-expr="${e.id}"><td>${esc(e.label)}</td>${dims.map(dim=>`<td>${esc(e.qualifiers.filter(q=>q.dimension===dim).map(q=>q.valueLabel).join('、')||'—')}</td>`).join('')}<td class="matrix-count">${e.fieldCount}</td><td class="matrix-count">${e.tableCount}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">没有匹配表达</div>';$('expressions').querySelectorAll('[data-expr]').forEach(b=>b.onclick=()=>{expr=b.dataset.expr;renderExpressions(d);showExpression(d.expressions.find(x=>x.id===expr),d.concept)});if(rows.length&&!rows.some(e=>e.id===expr)){expr=rows[0].id;renderExpressions(d);showExpression(rows[0],d.concept)}}
+function expressionMatchesSearch(e){const q=$('search').value.trim().toUpperCase();return !q||e.label.toUpperCase().includes(q)||e.physicalGroups.some(g=>g.name.toUpperCase().includes(q)||g.instances.some(x=>`${x.table||''} ${x.tableComment||''} ${x.column||''} ${x.fieldComment||''} ${x.columnId||''}`.toUpperCase().includes(q)))}
+function renderExpressions(d){const dims=[...new Set(d.expressions.flatMap(e=>e.qualifiers.map(q=>q.dimension)))];const rows=d.expressions.filter(e=>expressionMatchesSearch(e)&&[...filters].every(([dim,values])=>e.qualifiers.some(q=>q.dimension===dim&&values.has(q.value)))).sort((a,b)=>(a.label===d.concept.label?-1:b.label===d.concept.label?1:a.label.localeCompare(b.label,'zh-CN')));$('expressions').innerHTML=rows.length?`<div class="matrix-wrap"><table class="expression-matrix"><thead><tr><th>属性表达</th>${dims.map(dim=>`<th>${esc(d.expressions.flatMap(e=>e.qualifiers).find(q=>q.dimension===dim)?.dimensionLabel||dim)}</th>`).join('')}<th>实现</th><th>表</th></tr></thead><tbody>${rows.map(e=>`<tr class="${expr===e.id?'active':''}" data-expr="${e.id}"><td>${esc(e.label)}</td>${dims.map(dim=>`<td>${esc(e.qualifiers.filter(q=>q.dimension===dim).map(q=>q.valueLabel).join('、')||'—')}</td>`).join('')}<td class="matrix-count">${e.fieldCount}</td><td class="matrix-count">${e.tableCount}</td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">没有匹配表达</div>';$('expressions').querySelectorAll('[data-expr]').forEach(b=>b.onclick=()=>{expr=b.dataset.expr;renderExpressions(d);showExpression(d.expressions.find(x=>x.id===expr),d.concept)});if(rows.length&&!rows.some(e=>e.id===expr)){expr=rows[0].id;renderExpressions(d);showExpression(rows[0],d.concept)}}
 function showExpression(e,c){const status=e.supportStatus==='SUPPORTED'?'status':'status provisional',groups=e.physicalGroups.map(g=>physicalGroup(g)).join('');$('detail').innerHTML=`<div class="detail"><h3>当前表达：${esc(e.label)}</h3><p>基础概念：<strong>${esc(c.label)}</strong></p><p>证据状态：<span class="${status}">${esc(e.supportStatus)}</span></p><h3>限定条件</h3>${e.qualifiers.length?e.qualifiers.map(q=>`<div>├─ ${esc(q.dimensionLabel)}：${esc(q.valueLabel)}</div>`).join(''):'<div class="muted">未识别明确限定</div>'}<h3>业务上下文</h3>${e.contexts.length?e.contexts.map(x=>`<div>├─ ${esc(x.label)} <span class="muted">${esc(x.type)}</span></div>`).join(''):'<div class="muted">当前无独立上下文证据</div>'}<h3>物理字段</h3>${groups||'<div class="muted">没有物理字段</div>'}<h3>逐项证据</h3>${e.evidence.length?e.evidence.slice(0,120).map(x=>`<div class="physical"><div>${esc(x.role)} · ${esc(x.type)} · ${esc(x.label)}</div><div class="boundary">${esc(x.id)} · ${esc(x.sourceRef)}</div></div>`).join(''):'<div class="muted">当前表达没有独立 Evidence 引用</div>'}<details><summary>断言与方法（${e.assertions.length}）</summary>${e.assertions.map(x=>`<div class="physical"><div>${esc(x.predicate)} · ${esc(x.status)}</div><div class="boundary">${esc(x.id)} · ${esc(x.methodId)} · ${esc(x.objectId)}</div></div>`).join('')}</details><h3>证据边界</h3>${e.conflicts.length?'<div>△ 存在证据冲突</div>':''}<div>△ 正式业务定义待确认</div></div>`}
-function physicalGroup(g){const tables=new Set(g.instances.map(x=>x.assetId)).size;return `<div class="physical"><details open><summary><span class="technical-name">${esc(g.name)}</span> · ${g.instances.length}处实现 · ${tables}张表</summary><table><thead><tr><th>Schema</th><th>表名</th><th>表注释</th><th>字段注释</th><th>入口</th></tr></thead><tbody>${g.instances.map(x=>`<tr><td class="technical-name">${esc(x.schema)}</td><td class="technical-name">${esc(x.table)}</td><td>${esc(x.tableComment||'—')}</td><td>${esc(x.fieldComment||'—')}${x.commentFromConsensus?' <span class="muted">（同名字段共识）</span>':''}</td><td>${x.objectUrl?`<a href="${esc(x.objectUrl)}">表详情</a>`:'目标缺失'}</td></tr>`).join('')}</tbody></table></details></div>`}
+function physicalGroup(g){const tables=new Set(g.instances.map(x=>x.assetId)).size;return `<div class="physical"><details open><summary><span class="technical-name">${esc(g.name)}</span> · ${g.instances.length}处实现 · ${tables}张表</summary><table><thead><tr><th>Schema</th><th>表名</th><th>表注释</th><th>字段注释</th><th>类型</th><th>治理状态</th><th>入口</th></tr></thead><tbody>${g.instances.map(x=>{const assignments=x.readerAssignments?.length?x.readerAssignments.join('；'):x.suppressedReaderAssignments?.length?'Reader候选已抑制：'+x.suppressedReaderAssignments.join('；'):'未归属';const boundaries=[x.conflictCount?`冲突 ${x.conflictCount}：${(x.conflictTypes||[]).join('、')}`:'',x.unresolvedCount?`未解决 ${x.unresolvedCount}：${(x.unresolvedCodes||[]).join('、')}`:''].filter(Boolean).join('；');return `<tr><td class="technical-name">${esc(x.schema)}</td><td class="technical-name">${esc(x.table)}</td><td>${esc(x.tableComment||'—')}</td><td>${esc(x.fieldComment||'—')}${x.commentFromConsensus?' <span class="muted">（同名字段共识）</span>':''}</td><td>${esc(x.dataType||'—')}</td><td><div>${esc(x.preparationDisposition||'—')}${x.preparationReason?` · ${esc(x.preparationReason)}`:''}</div><div class="boundary">${esc(assignments)}</div>${boundaries?`<div class="boundary">${esc(boundaries)}</div>`:''}</td><td>${x.objectUrl?`<a href="${esc(x.objectUrl)}">表详情</a>`:'目标缺失'}</td></tr>`}).join('')}</tbody></table></details></div>`}
 function renderQueue(){const names={NAVIGATION_CANDIDATE_NOT_PUBLISHED:'导航候选未发布',UNKNOWN_BUSINESS_CONCEPT:'基础概念待确认',RECURRENT_CORE_WITH_UNTYPED_MODIFIER:'属性表达待确认',INSUFFICIENT_EVIDENCE:'证据不足',CONFLICT:'证据冲突'};$('queue').innerHTML='<strong>语义治理队列</strong>'+P.governanceQueue.map((x,i)=>`<button class="chip" data-queue="${i}">${esc(names[x.reason]||x.reason)} ${x.count}</button>`).join('')+`<span class="muted">来源 ${esc(P.sourceRoot)} · ${esc(P.sourceManifestHash.slice(0,12))}</span>`;$('queue').querySelectorAll('[data-queue]').forEach(b=>b.onclick=()=>showQueue(P.governanceQueue[Number(b.dataset.queue)]))}
 function showQueue(q){$('detail').innerHTML=`<h3>治理队列：${esc(q.reason)}</h3><p class="muted">展示前 ${q.items.length} 条；完整计数 ${q.count}。</p>${q.items.map(x=>`<div class="physical"><div>${esc(x.label||'未命名候选')} · ${esc(x.status)}</div><div class="boundary">${esc(x.methodId||'无方法标识')} · ${esc((x.sourceRefs&&x.sourceRefs.length?x.sourceRefs.join('；'):x.sourceRef)||'无来源引用')}</div></div>`).join('')}`}
-$('search').addEventListener('input',renderMap);renderStages();renderMap();renderQueue();const preferred=C.find(x=>x.label==='名义本金')||C.find(x=>x.label.includes('名义本金'))||C.find(x=>x.stageIds.includes(stage));if(preferred)loadConcept(preferred.id);
-</script></body></html>'''
+$('search').addEventListener('input',()=>{renderMap();if(concept&&S[concept])showConcept(S[concept])});renderStages();renderMap();renderQueue();const preferred=C.find(x=>x.label==='名义本金')||C.find(x=>x.label.includes('名义本金'))||C.find(x=>x.stageIds.includes(stage));if(preferred)loadConcept(preferred.id);
+</script></body></html>"""
+    )

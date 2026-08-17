@@ -1,0 +1,117 @@
+# 口径拐点表：grp1_CompScal_OtcDeriRgstComp_MthEnd 从 TITANS 事实到指标值的每次语义变化
+# 拐点类型：统计对象/统计范围/时点/金额/币种/正负号/粒度/计算/数据质量/指标标签
+schemaVersion: indicator-journey-inflections-v1
+
+inflections:
+  - id: IF-01
+    type: 统计对象
+    label: 合约集合定义
+    location: T98 采集（86840/86841/86842/220650）
+    before: TITANS 全部 OTC 交易/合约（d_trd_otc_trade + d_ref_otc_option_deal/d_ref_trs/d_ks_trade_comfirm_info/d_ref_fast_trs）
+    after: 期权+互换合约（限 OTC/OTC_HK 账簿，剔除测试 book 10022/10019）
+    evidence: tasksql-86840 等 FROM/JOIN 结构
+    confidence: HIGH
+    note: 覆盖期权（OPTION）、互换（TRS）、极速互换（FAST_TRS）、成交确认互换（KS）四个分组
+
+  - id: IF-02
+    type: 金额
+    label: 动态名义本金定义（分组01 期权）
+    location: T98 采集（86840）
+    before: 期权合约要素 Notional（d_ref_otc_option_deal.Notional）
+    after: 有效期内（start_date ≤ 业务日期 ≤ coalesce(Early_Term_Date,end_date)）Notional，否则 0
+    evidence: sqllens 逐跳血缘（journey-rgstcomp-mthend-lineage.txt）
+    confidence: HIGH
+
+  - id: IF-02B
+    type: 金额
+    label: 动态名义本金定义（分组02 互换）
+    location: T98 采集（86841）
+    before: 互换腿历史持仓（d_pos_trs_leg_his_pos：SUM(Init_Price × Quantity) → Nom_Prin）
+    after: COALESCE(Nom_Prin,0)
+    evidence: sqllens 逐跳血缘；86841 SQL
+    confidence: HIGH
+
+  - id: IF-02C
+    type: 金额
+    label: 动态名义本金定义（分组03/04）
+    location: T98 采集（86842/220650）
+    before: KS 成交确认 dynamic_notional / 极速互换腿持仓 SUM(dynamic_notional)
+    after: 直接取值，无折算
+    evidence: 86842/220650 SQL
+    confidence: HIGH
+
+  - id: IF-03
+    type: 币种
+    label: 币种折算（分组01/02 显式折算人民币；03/04 依赖源字段）
+    location: T98 采集
+    before: 原币/结算币/担保币
+    after: 分组01：CASE 担保币=CNY→1，结算币=CNY→INIT_NOTL_EXCHANGE_RATE，否则 MIDRATE（外汇中间价）
+          分组02：CASE CURRENCY=CNY→1，BASE_CURRENCY=CNY→BASE_INIT_EXCHANGE_RATE，SETTLEMENT_CURRENCY=CNY→SETTLE_INIT_EXCHANGE_RATE
+          分组03/04：直接取值（金仕达/极速互换为境内柜台，字段本身应为人民币）
+    evidence: sqllens 逐跳血缘（86840/86841 完整表达式）；86842/220650 SQL
+    confidence: MEDIUM
+    action: 分组03/04 的 dynamic_notional 币种口径未显式折算，建议业务确认其为人民币；若含外币合约，指标值将混币种
+
+  - id: IF-04
+    type: 统计范围
+    label: 报备合约筛选
+    location: 指标加工（162610）
+    before: 全量场外衍生品合约（T98 快照）
+    after: 剔除无需报备合约（T05.Rgst_Stat_Cd='SKIP_REPORT'，来源 D_TRD_OTC_CONTR_REPORT.REPORT_STATUS）
+    evidence: 162610 LEFT JOIN + WHERE IS NULL；106204 REPORT_STATUS→Rgst_Stat_Cd
+    confidence: HIGH
+    note: 业务定义"剔除无需报备"与 SQL 完全一致；"报备合约"= 有报备义务的合约
+
+  - id: IF-05
+    type: 时点
+    label: 月末快照
+    location: 指标加工（162610）
+    before: T98 每日快照（busi_date=${yyyy-MM-dd}）
+    after: 当月月末（busi_mon=${yyyyMM}），取调度日当日快照
+    evidence: 162610 busi_date/busi_mon 变量
+    confidence: HIGH
+    note: 实际取数日 = 任务运行日（月终/月初），非"自然月末最后一天"显式定义
+
+  - id: IF-06
+    type: 粒度
+    label: 合约 → 组合级汇总
+    location: 指标加工（162610）
+    before: 合约级（Agt_Id）
+    after: 组合级（grp_val='8888' COMPANY=广发证券）× 标签（tag999999999 全部 / tagdim101742 业务类型）
+    evidence: 162610 两段 UNION ALL + JOIN grp_def
+    confidence: HIGH
+
+  - id: IF-07
+    type: 数据质量
+    label: 空值处理
+    location: 指标加工（162610）与 T98 采集
+    before: 无
+    after: 期权侧 COALESCE(Notional,0)、互换侧 COALESCE(Nom_Prin,0)；指标 LEFT JOIN 未命中报备记录的合约保留（IS NULL 判定）
+    evidence: 各 SQL COALESCE
+    confidence: HIGH
+
+  - id: IF-08
+    type: 指标标签
+    label: 业务类型标签映射
+    location: 指标加工（162610 段2）
+    before: T98.Busi_Type（OPTION/TRS 原始值）
+    after: 标签 tagdim101742（场外衍生品业务类型：期权/互换）tag_id
+    evidence: 162610 JOIN tag_def WHERE tag_partition_id='tagdim101742'
+    confidence: MEDIUM
+    note: tag_def.dim_val 与 Busi_Type 的取值映射未逐一核对（标签快照 dimensionResolved=NOT_FOUND）
+
+  - id: IF-09
+    type: 计算
+    label: 无备注信息
+    location: 指标加工（162610）
+    before: 命名含"无备注信息"
+    after: SQL 中未见备注字段过滤，实际等同"全量报备合约"
+    evidence: 162610 全文
+    confidence: MEDIUM
+    action: 确认"无备注"是否为命名约定（区别于带备注变体），非计算逻辑
+
+openQuestions:
+  - 分组 03/04 的 dynamic_notional 是否均为人民币口径（IF-03，未显式折算）
+  - tagdim101742 标签值 → Busi_Type 映射完整性（IF-08）
+  - 月末取数日约定（IF-05）
+  - "无备注信息"语义（IF-09）

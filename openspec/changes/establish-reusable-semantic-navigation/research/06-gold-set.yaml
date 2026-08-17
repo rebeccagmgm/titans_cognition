@@ -1,0 +1,1063 @@
+metadata:
+  gold_set_id: "otc-semantic-navigation-rework-gold-v1-candidate"
+  version: "v1-candidate"
+  status: "REWORKED_CANDIDATE"
+  scope: "TITANS_TRADEFLOW"
+  case_count: 27
+  authority: "RESEARCH_REGRESSION_INPUT_NOT_BUSINESS_GOLD"
+  source_case_ids: "03-gold-set.yaml A01-M01"
+  purpose: >-
+    Machine-parseable expected semantic-layer decisions for the 27 retained
+    regression cases. Expected-after-rework is kept separate from the observed
+    current Stage 3/5 baseline.
+  non_claims:
+    - "This file does not mean the current runtime passes the cases."
+    - "This file does not publish a Reader or grant business acceptance."
+    - "A provider field-evidence contract does not mean its output is implemented or integrated."
+  field_evidence_integration_status: "PENDING_INTEGRATION"
+  revised_execution_status: "PENDING_RERUN"
+  legacy_oracle_policy: >-
+    The historical 03 oracle is not edited. Its first executable baseline must
+    change quoting only, as required by 05. This separate 06 fork also follows
+    the later explicit instruction to correct self-contradictory direction and
+    frozen-description expectations; every such change retains the old oracle
+    below as counterevidence and remains PENDING_RERUN.
+
+result_states:
+  observed_current: ["PASS", "FAIL", "NOT_EVALUABLE"]
+  revised_run: ["PENDING_RERUN", "PASS", "FAIL", "NOT_EVALUABLE"]
+  evaluability: ["EVALUABLE", "NOT_EVALUABLE"]
+
+current_observed_baseline:
+  source: "05-independent-review.md"
+  pass: 6
+  fail: 17
+  not_evaluable: 4
+  disposition: "FAIL"
+  note: "Historical result against the current Stage 3/5 projection; it is not overwritten by corrected expectations."
+
+case_contract:
+  required_sections:
+    - "physical_field"
+    - "table_context"
+    - "expected_after_rework"
+    - "evidence_requirement"
+    - "observed_current"
+  physical_field_rule: >-
+    Use a locatable Schema/Table/Column composite and retain raw name, raw
+    comment, and data type. A non-locatable aggregate case uses explicit nulls
+    and NOT_EVALUABLE; no physical field is fabricated.
+  semantic_rule: >-
+    Tokenization, protected phrases, table context, and technical-field
+    candidacy are observations only. They cannot decide the base concept,
+    qualifier, Reader identity, or publication status.
+
+candidate_observation_registry:
+  registry_kind: "PRE_A_SEMANTIC_OBSERVATION"
+  counts_toward_core_22_concepts: false
+  reader_eligible: false
+  identity_rule: >-
+    These IDs identify unresolved Gold observations, not business concept
+    identities. They cannot appear in the navigation skeleton's concepts or
+    Reader scope without a separate adjudication.
+  observations:
+    - observation_id: "observation:inner-value-ratio"
+      label_zh: "内在价值系数"
+      next_decision: "Determine the owning Economic Terms concept and expression boundary."
+    - observation_id: "observation:interest-interval"
+      label_zh: "计息区间/计息起止"
+      next_decision: "Determine the owning Contract Leg or Economic Terms context."
+    - observation_id: "observation:netting-record-quantity"
+      label_zh: "轧差记录买入数量"
+      next_decision: "Determine the netting-record object before Reader placement."
+    - observation_id: "observation:lifecycle-event-source"
+      label_zh: "生命周期事件来源"
+      next_decision: "Distinguish business provenance from a standalone concept."
+    - observation_id: "observation:valuation-rate-source"
+      label_zh: "估值汇率来源"
+      next_decision: "Locate the referenced market-reference object's responsibility."
+
+cases:
+  - id: "A01"
+    category: "SHORT_NAME_PROTECTED_PHRASE"
+    case_intent: "NEGATIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_LS_DEAL"
+      column_name: "CTPTY_SHORT_NAME"
+      identity_key: "TITANS_TRADEFLOW.TRD_LS_DEAL.CTPTY_SHORT_NAME"
+      raw_column_name: "CTPTY_SHORT_NAME"
+      raw_column_comment: "交易对手短名"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_LS_DEAL"
+      raw_table_comment: "意向成交流水原始转义表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手短名"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "standalone concept from 短名"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Preserve protected phrase CTPTY_SHORT_NAME before token-level rules."
+      - "Retain raw name and comment as separate evidence."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Reader displays 交易对手短名（空头）."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "A02"
+    category: "SHORT_NAME_PROTECTED_PHRASE"
+    case_intent: "NEGATIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_OPTION_MANUAL_TRADE_DEAL"
+      column_name: "CTPTY_SHORT_NAME"
+      identity_key: "TITANS_TRADEFLOW.TRD_OPTION_MANUAL_TRADE_DEAL.CTPTY_SHORT_NAME"
+      raw_column_name: "CTPTY_SHORT_NAME"
+      raw_column_comment: "交易对手简称"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_OPTION_MANUAL_TRADE_DEAL"
+      raw_table_comment: "Option 手工原始流水表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手简称"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "standalone concept from 简称"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Protect CTPTY_SHORT_NAME as a name-form phrase."
+      - "Do not let SHORT vote independently."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Reader displays 交易对手简称（空头）."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "A03"
+    category: "SHORT_NAME_AND_OBJECT_ANCHOR"
+    case_intent: "NEGATIVE_POSITION_SIDE_AND_UNRESOLVED_IDENTITY"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_CLN_TRADE_DEAL"
+      column_name: "CTPTY_SHORT_NAME"
+      identity_key: "TITANS_TRADEFLOW.TRD_CLN_TRADE_DEAL.CTPTY_SHORT_NAME"
+      raw_column_name: "CTPTY_SHORT_NAME"
+      raw_column_comment: "客户短名"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_CLN_TRADE_DEAL"
+      raw_table_comment: "CLN 认购流水"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: null
+      candidate_base_concepts: ["concept:customer", "concept:counterparty"]
+      attribute_expression: "客户短名"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: ["COMPETING_OBJECT_ANCHOR"]
+      forbidden_inferences: ["position_side=SHORT", "Customer equals Counterparty"]
+      reader_identity: null
+      reader_publication: "BLOCKED_BY_UNRESOLVED_IDENTITY"
+    evidence_requirement:
+      - "Preserve the column-name/comment object-anchor conflict."
+      - "Require eligibility or trade/agreement relationship evidence to distinguish Customer and Counterparty."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Reader displays 客户短名（空头） under Counterparty."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "A04"
+    category: "SHORT_NAME_PROTECTED_PHRASE"
+    case_intent: "NEGATIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_PRE_TRADE_VALIDATION_LOG"
+      column_name: "SHORT_NAME"
+      identity_key: "TITANS_TRADEFLOW.TRD_PRE_TRADE_VALIDATION_LOG.SHORT_NAME"
+      raw_column_name: "SHORT_NAME"
+      raw_column_comment: "交易对手简称"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_PRE_TRADE_VALIDATION_LOG"
+      raw_table_comment: "事前交易风险速查记录表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手简称"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "table risk context creates Risk Exposure"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Protect SHORT_NAME as a complete name-form phrase."
+      - "Use the table only as CONTEXT_ONLY."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Reader displays 交易对手简称（空头）."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "A05"
+    category: "ABBREVIATED_SHORT_NAME"
+    case_intent: "NEGATIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRANS_HKFT_ORIGINAL_DEAL"
+      column_name: "CTPTY_SHTNAME"
+      identity_key: "TITANS_TRADEFLOW.TRANS_HKFT_ORIGINAL_DEAL.CTPTY_SHTNAME"
+      raw_column_name: "CTPTY_SHTNAME"
+      raw_column_comment: "交易对手短名"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRANS_HKFT_ORIGINAL_DEAL"
+      raw_table_comment: "HKFT原始意向成交流水表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手短名"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "SHT abbreviation as semantic proof"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Abbreviation expansion is an observation and must cite provenance."
+      - "The Chinese comment supplies independent name-form support."
+    observed_current:
+      result: "PASS"
+      observation: "Current Reader shows 交易对手短名 without a direction qualifier."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "B01"
+    category: "LONG_NAME_PROTECTED_PHRASE"
+    case_intent: "NEGATIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_TRS_ORDER"
+      column_name: "CTPTY_LONG_NAME"
+      identity_key: "TITANS_TRADEFLOW.TRD_TRS_ORDER.CTPTY_LONG_NAME"
+      raw_column_name: "CTPTY_LONG_NAME"
+      raw_column_comment: "交易对手长名"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_TRS_ORDER"
+      raw_table_comment: "交易-交易指令"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手长名"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=LONG", "Order table makes the field an Order attribute"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Protect CTPTY_LONG_NAME as a name-form phrase."
+      - "Do not let LONG vote independently."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Reader displays 交易对手长名（多头）."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "C01"
+    category: "POSITION_SIDE_VALID"
+    case_intent: "POSITIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_FAST_TRS"
+      column_name: "SHORT_DYNAMIC_NOTIONAL"
+      identity_key: "TITANS_TRADEFLOW.REF_FAST_TRS.SHORT_DYNAMIC_NOTIONAL"
+      raw_column_name: "SHORT_DYNAMIC_NOTIONAL"
+      raw_column_comment: "空头动态名义本金（结算币种）"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_FAST_TRS"
+      raw_table_comment: "极速互换合约要素表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:notional"
+      attribute_expression: "空头动态名义本金（结算币种）"
+      field_attribute: "MEASURE"
+      qualifiers:
+        - {dimension: "position_side", value: "SHORT"}
+        - {dimension: "variability", value: "DYNAMIC"}
+        - {dimension: "currency_basis", value: "SETTLEMENT"}
+      unresolved_observations: []
+      forbidden_inferences: ["trade_side=SELL", "cashflow_direction=PAY"]
+      reader_identity: "reader:notional"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Column name and Chinese comment independently support SHORT."
+      - "Parenthetical text supports settlement-currency basis."
+    observed_current:
+      result: "PASS"
+      observation: "Current projection retains position_side SHORT."
+      current_reader_identity: "reader:notional"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "C02"
+    category: "POSITION_SIDE_AND_CURRENCY_CORRECTION"
+    case_intent: "POSITIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_FAST_TRS"
+      column_name: "LONG_DYNAMIC_NOTIONAL"
+      identity_key: "TITANS_TRADEFLOW.REF_FAST_TRS.LONG_DYNAMIC_NOTIONAL"
+      raw_column_name: "LONG_DYNAMIC_NOTIONAL"
+      raw_column_comment: "多头动态名义本金（结算币种）"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_FAST_TRS"
+      raw_table_comment: "极速互换合约要素表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:notional"
+      attribute_expression: "多头动态名义本金（结算币种）"
+      field_attribute: "MEASURE"
+      qualifiers:
+        - {dimension: "position_side", value: "LONG"}
+        - {dimension: "variability", value: "DYNAMIC"}
+        - {dimension: "currency_basis", value: "SETTLEMENT"}
+      unresolved_observations: []
+      forbidden_inferences: ["currency_basis=UNDERLYING", "trade_side=BUY"]
+      reader_identity: "reader:notional"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    legacy_oracle:
+      expected_currency_basis: "UNDERLYING"
+      status: "RETAINED_AS_FROZEN_DESCRIPTION_CONFLICT"
+      supersession_claim: false
+      note: "The historical meaning remains auditable; only the 06 candidate expectation uses the frozen settlement-currency comment."
+    evidence_requirement:
+      - "Use the frozen raw comment stating settlement currency."
+      - "Retain the old Gold underlying-currency wording as corrected counterevidence."
+    observed_current:
+      result: "NOT_EVALUABLE"
+      observation: "Old Gold said underlying currency while the physical comment says settlement currency."
+      current_reader_identity: "reader:notional"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "C03"
+    category: "POSITION_SIDE_BASE_CONCEPT_CORRECTION"
+    case_intent: "POSITIVE_POSITION_SIDE_WITH_DEFERRED_CONCEPT"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_OTC_CONTR_MARGIN_PARAM"
+      column_name: "SHORT_INNER_VALUE_RATIO"
+      identity_key: "TITANS_TRADEFLOW.REF_OTC_CONTR_MARGIN_PARAM.SHORT_INNER_VALUE_RATIO"
+      raw_column_name: "SHORT_INNER_VALUE_RATIO"
+      raw_column_comment: "空头内在价值系数"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_OTC_CONTR_MARGIN_PARAM"
+      raw_table_comment: "合约-静态履约保证金参数"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: null
+      base_concept_observation_id: "observation:inner-value-ratio"
+      expected_base_concept_label: "内在价值系数（待归属）"
+      base_concept_status: "UNRESOLVED"
+      attribute_expression: "空头内在价值系数"
+      field_attribute: "MEASURE"
+      qualifiers:
+        - {dimension: "position_side", value: "SHORT"}
+        - {dimension: "measure_basis", value: "RATIO"}
+      unresolved_observations: []
+      forbidden_inferences: ["base concept 多头内在价值系数", "reader:margin from table context alone"]
+      reader_identity: null
+      reader_publication: "NOT_IN_FIRST_READER_SCOPE"
+    legacy_oracle:
+      expected_base_concept_label: "多头内在价值系数"
+      status: "RETAINED_AS_SELF_CONTRADICTORY_ORACLE"
+      supersession_claim: false
+      note: "The historical oracle conflicts with both SHORT in the name and 空头 in the comment; 06 correction awaits rerun and review."
+    evidence_requirement:
+      - "Name and comment agree on SHORT."
+      - "Table context cannot turn the coefficient into Margin identity."
+    observed_current:
+      result: "FAIL"
+      observation: "Old Gold expected a long-side base concept for a short-side field."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "C04"
+    category: "POSITION_SIDE_ON_TIME_EXPRESSION"
+    case_intent: "POSITIVE_POSITION_SIDE_WITHOUT_READER"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_FAST_TRS"
+      column_name: "INTEREST_INTERVAL_S"
+      identity_key: "TITANS_TRADEFLOW.REF_FAST_TRS.INTEREST_INTERVAL_S"
+      raw_column_name: "INTEREST_INTERVAL_S"
+      raw_column_comment: "计息起止（空头）"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "REF_FAST_TRS"
+      raw_table_comment: "极速互换合约要素表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: null
+      base_concept_observation_id: "observation:interest-interval"
+      expected_base_concept_label: "计息区间/计息起止（待归属）"
+      base_concept_status: "UNRESOLVED"
+      attribute_expression: "计息起止（空头）"
+      field_attribute: "TIME"
+      qualifiers:
+        - {dimension: "position_side", value: "SHORT"}
+      unresolved_observations: []
+      forbidden_inferences: ["reader:position from SHORT", "lifecycle_stage qualifier"]
+      reader_identity: null
+      reader_publication: "NOT_IN_FIRST_READER_SCOPE"
+    evidence_requirement:
+      - "Chinese comment provides explicit side semantics."
+      - "No Reader placement follows from the qualifier."
+    observed_current:
+      result: "FAIL"
+      observation: "Stage 3 has the expression; old expected placement was absent from reader:position."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "D01"
+    category: "TARGET_BUSINESS_OR_MAPPING_ROLE"
+    case_intent: "NEGATIVE_FLOW_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRS_CONTRACT_MAPPING_CONFIG"
+      column_name: "TARGET_CTPTY_ID"
+      identity_key: "TITANS_TRADEFLOW.TRS_CONTRACT_MAPPING_CONFIG.TARGET_CTPTY_ID"
+      raw_column_name: "TARGET_CTPTY_ID"
+      raw_column_comment: "目标交易对手"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "TRS_CONTRACT_MAPPING_CONFIG"
+      raw_table_comment: "合约映射方向配置表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "目标交易对手标识"
+      field_attribute: "IDENTIFIER"
+      qualifiers: []
+      unresolved_observations: ["MAPPING_ROLE_TARGET"]
+      forbidden_inferences: ["flow_side=TARGET", "party_relationship_role=TARGET"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_BY_UNRESOLVED_MAPPING_ROLE"
+    evidence_requirement:
+      - "Distinguish target business object from target data side."
+      - "Require explicit mapping input/output semantics before flow_side."
+    observed_current:
+      result: "FAIL"
+      observation: "Current projection labels 目标交易对手 with flow_side TARGET."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "D02"
+    category: "EXPLICIT_TRADEFLOW_MAPPING_SIDE"
+    case_intent: "POSITIVE_FLOW_SIDE_WITH_CONTEXT"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRS_FAST_MAPPING_CONFIG"
+      column_name: "SOURCE_CTPTY_ID"
+      identity_key: "TITANS_TRADEFLOW.TRS_FAST_MAPPING_CONFIG.SOURCE_CTPTY_ID"
+      raw_column_name: "SOURCE_CTPTY_ID"
+      raw_column_comment: "源侧交易对手ID"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "TRS_FAST_MAPPING_CONFIG"
+      raw_table_comment: "极速映射方向配置"
+      evidence_use: "REQUIRED_FOR_FLOW_SIDE"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "源侧交易对手标识"
+      field_attribute: "IDENTIFIER"
+      qualifiers:
+        - {dimension: "flow_side", value: "SOURCE", portability: "TRADEFLOW_ONLY"}
+      unresolved_observations: []
+      forbidden_inferences: ["party_relationship_role=SOURCE", "cross-schema flow_side validation"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Both field comment and explicit mapping context must support data-side meaning."
+      - "Keep the qualifier versioned as TRADEFLOW-only."
+    observed_current:
+      result: "PASS"
+      observation: "Current Reader shows identifier without flow_side; business mapping meaning still needs context."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "E01"
+    category: "GENERIC_STATE_AGGREGATE"
+    case_intent: "NEGATIVE_STANDALONE_CONCEPT"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_FAST_TRS_FEE"
+      column_name: "AUDIT_STATUS"
+      identity_key: "TITANS_TRADEFLOW.TRD_FAST_TRS_FEE.AUDIT_STATUS"
+      raw_column_name: "AUDIT_STATUS"
+      raw_column_comment: "状态"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_FAST_TRS_FEE"
+      raw_table_comment: "极速互换合约费用表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: null
+      attribute_expression: "未绑定状态观察"
+      field_attribute: "BUSINESS_OBJECT_STATE"
+      qualifiers: []
+      unresolved_observations: ["OBJECT_ANCHOR_REQUIRES_AUDIT_OR_FEE_WORKFLOW_CONTEXT"]
+      forbidden_inferences: ["standalone business concept 状态", "cross-object state merge", "AUDIT token creates AUDIT field attribute without workflow evidence"]
+      reader_identity: null
+      reader_publication: "PROHIBITED"
+    evidence_requirement:
+      - "The frozen Stage 0 field and table context must remain locatable."
+      - "Determine the owning fee/audit workflow object before assigning a namespaced state."
+    observed_current:
+      result: "FAIL"
+      observation: "Stage 3 currently contains 状态 as a DOMAIN candidate."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "E02"
+    category: "GENERIC_TYPE_AGGREGATE"
+    case_intent: "NEGATIVE_STANDALONE_CONCEPT"
+    evaluability: "NOT_EVALUABLE"
+    physical_field:
+      schema_name: null
+      table_name: null
+      column_name: null
+      identity_key: null
+      raw_column_name: null
+      raw_column_comment: "类型"
+      data_type: null
+    table_context:
+      raw_table_name: null
+      raw_table_comment: null
+      evidence_use: "NOT_AVAILABLE"
+    expected_after_rework:
+      base_concept_id: null
+      attribute_expression: "未绑定类型观察"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: ["UNBOUND_ATTRIBUTE_OBSERVATION"]
+      forbidden_inferences: ["standalone business concept 类型", "CONFIGURATION axis"]
+      reader_identity: null
+      reader_publication: "PROHIBITED"
+    evidence_requirement:
+      - "A concrete object-anchored field is required for evaluation."
+      - "No physical field may be fabricated from the aggregate label."
+    observed_current:
+      result: "FAIL"
+      observation: "Stage 3 currently contains 类型 as a DOMAIN candidate."
+      current_reader_identity: null
+    revised_run_status: "NOT_EVALUABLE"
+
+  - id: "E03"
+    category: "GENERIC_AMOUNT_AGGREGATE"
+    case_intent: "NEGATIVE_STANDALONE_CONCEPT"
+    evaluability: "NOT_EVALUABLE"
+    physical_field:
+      schema_name: null
+      table_name: null
+      column_name: null
+      identity_key: null
+      raw_column_name: null
+      raw_column_comment: "金额"
+      data_type: null
+    table_context:
+      raw_table_name: null
+      raw_table_comment: null
+      evidence_use: "NOT_AVAILABLE"
+    expected_after_rework:
+      base_concept_id: null
+      attribute_expression: "未绑定金额观察"
+      field_attribute: "MEASURE"
+      qualifiers: []
+      unresolved_observations: ["UNBOUND_ATTRIBUTE_OBSERVATION"]
+      forbidden_inferences: ["standalone business concept 金额", "Reader identity from numeric data type"]
+      reader_identity: null
+      reader_publication: "PROHIBITED"
+    evidence_requirement:
+      - "A concrete object-anchored field is required for evaluation."
+      - "No physical field may be fabricated from the aggregate label."
+    observed_current:
+      result: "FAIL"
+      observation: "Stage 3 currently contains 金额 as a DOMAIN candidate."
+      current_reader_identity: null
+    revised_run_status: "NOT_EVALUABLE"
+
+  - id: "E04"
+    category: "GENERIC_ABBREVIATION_AGGREGATE"
+    case_intent: "NEGATIVE_STANDALONE_CONCEPT"
+    evaluability: "NOT_EVALUABLE"
+    physical_field:
+      schema_name: null
+      table_name: null
+      column_name: null
+      identity_key: null
+      raw_column_name: null
+      raw_column_comment: "简称"
+      data_type: null
+    table_context:
+      raw_table_name: null
+      raw_table_comment: null
+      evidence_use: "NOT_AVAILABLE"
+    expected_after_rework:
+      base_concept_id: null
+      attribute_expression: "未绑定简称观察"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: ["UNBOUND_ATTRIBUTE_OBSERVATION"]
+      forbidden_inferences: ["standalone business concept 简称", "position_side from short-name semantics"]
+      reader_identity: null
+      reader_publication: "PROHIBITED"
+    evidence_requirement:
+      - "A concrete object-anchored field is required for evaluation."
+      - "No physical field may be fabricated from the aggregate label."
+    observed_current:
+      result: "FAIL"
+      observation: "Stage 3 currently contains 简称 as a DOMAIN candidate."
+      current_reader_identity: null
+    revised_run_status: "NOT_EVALUABLE"
+
+  - id: "F01"
+    category: "NAME_COMMENT_DIRECTION_CONFLICT"
+    case_intent: "CONFLICT_PRESERVATION"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_LS_TRS"
+      column_name: "SHORT_DYNAMIC_NOTIONAL_ORG"
+      identity_key: "TITANS_TRADEFLOW.REF_LS_TRS.SHORT_DYNAMIC_NOTIONAL_ORG"
+      raw_column_name: "SHORT_DYNAMIC_NOTIONAL_ORG"
+      raw_column_comment: "多头动态名义本金（结算币种）"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_LS_TRS"
+      raw_table_comment: "多空互换合约表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:notional"
+      attribute_expression: "动态名义本金（结算币种，方向冲突）"
+      field_attribute: "MEASURE"
+      qualifiers:
+        - {dimension: "variability", value: "DYNAMIC"}
+        - {dimension: "currency_basis", value: "SETTLEMENT"}
+      unresolved_observations: ["NAME_COMMENT_CONFLICT", "position_side=SHORT versus LONG"]
+      forbidden_inferences: ["fixed comment priority", "fixed column-name priority", "Reader publication while conflict is open"]
+      reader_identity: "reader:notional"
+      reader_publication: "BLOCKED_BY_CONFLICT"
+    evidence_requirement:
+      - "Preserve both raw direction claims and their spans."
+      - "Require independent business evidence for direction adjudication."
+    observed_current:
+      result: "NOT_EVALUABLE"
+      observation: "Physical field exists in Stage 0 but the specified field was not located in the current candidate projection."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "G01"
+    category: "TRADE_SIDE_SELLER"
+    case_intent: "POSITIVE_TRADE_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_OTC_OPTION_DEAL"
+      column_name: "SELLER"
+      identity_key: "TITANS_TRADEFLOW.REF_OTC_OPTION_DEAL.SELLER"
+      raw_column_name: "SELLER"
+      raw_column_comment: "卖方，关联交易对手ID"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_OTC_OPTION_DEAL"
+      raw_table_comment: "场外交易-期权交易合同要素表"
+      evidence_use: "REQUIRED_FOR_TRADE_SIDE"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "卖方交易对手标识"
+      field_attribute: "IDENTIFIER"
+      qualifiers:
+        - {dimension: "trade_side", value: "SELL"}
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "party_relationship_role=SOURCE"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Use the explicit seller comment and trade-contract context together."
+      - "Do not infer an Order or Trade Reader from the table alone."
+    observed_current:
+      result: "NOT_EVALUABLE"
+      observation: "The field is absent from all five current Stage 5 Reader shards."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "G02"
+    category: "TRADE_SIDE_BUY_QUANTITY"
+    case_intent: "POSITIVE_TRADE_SIDE_WITH_UNRESOLVED_OBJECT"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_TRS_NETTING_DEAL"
+      column_name: "BUY_QTY"
+      identity_key: "TITANS_TRADEFLOW.TRD_TRS_NETTING_DEAL.BUY_QTY"
+      raw_column_name: "BUY_QTY"
+      raw_column_comment: "买入数量（汇总前流水买入数量求和）"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "TRD_TRS_NETTING_DEAL"
+      raw_table_comment: "日终轧差记录表"
+      evidence_use: "REQUIRED_FOR_OBJECT_BOUNDARY"
+    expected_after_rework:
+      base_concept_id: null
+      base_concept_observation_id: "observation:netting-record-quantity"
+      expected_base_concept_label: "轧差记录买入数量（待对象归属）"
+      attribute_expression: "买入数量（汇总前）"
+      field_attribute: "MEASURE"
+      qualifiers:
+        - {dimension: "trade_side", value: "BUY"}
+      unresolved_observations: ["OBJECT_ANCHOR_REQUIRES_NETTING_CONTEXT", "aggregation_state candidate"]
+      forbidden_inferences: ["reader:order from BUY", "reader:trade from table name", "base concept 数量"]
+      reader_identity: null
+      reader_publication: "BLOCKED_BY_UNRESOLVED_OBJECT"
+    evidence_requirement:
+      - "Retain the netting-table context and aggregation wording."
+      - "Require an object-role decision before Reader placement."
+    observed_current:
+      result: "NOT_EVALUABLE"
+      observation: "The field is absent from all five current Stage 5 Reader shards."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "H01"
+    category: "ORDER_TRADE_IDENTITY_SPLIT"
+    case_intent: "POSITIVE_ORDER_IDENTIFIER"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_ALLMARKET_ORDER_DEAL"
+      column_name: "KEY_STOCK_ORDER_ID"
+      identity_key: "TITANS_TRADEFLOW.TRD_ALLMARKET_ORDER_DEAL.KEY_STOCK_ORDER_ID"
+      raw_column_name: "KEY_STOCK_ORDER_ID"
+      raw_column_comment: "订单业务主键"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "TRD_ALLMARKET_ORDER_DEAL"
+      raw_table_comment: "一站通一级流水主表"
+      evidence_use: "SUPPORT"
+    expected_after_rework:
+      base_concept_id: "concept:order"
+      attribute_expression: "订单业务主键"
+      field_attribute: "IDENTIFIER"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["combined Order/Trade Reader identity", "reader:trade", "Trade identifier inheritance"]
+      reader_identity: "reader:order"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Column comment and table responsibility must support Order identity."
+      - "The Reader identity must be distinct from Trade."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Stage 5 uses a merged Order/Trade Reader identity."
+      current_reader_identity: "LEGACY_COMBINED_ORDER_TRADE_READER"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "I01"
+    category: "COMMENT_SHORT_NAME_WITH_NEUTRAL_COLUMN"
+    case_intent: "NEGATIVE_POSITION_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_GOATS_DEAL"
+      column_name: "CTPTY_NAME"
+      identity_key: "TITANS_TRADEFLOW.REF_GOATS_DEAL.CTPTY_NAME"
+      raw_column_name: "CTPTY_NAME"
+      raw_column_comment: "交易对手短名"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "REF_GOATS_DEAL"
+      raw_table_comment: "GOATS委托订单表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手短名"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "Order identity from table context"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Treat 短名 as a name expression, not position direction."
+    observed_current:
+      result: "PASS"
+      observation: "Current Reader does not attach SHORT to this field."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "I02"
+    category: "COMMENT_SHORT_NAME_WITH_GENERIC_COLUMN"
+    case_intent: "NEGATIVE_POSITION_SIDE_AND_CONCEPT_PROMOTION"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_FICC_TRADING_BOND_ORI_DEAL"
+      column_name: "COUNTERPARTY"
+      identity_key: "TITANS_TRADEFLOW.TRD_FICC_TRADING_BOND_ORI_DEAL.COUNTERPARTY"
+      raw_column_name: "COUNTERPARTY"
+      raw_column_comment: "交易对手短名"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_FICC_TRADING_BOND_ORI_DEAL"
+      raw_table_comment: "FICC-Trading债券原始成交流水表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "交易对手短名"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: []
+      forbidden_inferences: ["position_side=SHORT", "new business concept 交易对手短名"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Bind the descriptive expression to the existing Counterparty identity."
+    observed_current:
+      result: "PASS"
+      observation: "Current Reader keeps it as a Counterparty expression without a new object."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "J01"
+    category: "BUSINESS_EVENT_SOURCE"
+    case_intent: "NEGATIVE_FLOW_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_FAST_TRS_EVENT"
+      column_name: "SOURCE_TYPE"
+      identity_key: "TITANS_TRADEFLOW.TRD_FAST_TRS_EVENT.SOURCE_TYPE"
+      raw_column_name: "SOURCE_TYPE"
+      raw_column_comment: "事件来源类型"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_FAST_TRS_EVENT"
+      raw_table_comment: "极速互换存续期事件表"
+      evidence_use: "SUPPORTS_BUSINESS_SOURCE_ONLY"
+    expected_after_rework:
+      base_concept_id: null
+      base_concept_observation_id: "observation:lifecycle-event-source"
+      expected_base_concept_label: "生命周期事件来源（待归属）"
+      base_concept_status: "UNRESOLVED"
+      attribute_expression: "事件来源类型"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: ["BUSINESS_SOURCE_OBSERVATION"]
+      forbidden_inferences: ["flow_side=SOURCE", "standalone concept 类型"]
+      reader_identity: null
+      reader_publication: "NOT_IN_FIRST_READER_SCOPE"
+    evidence_requirement:
+      - "Recognize event source as business provenance, not data side."
+      - "Bind generic TYPE only to the event-source expression."
+    observed_current:
+      result: "FAIL"
+      observation: "Current projection displays 事件来源类型（源侧）."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "J02"
+    category: "VALUATION_REFERENCE_SOURCE"
+    case_intent: "NEGATIVE_FLOW_SIDE"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_FAST_TRS_LEG"
+      column_name: "VALUATION_RATE_SOURCE_ID"
+      identity_key: "TITANS_TRADEFLOW.REF_FAST_TRS_LEG.VALUATION_RATE_SOURCE_ID"
+      raw_column_name: "VALUATION_RATE_SOURCE_ID"
+      raw_column_comment: "估值汇率来源"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_FAST_TRS_LEG"
+      raw_table_comment: "极速互换腿表"
+      evidence_use: "SUPPORTS_REFERENCE_SOURCE_ONLY"
+    expected_after_rework:
+      base_concept_id: null
+      base_concept_observation_id: "observation:valuation-rate-source"
+      expected_base_concept_label: "估值汇率来源（待归属）"
+      base_concept_status: "UNRESOLVED"
+      attribute_expression: "估值汇率来源标识"
+      field_attribute: "IDENTIFIER"
+      qualifiers: []
+      unresolved_observations: ["MARKET_REFERENCE_SOURCE_OBSERVATION"]
+      forbidden_inferences: ["flow_side=SOURCE", "Valuation Reader publication", "Contract Leg identity from table alone"]
+      reader_identity: null
+      reader_publication: "NOT_IN_FIRST_READER_SCOPE"
+    evidence_requirement:
+      - "Distinguish reference provenance from processing direction."
+      - "Require the referenced object's responsibility for concept adjudication."
+    observed_current:
+      result: "FAIL"
+      observation: "Current projection displays 估值汇率来源（源侧）."
+      current_reader_identity: null
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "K01"
+    category: "OBSERVATION_TIME_ROLE"
+    case_intent: "POSITIVE_INITIAL"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_IRS"
+      column_name: "NOTIONAL_BASE"
+      identity_key: "TITANS_TRADEFLOW.REF_IRS.NOTIONAL_BASE"
+      raw_column_name: "NOTIONAL_BASE"
+      raw_column_comment: "初始名义本金"
+      data_type: "NUMBER"
+    table_context:
+      raw_table_name: "REF_IRS"
+      raw_table_comment: "IRS利率互换合约全量要素表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:notional"
+      attribute_expression: "初始名义本金"
+      field_attribute: "MEASURE"
+      qualifiers:
+        - {dimension: "observation_time_role", value: "INITIAL"}
+      unresolved_observations: []
+      forbidden_inferences: ["lifecycle_stage=INITIAL", "base concept 初始名义本金"]
+      reader_identity: "reader:notional"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Chinese comment explicitly supports INITIAL."
+      - "Initial is a time role, not a lifecycle navigation stage."
+    observed_current:
+      result: "PASS"
+      observation: "Current Stage 5 represents the expression as Notional plus INITIAL."
+      current_reader_identity: "reader:notional"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "L01"
+    category: "ABBREVIATION_ATTRIBUTE"
+    case_intent: "NEGATIVE_STANDALONE_CONCEPT"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "TRD_B2B_CONTRACT_CONFIG"
+      column_name: "B2B_KEY_CTPTY_NAME"
+      identity_key: "TITANS_TRADEFLOW.TRD_B2B_CONTRACT_CONFIG.B2B_KEY_CTPTY_NAME"
+      raw_column_name: "B2B_KEY_CTPTY_NAME"
+      raw_column_comment: "背靠背交易对手缩写"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "TRD_B2B_CONTRACT_CONFIG"
+      raw_table_comment: "背靠背合约配置表"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:counterparty"
+      attribute_expression: "背靠背交易对手缩写"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: ["RELATION_CONTEXT_BACK_TO_BACK"]
+      forbidden_inferences: ["standalone business concept 交易对手缩写", "CONFIGURATION axis", "new Counterparty identity"]
+      reader_identity: "reader:counterparty"
+      reader_publication: "BLOCKED_PENDING_INTEGRATION"
+    evidence_requirement:
+      - "Bind abbreviation to Counterparty while preserving back-to-back relation context."
+      - "Do not publish the attribute expression as a source concept identity."
+    observed_current:
+      result: "FAIL"
+      observation: "Stage 3 retains 背靠背交易对手缩写 as an independent DOMAIN source concept."
+      current_reader_identity: "reader:counterparty"
+    revised_run_status: "PENDING_RERUN"
+
+  - id: "M01"
+    category: "UNRESOLVED_MARGIN_DIRECTION"
+    case_intent: "UNRESOLVED_CASHFLOW_DIRECTION"
+    evaluability: "EVALUABLE"
+    physical_field:
+      schema_name: "TITANS_TRADEFLOW"
+      table_name: "REF_OTC_CONTR_MARGIN_PARAM"
+      column_name: "MARGIN_DIRECTION"
+      identity_key: "TITANS_TRADEFLOW.REF_OTC_CONTR_MARGIN_PARAM.MARGIN_DIRECTION"
+      raw_column_name: "MARGIN_DIRECTION"
+      raw_column_comment: "保证金方向"
+      data_type: "VARCHAR2"
+    table_context:
+      raw_table_name: "REF_OTC_CONTR_MARGIN_PARAM"
+      raw_table_comment: "合约-静态履约保证金参数"
+      evidence_use: "CONTEXT_ONLY"
+    expected_after_rework:
+      base_concept_id: "concept:margin"
+      attribute_expression: "保证金方向"
+      field_attribute: "DESCRIPTIVE_TEXT"
+      qualifiers: []
+      unresolved_observations: ["candidate cashflow_direction requires value semantics"]
+      forbidden_inferences: ["position_side", "trade_side", "flow_side", "cashflow_direction without enum or rule evidence"]
+      reader_identity: "reader:margin"
+      reader_publication: "BLOCKED_BY_UNRESOLVED_QUALIFIER"
+    evidence_requirement:
+      - "Require enum, business rule, or other locatable value-semantic evidence."
+      - "Do not query business rows for this V1 research decision."
+    observed_current:
+      result: "FAIL"
+      observation: "Current Stage 5 marks 保证金方向 SUPPORTED without cashflow_direction; only 保证金支付方向 carries PAY."
+      current_reader_identity: "reader:margin"
+    revised_run_status: "PENDING_RERUN"
+
+validation_expectations:
+  unique_case_ids: 27
+  physical_cases: 24
+  explicitly_non_locatable_cases: ["E02", "E03", "E04"]
+  no_fabricated_physical_fields: true
+  first_reader_scope_count: 6
+  reader_identity_count_referenced: 4
+  first_readers_not_directly_covered: ["reader:trade", "reader:position"]
+  forbidden_reader_combinations: ["combined-order-trade-reader"]
+  required_rerun_cases:
+    - "A01"
+    - "A02"
+    - "A03"
+    - "A04"
+    - "B01"
+    - "D01"
+    - "D02"
+    - "E01"
+    - "E02"
+    - "E03"
+    - "E04"
+    - "F01"
+    - "H01"
+    - "J01"
+    - "J02"
+    - "L01"
+    - "M01"

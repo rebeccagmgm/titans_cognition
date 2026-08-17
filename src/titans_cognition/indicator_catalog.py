@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -13,6 +14,15 @@ from typing import Any, Iterable
 
 UNAVAILABLE = "未采集（源快照没有该字段）"
 UNCATALOGUED_PATH = ("未归类（源数据无目录）",)
+
+
+def _without_expand_all_control(page_html: str) -> str:
+    page_html = re.sub(r'<button id="expand">[^<]*</button>', "", page_html)
+    return page_html.replace(
+        "document.getElementById('expand').addEventListener('click',()=>"
+        "treeEl.querySelectorAll('details').forEach(x=>x.open=true));",
+        "",
+    )
 
 
 def _sha256(path: Path) -> str:
@@ -185,7 +195,7 @@ function nodeHtml(node,visible,depth){{const count=countNode(node,visible);if(!c
 function render(){{const visible=visibleIds();treeEl.innerHTML=nodeHtml(TREE,visible,0)||'<div class="empty">没有匹配的指标</div>';document.getElementById('visible').textContent=fmt.format(visible.size);document.getElementById('nodes').textContent=fmt.format(countVisibleNodes(TREE,visible));treeEl.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>showDetail(el.dataset.id)));}}
 function countVisibleNodes(node,visible){{return (countNode(node,visible)>0?1:0)+(node.children||[]).reduce((sum,child)=>sum+countVisibleNodes(child,visible),0)}}
 function display(value){{return value?value:UNAVAILABLE}}
-function showDetail(id){{const row=byId.get(id);if(!row)return;selected.id=id;const fields=[['指标英文名',row.englishName],['业务定义',row.businessDefinition],['指标ID',row.indexId],['状态',row.status],['类型',row.indexType],['颗粒度',row.dataLevel||row.indexGran],['周期',row.busiCyc],['负责人',row.techDirector],['数据库',row.dbName],['英文表名',row.engTblName],['Horae任务ID',row.horaeTaskId],['指标单位',row.indicatorUnit],['数据集',row.dataSetConfigName],['包含组合类型',row.includeGroupTypes],['包含标签',row.includeTags],['目录',(row.catalog||[]).join(' > ')],['源目录',(row.sourceCatalog||[]).join(' > ')],['加工SQL',UNAVAILABLE]];detailEl.innerHTML=`<h2>${{esc(row.chineseName||row.englishName||'(未命名)')}}</h2><div class="detail-sub">当前快照字段 · 指标ID：${{esc(row.indexId)}}</div>${{fields.map(([key,value])=>`<div class="row"><strong>${{esc(key)}}：</strong>${{esc(display(value))}}</div>`).join('')}}<div class="note">详情仅反映当前快照；缺失字段不等于业务上不存在，也未进行SQL推断。</div>`;render();}}
+function showDetail(id){{const row=byId.get(id);if(!row)return;selected.id=id;const fields=[['指标英文名',row.englishName],['业务定义',row.businessDefinition],['指标ID',row.indexId],['状态',row.status],['类型',row.indexType],['颗粒度',row.dataLevel||row.indexGran],['周期',row.busiCyc],['负责人',row.techDirector],['数据库',row.dbName],['英文表名',row.engTblName],['Horae任务ID',row.horaeTaskId],['指标单位',row.indicatorUnit],['数据集',row.dataSetConfigName],['包含组合类型',row.includeGroupTypes],['包含标签',row.includeTags],['目录',(row.catalog||[]).join(' > ')],['源目录',(row.sourceCatalog||[]).join(' > ')],['加工SQL',UNAVAILABLE]];detailEl.innerHTML=`<h2>${{esc(row.chineseName||row.englishName||'(未命名)')}}</h2><div class="detail-sub">当前快照字段 · 指标ID：${{esc(row.indexId)}}</div>${{fields.map(([key,value])=>`<div class="row"><strong>${{esc(key)}}：</strong>${{esc(display(value))}}</div>`).join('')}}<div class="note">详情仅反映当前快照；缺失字段不等于业务上不存在，也未进行SQL推断。</div>`;treeEl.querySelectorAll('.indicator.selected').forEach(el=>el.classList.remove('selected'));const selectedEl=treeEl.querySelector(`[data-id="${{CSS.escape(id)}}"]`);if(selectedEl)selectedEl.classList.add('selected');}}
 searchEl.addEventListener('input',render);document.getElementById('clear').addEventListener('click',()=>{{searchEl.value='';render()}});document.getElementById('expand').addEventListener('click',()=>treeEl.querySelectorAll('details').forEach(x=>x.open=true));document.getElementById('collapse').addEventListener('click',()=>treeEl.querySelectorAll('details').forEach(x=>x.open=false));render();
 </script></body></html>"""
 
@@ -201,7 +211,10 @@ def build_indicator_catalog(snapshot_dir: Path, output_root: Path) -> dict[str, 
     try:
         page_path = stage / "index.html"
         page_path.write_text(
-            _html(snapshot_id, manifest, rows, manifest_hash, records_hash), encoding="utf-8"
+            _without_expand_all_control(
+                _html(snapshot_id, manifest, rows, manifest_hash, records_hash)
+            ),
+            encoding="utf-8",
         )
         projection_manifest = {
             "schemaVersion": "indicator-catalog-review-v1",

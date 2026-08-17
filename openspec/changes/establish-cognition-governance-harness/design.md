@@ -48,6 +48,8 @@ Workflow Profile + Schema Case Pack
 
 本 Change 只实现 semantic-navigation Workflow Profile 和 TRADEFLOW Case Pack。Profile 不出现 TRADEFLOW 词汇或路径；Case Pack 引用现有语义导航配置、冻结输入和 Artifact。结构显著不同的合成 Case 只验证契约隔离。
 
+职责边界修正：当前治理用例是字段语义导航，不是表语义地图。TRADEFLOW Case Pack 只冻结字段语义 Artifact（`FROZEN_INPUTS`、`SEMANTIC_CONFIG`、`FIELD_MANIFEST`、`CONTEXT_MANIFEST`），不再要求 Stage 4 表语义 Manifest；Profile 的 `required_artifact_roles` 同样不含 `TABLE_MANIFEST`。表只作为字段所在位置展示，其语义地图由未来独立 Case Pack 治理；Runner 仍保留对 `TABLE_MANIFEST` 角色的校验支持，合成隔离 Fixture 继续携带该角色以证明能力基线。
+
 真实第二 Schema 仍由 `D-010` 选择，并通过后续独立 Change 接入。只有真实运行、独立审阅和读者任务证据才能支持跨 Schema 结论。
 
 ### 4. Skill 是薄入口，Reviewer 是唯一新增 Agent

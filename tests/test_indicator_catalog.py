@@ -63,6 +63,11 @@ def test_build_indicator_catalog_preserves_gap_and_source_metadata(tmp_path):
     assert "未采集（源快照没有该字段）" in html
     assert "function matches" in html
     assert "document.getElementById('visible')" in html
+    assert "treeEl.querySelectorAll('.indicator.selected')" in html
+    assert "detailEl.innerHTML" in html
+    assert 'id="expand"' not in html
+    assert "getElementById('expand')" not in html
+    assert "`);render();}}" not in html
 
 
 def test_build_indicator_catalog_rejects_duplicate_ids_without_publishing(tmp_path):

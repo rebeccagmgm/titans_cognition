@@ -1,0 +1,64 @@
+version: field-evidence-preparation-v1
+profile_id: tradeflow-field-evidence-preparation-v1-20260814
+status: DETERMINISTIC_IMPLEMENTATION
+
+scope:
+  schema_name: TITANS_TRADEFLOW
+  object_types: [TABLE]
+  expected_object_count: 477
+  expected_physical_column_count: 13611
+  physical_column_id_scope: stage0-panorama-comments-refresh-20260811/TITANS_TRADEFLOW
+  downstream_workset:
+    id: stage3-field-semantics-v2
+    exclude_object_name_numeric_suffix: true
+  expected_prepared_count: 5512
+  expected_excluded_count: 8099
+  expected_deferred_count: 0
+
+source_artifacts:
+  columns:
+    path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/columns.json
+    sha256: a7b783781e53ccce713d43af3a177e8790d8a37c0455a2a4f2e1ce54d490f4b7
+    locator: physical_column_id
+    evidence_role: COLUMN_PHYSICAL_FACT
+  objects:
+    path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/objects.json
+    sha256: 3b196bf1b02e6edeafa0b604406b879dceb27edc978d053dea891d6ad969889c
+    locator: asset_id joined from the column record
+    evidence_role: OBJECT_PHYSICAL_FACT
+
+contract:
+  path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-preparation-contract.yaml
+  sha256: 99efa074b614477a7e32b334e20738fdf247f4861820572b3f3e6d77c53d0d8a
+  expected_unique_rule_ids: 77
+
+schema:
+  path: schemas/field-evidence-pack.schema.json
+  schema_id: https://titans-cognition.local/schemas/field-evidence-pack-v1.json
+  expected_block_count: 16
+
+gold_set:
+  path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-gold-set.yaml
+  sha256: db804025bc3d311912fd854cf34abcc83d3ec676ecbe90a3c0fb00d4d04e1f5c
+  formal_gate_status: NOT_CLAIMED
+
+qualifier_values:
+  position_side: [LONG, SHORT]
+  trade_side: [BUY, SELL]
+  cashflow_direction: [PAY, RECEIVE]
+  variability: [DYNAMIC, FIXED]
+  currency_basis:
+    - ORIGINAL_CURRENCY
+    - LOCAL_CURRENCY
+    - UNDERLYING_CURRENCY
+    - SETTLEMENT_CURRENCY
+
+controls:
+  metadata_only: true
+  model_calls: 0
+  business_rows_read: false
+  external_egress: false
+  database_writes: 0
+  emits_semantic_candidates: false
+  emits_reader_projection: false
+

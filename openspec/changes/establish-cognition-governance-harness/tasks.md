@@ -24,6 +24,7 @@
 - [x] 4.2 Add one TRADEFLOW Case Pack referencing the current frozen inputs, configs, Manifests, data policy, authorization records and budgets.
 - [x] 4.3 Run the Harness against current semantic-navigation artifacts and prove it neither changes the algorithm/page nor promotes current reader/business status.
 - [x] 4.4 Run `CONTRACT_ISOLATION_CHECK` on the non-TRADEFLOW fixture and prove no `CROSS_SCHEMA_VALIDATED` or equivalent label is emitted.
+- [x] 4.5 Narrow the governance boundary: drop the Stage 4 `TABLE_MANIFEST` requirement from the Profile roles and the TRADEFLOW Case Pack so field navigation is not blocked by the table-semantic map; keep Runner support for the role for a future table-semantic Case Pack.
 
 ## 5. Thin Codex Adaptation
 

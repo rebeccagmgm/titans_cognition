@@ -1,0 +1,50 @@
+# 指标旅程案例范围：grp1_CompScal_OtcDeriRgstComp_MthEnd
+# 方法：先逆向（指标SQL → T98/T05 → 贴源 → TITANS），再正向（受影响下游）
+schemaVersion: indicator-journey-scope-v1
+caseId: indicator-journey-rgstcomp-mthend
+caseName: 广发证券_合约规模_场外衍生品报备合约_当月月末_无备注信息
+objective: 还原该指标端到端计算链路，识别口径拐点，输出影响面
+method: reverse-then-forward
+
+sourceFacts:
+  indicator: ind2024070561739587
+  indicatorTable: dm_index_n.index_grp1_CompScal_OtcDeriRgstComp_MthEnd
+  indicatorTask: "162610"
+
+chainTasks:
+  - hop: 指标加工
+    taskId: "162610"
+    target: dm_index_n.index_grp1_CompScal_OtcDeriRgstComp_MthEnd
+    evidence: .evidence-cache/tasksql-162610-20260816122434.txt
+  - hop: T98 采集（期权分组）
+    taskId: "86840"
+    target: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=01)
+    evidence: .evidence-cache/tasksql-86840-20260816122735.txt
+  - hop: T98 采集（互换分组）
+    taskId: "86841"
+    target: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=02)
+    evidence: .evidence-cache/tasksql-86841-20260816122832.txt
+  - hop: T98 采集（成交确认互换分组）
+    taskId: "86842"
+    target: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=03)
+    evidence: .evidence-cache/tasksql-86842-20260816122925.txt
+  - hop: T98 采集（极速互换分组）
+    taskId: "220650"
+    target: pdata_n.T98_OTC_DERI_COMP_SALE_INFO (grp_id=04)
+    evidence: .evidence-cache/tasksql-220650-20260816122926.txt
+  - hop: T05 报备事件采集
+    taskId: "106204"
+    target: pdata_n.T05_OTC_COMP_RGST_SAC_EVT (src_tbl=ODATA_N_TIT.D_TRD_OTC_CONTR_REPORT)
+    evidence: .evidence-cache/tasksql-106204-20260816122833.txt
+
+outOfScope:
+  - TITANS → odata_n_tit 各贴源采集任务的逐字段核对（仅记录任务ID）
+  - tagdim101742 标签生产任务明细（标记任务未从平台确认）
+  - 非 grp1_* 指标族之外的其他指标
+
+evidenceSources:
+  - 指标字典快照: E:\02_area\股衍数据-Cookbook\.evidence-cache\indicator-dictionary-snapshots\20260812-refresh\indicators.jsonl
+  - 标签快照: C:\Users\13246\.opencli\tag-snapshot-output\20260814-refresh-full-sql\
+  - szdata table-ddl: T98 (guid 7ce819de-5afd-45cd-a0a1-459166c606f1)
+  - szdata table full: T98 / T05 (guid 188a8b5d-af3f-484d-9d4a-1b50431d4169)
+  - szdata task-sql: 162610 / 86840 / 86841 / 86842 / 220650 / 106204

@@ -1,0 +1,48 @@
+schema_version: tradeflow-full-field-navigation-v1
+schema_name: TITANS_TRADEFLOW
+expected_field_count: 13611
+panorama_root: output/stage0-panorama-comments-refresh-20260811/panorama
+reader_concepts:
+  - id: reader:counterparty
+    label: 交易对手
+    direct_patterns: ["CTP(?:Y|TY)", COUNTERPARTY, 交易对手, 对手方]
+    context_patterns: ["CTP(?:Y|TY)", COUNTERPARTY, 交易对手, 对手方]
+    stages: [trade-preparation]
+    area_labels: [参与主体]
+  - id: reader:order
+    label: 订单
+    direct_patterns: ["(?:^|_)ORD(?:ER)?(?:_|$)", ORDER, 委托, 订单, 交易指令]
+    context_patterns: ["(?:^|_)ORD(?:ER)?(?:_|$)", ORDER, 委托, 订单, 交易指令]
+    stages: [trade-agreement]
+    area_labels: [询价、订单与交易]
+  - id: reader:trade
+    label: 交易
+    direct_patterns: ["(?:^|_)TRD(?:_|$)", TRADE, DEAL, 成交, 交易]
+    context_patterns: ["(?:^|_)TRD(?:_|$)", TRADE, DEAL, 成交, 交易]
+    stages: [trade-agreement]
+    area_labels: [询价、订单与交易]
+  - id: reader:notional
+    label: 名义本金
+    direct_patterns: [NOTIONAL, PRINCIPAL, 名义本金, 名义金额, 本金]
+    context_patterns: [NOTIONAL, PRINCIPAL, 名义本金, 名义金额, 本金]
+    stages: [contract-lifecycle, valuation-risk]
+    area_labels: [合同与结构, 估值、履约保障与现金流]
+  - id: reader:position
+    label: 持仓
+    direct_patterns: ["(?:^|_)POS(?:ITION)?(?:_|$)", POSITION, 持仓]
+    context_patterns: ["(?:^|_)POS(?:ITION)?(?:_|$)", POSITION, 持仓]
+    stages: [contract-lifecycle, valuation-risk]
+    area_labels: [持仓与风险]
+  - id: reader:margin
+    label: 保证金
+    direct_patterns: [MARGIN, COLLATERAL, 保证金, 追保, 履约保障]
+    context_patterns: [MARGIN, COLLATERAL, 保证金, 追保, 履约保障]
+    stages: [valuation-risk]
+    area_labels: [估值、履约保障与现金流]
+lifecycle_stages:
+  - {id: trade-preparation, label: 交易准备}
+  - {id: trade-agreement, label: 交易达成}
+  - {id: contract-lifecycle, label: 合同存续}
+  - {id: valuation-risk, label: 估值与风险}
+  - {id: clearing-settlement, label: 清算结算}
+  - {id: termination-followup, label: 终止与后续}

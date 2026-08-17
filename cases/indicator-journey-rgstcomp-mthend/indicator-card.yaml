@@ -1,0 +1,37 @@
+# 指标卡片：广发证券_合约规模_场外衍生品报备合约_当月月末_无备注信息
+# 来源：指标字典快照 20260812-refresh（.evidence-cache/indicator-dictionary-snapshots）
+schemaVersion: indicator-journey-card-v1
+snapshot: 20260812-refresh
+indexId: ind2024070561739587
+englishName: grp1_CompScal_OtcDeriRgstComp_MthEnd
+chineseName: 广发证券_合约规模_场外衍生品报备合约_当月月末_无备注信息
+abbreviation: 广发证券_合约规模_场外衍生品报备合约_当月月末
+
+businessDefinition: 场外衍生品全量合约剔除无需报备在当月月末的动态名义本金
+
+platformFields:
+  status: ONLINE
+  indexType: BASIC
+  indexGran: COMBINATION          # 组合颗粒度
+  dbName: dm_index_n
+  engTblName: index_grp1_CompScal_OtcDeriRgstComp_MthEnd
+  horaeTaskId: "162610"
+  techDirector: 方梓丞
+  indicatorUnit: 元(人民币)
+  dataLevel: 3级
+  busiCyc: MONTH
+  dataSetConfigId: 9803
+  dataSetConfigName: 广发证券_合约规模_场外衍生品报备合约_当月月末
+  includeGroupTypes: 广发证券
+  includeTags: 场外衍生品业务类型
+  catalog: [资产类, 市值, 基础市值]
+  createTime: 2024-07-05 11:20:52
+
+parsedCaliber:
+  statisticObject: 场外衍生品合约（期权 + 互换）
+  filter: 剔除无需报备合约（Rgst_Stat_Cd = SKIP_REPORT，即"报备合约"）
+  amount: 动态名义本金（dyna_nom_prin）
+  timePoint: 当月月末（busi_mon = ${yyyyMM}，取月末某日 T98 快照）
+  currency: 元(人民币) — 见 caliber-inflections.yaml 币种疑点
+  grouping: 组合（grp_val=8888=广发证券）+ 业务类型标签（tagdim101742）
+  remark: "无备注信息"来自指标命名，指不含备注筛选；指标 SQL 本身未见备注字段过滤

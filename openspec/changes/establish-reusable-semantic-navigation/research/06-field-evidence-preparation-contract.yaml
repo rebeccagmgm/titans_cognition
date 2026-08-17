@@ -1,0 +1,569 @@
+metadata:
+  contract_id: field-evidence-preparation-v1-candidate
+  version: v1-candidate
+  status: CANDIDATE
+  scope: TITANS_TRADEFLOW all 13611 physical columns
+  purpose: Non-destructive preparation between physical metadata and later semantic adjudication.
+  non_goals:
+    - No formal business concept or Reader expression is emitted.
+    - No business-row query, source write, canonical write, or external-model egress occurs.
+    - No rule is asserted as cross-schema confirmed.
+
+input_contract:
+  status: DETERMINISTIC_PROPOSAL
+  population:
+    physical_field_count: 13611
+    physical_object_count: 477
+    source_boundary: Stage 0 TRADEFLOW physical facts
+    downstream_semantic_workset:
+      field_count: 5512
+      meaning: Stage 3 semantic workset only; it does not bound evidence preparation.
+  physical_field_required:
+    - schema_name
+    - object_name
+    - object_type
+    - object_comment
+    - column_name_raw
+    - column_comment_raw
+    - data_type_raw
+    - nullable
+    - ordinal_position
+    - physical_column_id
+  source_anchor_required:
+    - source_artifacts
+  source_anchor_current_stage0:
+    source_artifacts:
+      - path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/columns.json
+        sha256: A7B783781E53CCCE713D43AF3A177E8790D8A37C0455A2A4F2E1CE54D490F4B7
+        locator: physical_column_id
+        evidence_role: COLUMN_PHYSICAL_FACT
+      - path: output/stage0-panorama-comments-refresh-20260811/panorama/facts/objects.json
+        sha256: 3B196BF1B02E6EDEAFA0B604406B879DCEB27EDC978D053DEA891D6AD969889C
+        locator: asset_id joined from the column record
+        evidence_role: OBJECT_PHYSICAL_FACT
+  source_manifest_injection:
+    status: REQUIRES_IMPLEMENTATION
+    optional_fields: [source_manifest_id, source_manifest_sha256]
+    rule: Manifest fields may be injected only by a versioned manifest-to-physical-locator mapping; they are not asserted as Stage 0 column facts.
+  identity_rule:
+    rule_id: GEN-ID-001
+    requirement: physical_column_id identifies schema-object-column; equal names never merge field instances.
+    status: DETERMINISTIC_PROPOSAL
+
+output_contract:
+  status: REQUIRES_IMPLEMENTATION
+  one_record_per: physical_column_id
+  join_key: physical_identity.physical_column_id
+  cardinality: exactly one field evidence package per Stage 0 physical column
+  preparation_disposition_enum:
+    PREPARED: Full physical anchor and evidence sections are emitted; eligible for later workset selection.
+    EXCLUDED: Physical anchor and minimum lexical evidence are emitted, but a named downstream workset excludes it with a reason code.
+    DEFERRED: Available raw facts are emitted, but a blocking source or encoding gap prevents a complete package.
+  evidence_status_enum: [SUPPORT, CONTRADICT, CONTEXT_ONLY, NOT_APPLICABLE, NOT_OBSERVED]
+  technical_observation_status_enum: [CANDIDATE, UNRESOLVED]
+  generic_attribute_enum: [IDENTIFIER_SHAPE, NUMERIC_SHAPE, CODE_SHAPE, NAME_VARIANT_OBSERVATION, BUSINESS_OBJECT_STATE, CLASSIFICATION, MEASURE, QUANTITY, RATE, TIME, CURRENCY, DESCRIPTION, SOURCE_TARGET_TERM]
+  candidate_qualifier_enum:
+    position_side: [LONG, SHORT]
+    trade_side: [BUY, SELL]
+    cashflow_direction: [PAY, RECEIVE]
+    variability: [DYNAMIC, FIXED]
+    currency_basis: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+  technical_class_enum: [TECHNICAL_IDENTIFIER, AUDIT_ACTOR, AUDIT_TIME, INGESTION_METADATA, BATCH_METADATA, LINEAGE_METADATA, EXTENSION_SLOT, SOFT_DELETE, VERSION_CONTROL, UNRESOLVED_TECHNICAL]
+  required_sections:
+    - physical_identity
+    - raw_physical_fact
+    - preparation_disposition
+    - normalized_lexical_form
+    - tokens
+    - protected_phrases
+    - abbreviation_observations
+    - generic_attribute_observations
+    - technical_observations
+    - contextual_evidence
+    - candidate_qualifier_observations
+    - conflicts
+    - unresolved_items
+    - applied_rule_ids
+    - provenance
+    - evidence_status
+  invariants:
+    - raw physical values are immutable within this output.
+    - every derived item cites source spans, physical_column_id, and applied rule_ids.
+    - candidate_qualifier_observations are not formal qualifiers.
+    - semantic hints carry SEMANTIC_LAYER_REQUIRED and cannot contain a final Reader concept.
+  block_definitions:
+    physical_identity:
+      cardinality: '1..1'
+      required: true
+      join_key: physical_column_id
+      fields:
+        schema_name: {type: string, required: true}
+        object_name: {type: string, required: true}
+        object_type: {type: enum, required: true, values: [TABLE, VIEW, MATERIALIZED_VIEW, SYNONYM]}
+        physical_column_id: {type: string, required: true}
+    raw_physical_fact:
+      cardinality: '1..1'
+      required: true
+      provenance_required: true
+      fields:
+        object_comment_raw: {type: 'string|null', required: true}
+        column_name_raw: {type: string, required: true}
+        column_comment_raw: {type: 'string|null', required: true}
+        data_type_raw: {type: string, required: true}
+        nullable: {type: boolean, required: true}
+        ordinal_position: {type: integer, required: true, minimum: 1}
+    preparation_disposition:
+      cardinality: '1..1'
+      required: true
+      fields:
+        status: {type: enum, required: true, values: [PREPARED, EXCLUDED, DEFERRED]}
+        reason_code: {type: 'string|null', required: true}
+        downstream_workset: {type: 'string|null', required: true}
+    normalized_lexical_form:
+      cardinality: '1..*'
+      required: true
+      provenance_required: true
+      fields:
+        source_kind: {type: enum, required: true, values: [COLUMN_NAME, COLUMN_COMMENT, OBJECT_NAME, OBJECT_COMMENT]}
+        raw_value: {type: string, required: true}
+        normalized_value: {type: string, required: true}
+        source_span: {type: array_integer_pair, required: true}
+        information_loss: {type: boolean, required: true}
+        review_required: {type: boolean, required: true}
+        rule_ids: {type: array_string, required: true, minimum_items: 1}
+    tokens:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        token_id: {type: string, required: true}
+        raw_text: {type: string, required: true}
+        normalized_text: {type: string, required: true}
+        source_kind: {type: enum, required: true, values: [COLUMN_NAME, COLUMN_COMMENT, OBJECT_NAME, OBJECT_COMMENT]}
+        source_span: {type: array_integer_pair, required: true}
+        rule_id: {type: string, required: true}
+    protected_phrases:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        phrase: {type: string, required: true}
+        source_span: {type: array_integer_pair, required: true}
+        rule_id: {type: string, required: true}
+        suppressed_rule_ids: {type: array_string, required: true}
+        status: {type: enum, required: true, values: [CANDIDATE, UNRESOLVED]}
+    abbreviation_observations:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        token_id: {type: string, required: true}
+        expansion_candidate: {type: 'string|null', required: true}
+        status: {type: enum, required: true, values: [CANDIDATE, UNRECOGNIZED_ABBREVIATION]}
+        rule_id: {type: string, required: true}
+    generic_attribute_observations:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        attribute: {type: enum, required: true, values: [IDENTIFIER_SHAPE, NUMERIC_SHAPE, CODE_SHAPE, NAME_VARIANT_OBSERVATION, BUSINESS_OBJECT_STATE, CLASSIFICATION, MEASURE, QUANTITY, RATE, TIME, CURRENCY, DESCRIPTION, SOURCE_TARGET_TERM]}
+        object_anchor_candidate: {type: 'string|null', required: true}
+        status: {type: enum, required: true, values: [CANDIDATE, UNBOUND_ATTRIBUTE_OBSERVATION]}
+        rule_id: {type: string, required: true}
+    technical_observations:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        technical_class: {type: enum, required: true, values: [TECHNICAL_IDENTIFIER, AUDIT_ACTOR, AUDIT_TIME, INGESTION_METADATA, BATCH_METADATA, LINEAGE_METADATA, EXTENSION_SLOT, SOFT_DELETE, VERSION_CONTROL, UNRESOLVED_TECHNICAL]}
+        status: {type: enum, required: true, values: [CANDIDATE, UNRESOLVED]}
+        required_context: {type: array_string, required: true}
+        rule_id: {type: string, required: true}
+    contextual_evidence:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        context_id: {type: string, required: true}
+        context_type: {type: enum, required: true, values: [OBJECT, PRODUCT_CANDIDATE, BUSINESS_AREA_CANDIDATE, WIKI_WEAK_CONTEXT, SIBLING_FIELD]}
+        status: {type: enum, required: true, values: [SUPPORT, CONTRADICT, CONTEXT_ONLY, NOT_APPLICABLE, NOT_OBSERVED]}
+        source_ref: {type: string, required: true}
+    candidate_qualifier_observations:
+      cardinality: '0..*'
+      required: true
+      provenance_required: true
+      fields:
+        dimension: {type: enum, required: true, values: [position_side, trade_side, cashflow_direction, variability, currency_basis]}
+        value: {type: string, required: true}
+        value_enum_by_dimension:
+          position_side: [LONG, SHORT]
+          trade_side: [BUY, SELL]
+          cashflow_direction: [PAY, RECEIVE]
+          variability: [DYNAMIC, FIXED]
+          currency_basis: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+        status: {type: enum, required: true, values: [CANDIDATE, CONFLICT]}
+        rule_id: {type: string, required: true}
+    conflicts:
+      cardinality: '0..*'
+      required: true
+      fields:
+        conflict_id: {type: string, required: true}
+        conflict_type: {type: string, required: true}
+        evidence_a: {type: string, required: true}
+        evidence_b: {type: string, required: true}
+        candidate_interpretations: {type: array_string, required: true}
+        prohibited_auto_resolution: {type: boolean, required: true, value: true}
+        required_next_evidence: {type: array_string, required: true}
+        review_status: {type: enum, required: true, values: [UNREVIEWED, DEFERRED]}
+    unresolved_items:
+      cardinality: '0..*'
+      required: true
+      fields:
+        code: {type: enum, required: true, values: [NOT_OBSERVED, UNRECOGNIZED_ABBREVIATION, UNBOUND_ATTRIBUTE_OBSERVATION, UNRESOLVED_PROTECTED_PHRASE, UNRESOLVED_TECHNICAL, SEMANTIC_LAYER_REQUIRED]}
+        reason: {type: string, required: true}
+        required_next_evidence: {type: array_string, required: true}
+    applied_rule_ids:
+      cardinality: '1..1'
+      required: true
+      fields:
+        values: {type: array_string, required: true, minimum_items: 1}
+    provenance:
+      cardinality: '1..1'
+      required: true
+      fields:
+        source_artifacts:
+          type: array_object
+          required: true
+          cardinality: '1..*'
+          join_key: [evidence_role, locator]
+          item_fields:
+            path: {type: string, required: true}
+            sha256: {type: string, required: true}
+            locator: {type: string, required: true}
+            evidence_role: {type: enum, required: true, values: [COLUMN_PHYSICAL_FACT, OBJECT_PHYSICAL_FACT, INJECTED_MANIFEST]}
+        injected_source_manifest_id: {type: 'string|null', required: true}
+        injected_source_manifest_sha256: {type: 'string|null', required: true}
+    evidence_status:
+      cardinality: '1..*'
+      required: true
+      fields:
+        status: {type: enum, required: true, values: [SUPPORT, CONTRADICT, CONTEXT_ONLY, NOT_APPLICABLE, NOT_OBSERVED]}
+        evidence_ref: {type: string, required: true}
+
+normalization_rules:
+  - rule_id: GEN-NORM-001
+    status: DETERMINISTIC_PROPOSAL
+    action: Preserve raw text byte-for-byte before any transformation.
+  - rule_id: GEN-NORM-002
+    status: DETERMINISTIC_PROPOSAL
+    action: Derive NFKC matching value; retain raw value and source span.
+  - rule_id: GEN-NORM-003
+    status: DETERMINISTIC_PROPOSAL
+    action: Record full-width-half-width changes as a separate transformation.
+  - rule_id: GEN-NORM-004
+    status: DETERMINISTIC_PROPOSAL
+    action: Derive upper-case comparison key without replacing original case.
+  - rule_id: GEN-NORM-005
+    status: DETERMINISTIC_PROPOSAL
+    action: Record trimmed leading/trailing and collapsed internal whitespace.
+  - rule_id: GEN-NORM-006
+    status: DETERMINISTIC_PROPOSAL
+    action: Normalize Chinese-English punctuation only in comparison form.
+  - rule_id: GEN-NORM-007
+    status: DETERMINISTIC_PROPOSAL
+    action: Mark underscores, hyphens, slashes, and separators as token boundaries.
+  - rule_id: GEN-NORM-008
+    status: DETERMINISTIC_PROPOSAL
+    action: Retain parenthetical payload as a parallel fragment with its own span.
+  - rule_id: GEN-NORM-009
+    status: DETERMINISTIC_PROPOSAL
+    action: Split letter-number boundaries and retain ordering.
+  - rule_id: GEN-NORM-010
+    status: DETERMINISTIC_PROPOSAL
+    action: Detect Roman-number or leg-sequence form; do not assign meaning.
+  - rule_id: GEN-NORM-011
+    status: REQUIRES_REVIEW
+    action: Flag control characters or suspicious mojibake; do not repair destructively.
+
+tokenization_rules:
+  - rule_id: GEN-TOKEN-001
+    status: DETERMINISTIC_PROPOSAL
+    action: Apply longest protected-phrase match before single-token segmentation.
+  - rule_id: GEN-TOKEN-002
+    status: DETERMINISTIC_PROPOSAL
+    action: Segment snake_case with original offsets.
+  - rule_id: GEN-TOKEN-003
+    status: DETERMINISTIC_PROPOSAL
+    action: Segment camelCase and PascalCase with original offsets.
+  - rule_id: GEN-TOKEN-004
+    status: DETERMINISTIC_PROPOSAL
+    action: Keep consecutive upper-case acronym as one token before abbreviation lookup.
+  - rule_id: GEN-TOKEN-005
+    status: DETERMINISTIC_PROPOSAL
+    action: "Retain source kind: COLUMN_NAME, COLUMN_COMMENT, OBJECT_NAME, or OBJECT_COMMENT."
+  - rule_id: GEN-TOKEN-006
+    status: DETERMINISTIC_PROPOSAL
+    action: Emit both raw token sequence and normalized token sequence.
+  - rule_id: GEN-TOKEN-007
+    status: DETERMINISTIC_PROPOSAL
+    action: Recognize database-shape suffixes ID, NO, NUM, CODE, TYPE, STATUS, DATE, TIME, AMT only as form.
+  - rule_id: GEN-TOKEN-008
+    status: DETERMINISTIC_PROPOSAL
+    action: Rule match is provenance, never a semantic probability.
+
+protected_phrase_rules:
+  - rule_id: GEN-PHRASE-001
+    status: DETERMINISTIC_PROPOSAL
+    phrases: [SHORT_NAME, LONG_NAME, SHORT_DESC, LONG_DESC]
+    suppresses: [SHORT, LONG]
+    output: NAME_VARIANT_OBSERVATION
+  - rule_id: GEN-PHRASE-002
+    status: DETERMINISTIC_PROPOSAL
+    phrases: [SOURCE_TYPE, SOURCE_ID, SOURCE_SYSTEM, TARGET_ACCOUNT]
+    suppresses: [SOURCE, TARGET]
+    output: SOURCE_TARGET_TERM_OBSERVATION
+  - rule_id: GEN-PHRASE-003
+    status: DETERMINISTIC_PROPOSAL
+    phrases: [BUSINESS_TYPE, CONTRACT_ID, ORDER_ID, TRADE_ID, LEG_ID]
+    suppresses: [BUSINESS, CONTRACT, ORDER, TRADE, LEG]
+    output: PROTECTED_COMPOUND_OBSERVATION
+  - rule_id: GEN-PHRASE-004
+    status: DETERMINISTIC_PROPOSAL
+    phrases: [CREATED_BY, UPDATED_DATETIME, PUSH_BATCH_NO]
+    suppresses: [CREATED, UPDATED, PUSH, BATCH]
+    output: TECHNICAL_COMPOUND_OBSERVATION
+  - rule_id: GEN-PHRASE-005
+    status: REQUIRES_REVIEW
+    action: Unresolvable protected phrase emits UNRESOLVED_PROTECTED_PHRASE; it never emits a direction or flow conclusion.
+
+abbreviation_registry:
+  status: CANDIDATE
+  generic:
+    - rule_id: GEN-ABBR-001
+      tokens: {AMT: AMOUNT, QTY: QUANTITY, CCY: CURRENCY, DT: DATE}
+      output: ABBREVIATION_OBSERVATION
+    - rule_id: GEN-ABBR-002
+      tokens: {ID: IDENTIFIER_SHAPE, NO: IDENTIFIER_SHAPE, NUM: NUMERIC_SHAPE, CODE: CODE_SHAPE}
+      output: GENERIC_ATTRIBUTE_OBSERVATION
+    - rule_id: GEN-ABBR-003
+      action: Unknown acronym emits UNRECOGNIZED_ABBREVIATION with raw token retained.
+      status: DETERMINISTIC_PROPOSAL
+
+generic_attribute_rules:
+  - rule_id: GEN-ATTR-001
+    status: DETERMINISTIC_PROPOSAL
+    forms: [ID, 主键, 编号, 代码, 名称, 简称, 缩写, 长名, 短名]
+    output: GENERIC_ATTRIBUTE_OBSERVATION
+  - rule_id: GEN-ATTR-002
+    status: DETERMINISTIC_PROPOSAL
+    forms: [状态, 类型, 类别, 方式, 模式, 标志, 是否]
+    output: GENERIC_ATTRIBUTE_OBSERVATION
+  - rule_id: GEN-ATTR-003
+    status: DETERMINISTIC_PROPOSAL
+    forms: [金额, 数量, 比率, 日期, 时间, 币种, 备注, 描述, 来源, 目标]
+    output: GENERIC_ATTRIBUTE_OBSERVATION
+  - rule_id: GEN-ATTR-004
+    status: REQUIRES_REVIEW
+    action: An attribute may hand off only as object-anchor plus attribute-shape; missing anchor emits UNBOUND_ATTRIBUTE_OBSERVATION.
+  - rule_id: GEN-ATTR-005
+    status: DETERMINISTIC_PROPOSAL
+    action: Generic observation cannot create a business concept, Reader node, or formal qualifier.
+
+technical_field_rules:
+  - rule_id: GEN-TECH-001
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [CREATED_BY, UPDATED_BY, 创建人, 修改人]
+    output: AUDIT_ACTOR candidate only
+  - rule_id: GEN-TECH-002
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [CREATED_TIME, UPDATED_TIME, UPDATED_DATETIME, 创建时间, 修改时间]
+    output: AUDIT_TIME candidate only
+  - rule_id: GEN-TECH-003
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [DELETED, DELETE_FLAG, 删除标记]
+    output: SOFT_DELETE candidate only
+  - rule_id: GEN-TECH-004
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [VERSION, OPT_LOCK, 乐观锁]
+    output: VERSION_CONTROL candidate only
+  - rule_id: GEN-TECH-005
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [PUSH_BATCH_NO, BATCH_NO, 批次号]
+    output: BATCH_METADATA candidate only
+  - rule_id: GEN-TECH-006
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [SYNC, PUSH_STATUS, ETL_TIME, DATA_SOURCE, SOURCE_SYSTEM]
+    output: INGESTION_METADATA candidate only
+  - rule_id: GEN-TECH-007
+    status: REQUIRES_REVIEW
+    patterns: [SOURCE, TARGET]
+    condition: explicit data-mapping or ingestion context must be present and recorded
+    output: LINEAGE_METADATA candidate only; otherwise UNRESOLVED_TECHNICAL
+  - rule_id: GEN-TECH-008
+    status: DETERMINISTIC_PROPOSAL
+    patterns: [UUID, ROW_ID, SEQ_NO, NUM, PARTITION_DATE]
+    output: TECHNICAL_IDENTIFIER candidate only; sequence or numeric shape alone is unresolved
+  - rule_id: GEN-TECH-009
+    status: REQUIRES_REVIEW
+    patterns: [EXT, EXTENSION, RESERVED, REMARKn]
+    output: EXTENSION_SLOT candidate only
+  - rule_id: GEN-TECH-010
+    status: DETERMINISTIC_PROPOSAL
+    action: Ambiguous technical form emits UNRESOLVED_TECHNICAL and never enters business navigation.
+
+context_packaging_rules:
+  - rule_id: GEN-CTX-001
+    status: DETERMINISTIC_PROPOSAL
+    action: Package schema, object name/comment/type, and source manifest with every field.
+  - rule_id: GEN-CTX-002
+    status: DETERMINISTIC_PROPOSAL
+    action: Package product and business-area hints as CONTEXT_ONLY with source and evidence grade.
+  - rule_id: GEN-CTX-003
+    status: DETERMINISTIC_PROPOSAL
+    action: Package Wiki paths/titles only as weak CONTEXT_ONLY evidence.
+  - rule_id: GEN-CTX-004
+    status: DETERMINISTIC_PROPOSAL
+    action: Sibling fields can support or contradict a stated observation but cannot vote a business meaning into existence.
+
+conflict_rules:
+  - rule_id: GEN-CONFLICT-001
+    status: DETERMINISTIC_PROPOSAL
+    type: NAME_COMMENT_CONFLICT
+  - rule_id: GEN-CONFLICT-002
+    status: DETERMINISTIC_PROPOSAL
+    type: INTERNAL_TOKEN_CONFLICT
+  - rule_id: GEN-CONFLICT-003
+    status: DETERMINISTIC_PROPOSAL
+    type: CONTEXT_COMMENT_CONFLICT
+  - rule_id: GEN-CONFLICT-004
+    status: DETERMINISTIC_PROPOSAL
+    type: CONFIG_FIELD_CONFLICT
+  - rule_id: GEN-CONFLICT-005
+    status: REQUIRES_REVIEW
+    type: COMPETING_OBJECT_ANCHOR
+  - rule_id: GEN-CONFLICT-006
+    status: REQUIRES_REVIEW
+    type: COMPETING_QUALIFIER_OBSERVATION
+  - rule_id: GEN-CONFLICT-007
+    status: DETERMINISTIC_PROPOSAL
+    type: MISSING_INFORMATION
+  - rule_id: GEN-CONFLICT-008
+    status: DETERMINISTIC_PROPOSAL
+    type: UNRECOGNIZED_ABBREVIATION
+  - rule_id: GEN-CONFLICT-009
+    status: DETERMINISTIC_PROPOSAL
+    action: Every conflict records conflict_id, physical_column_id, conflict_type, evidence_a, evidence_b, candidate_interpretations, prohibited_auto_resolution, required_next_evidence, and review_status.
+
+unresolved_rules:
+  - rule_id: GEN-UNKNOWN-001
+    status: DETERMINISTIC_PROPOSAL
+    output: NOT_OBSERVED
+    meaning: Required evidence is absent from frozen input.
+  - rule_id: GEN-UNKNOWN-002
+    status: DETERMINISTIC_PROPOSAL
+    output: UNRECOGNIZED_ABBREVIATION
+    meaning: Acronym is retained but not expanded.
+  - rule_id: GEN-UNKNOWN-003
+    status: DETERMINISTIC_PROPOSAL
+    output: UNBOUND_ATTRIBUTE_OBSERVATION
+    meaning: Attribute shape has no object anchor.
+  - rule_id: GEN-UNKNOWN-004
+    status: DETERMINISTIC_PROPOSAL
+    output: UNRESOLVED_PROTECTED_PHRASE
+    meaning: Compound blocks token inference but lacks a disambiguator.
+  - rule_id: GEN-UNKNOWN-005
+    status: DETERMINISTIC_PROPOSAL
+    output: SEMANTIC_LAYER_REQUIRED
+    meaning: Preparation is complete; business meaning requires later adjudication.
+
+prohibited_inferences:
+  - rule_id: GEN-PROHIBIT-001
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: SHORT or LONG token alone cannot emit position_side.
+  - rule_id: GEN-PROHIBIT-002
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: SOURCE or TARGET token alone cannot emit flow_side.
+  - rule_id: GEN-PROHIBIT-003
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: ID, STATUS, TYPE, AMOUNT, DATE, CURRENCY, or NAME cannot become a business concept without object anchor.
+  - rule_id: GEN-PROHIBIT-004
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: Table-name terms cannot determine a field concept.
+  - rule_id: GEN-PROHIBIT-005
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: Wiki weak context cannot determine a field concept or relation.
+  - rule_id: GEN-PROHIBIT-006
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: Same column name across objects cannot merge physical identity.
+  - rule_id: GEN-PROHIBIT-007
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: Technical observation cannot enter business navigation automatically.
+  - rule_id: GEN-PROHIBIT-008
+    status: DETERMINISTIC_PROPOSAL
+    prohibition: Conflict cannot be auto-resolved to a single business conclusion.
+
+cross_schema_base:
+  status: CANDIDATE
+  rule_scope: Generic rules GEN-ID-001 through GEN-PROHIBIT-008.
+  replay_requirement: Re-run against each Schema and retain per-schema evidence, conflicts, and unknowns.
+  promotion_requirement: Second-Schema evaluation is DEFERRED; no GLOBAL_VALIDATED label is permitted.
+
+tradeflow_profile:
+  status: TRADEFLOW_CANDIDATE
+  rules:
+    - rule_id: TF-ABBR-001
+      status: TRADEFLOW_CANDIDATE
+      tokens: {CTPTY: counterparty-candidate, TRD: trade-candidate, POS: position-candidate}
+    - rule_id: TF-ABBR-002
+      status: TRADEFLOW_CANDIDATE
+      tokens: {MARGIN: margin-candidate, NOTIONAL: notional-candidate}
+    - rule_id: TF-PHRASE-001
+      status: TRADEFLOW_CANDIDATE
+      phrases: [CTPTY_SHORT_NAME, CTPTY_LONG_NAME, SHORT_DYNAMIC_NOTIONAL, LONG_DYNAMIC_NOTIONAL]
+      action: Apply phrase-first protection before direction rules.
+    - rule_id: TF-PHRASE-002
+      status: TRADEFLOW_CANDIDATE
+      phrases: [TARGET_CTPTY, SOURCE_CTPTY, TARGET_CTPTY_ID, SOURCE_CTPTY_ID]
+      action: Emit mapping-context candidate only; suppress naked flow-side inference.
+    - rule_id: TF-CONTEXT-001
+      status: TRADEFLOW_CANDIDATE
+      condition: TRS mapping configuration object context
+      action: SOURCE/TARGET may receive LINEAGE_METADATA candidate, never business role confirmation.
+    - rule_id: TF-CONTEXT-002
+      status: TRADEFLOW_CANDIDATE
+      condition: Explicit Chinese 多头 or 空头 in column comment
+      action: Emit candidate_qualifier_observation with comment provenance.
+    - rule_id: TF-CONFLICT-001
+      status: TRADEFLOW_CANDIDATE
+      condition: SHORT/LONG name and Chinese direction or currency comment disagree
+      action: Emit NAME_COMMENT_CONFLICT and require semantic review.
+    - rule_id: TF-CONTEXT-003
+      status: TRADEFLOW_CANDIDATE
+      condition: Current frozen Wiki title/path context
+      action: Preserve only weak CONTEXT_ONLY provenance.
+  non_portability: No TF rule is copied to another Schema without an explicit profile and independent evaluation.
+
+semantic_layer_handoff:
+  status: REQUIRES_REVIEW
+  provides: [physical facts, lexical observations, protected phrases, generic attributes, technical observations, contexts, support, contradiction, conflicts, unresolved items]
+  requires_semantic_layer: [business concept identity, object boundary, attribute-expression ownership, formal qualifier, multi-entry navigation, Reader publication]
+  mandatory_cross_boundary_questions:
+    - Is CTPTY customer, counterparty, or another relationship in this object?
+    - Is SOURCE or TARGET business-side, mapping-side, or ingestion-side?
+    - Does a direction observation apply to position, trade, cashflow, or none?
+    - Does ORDER, TRADE, CONTRACT, or POSITION name an object or a technical reference?
+
+versioning:
+  status: REQUIRES_IMPLEMENTATION
+  requirements:
+    - Record input source hash, contract version, profile version, rule ids, and output hash.
+    - Preserve prior evidence packs; a review decision is additive and versioned.
+    - Record deterministic replay differences by physical_column_id.
+
+known_gaps:
+  status: DEFERRED
+  items:
+    - Current output does not retain per-candidate lexical evidence source, so name-only candidate count is not recomputable.
+    - Current output has no field-level technical classification, so technical-candidate count is not recomputable.
+    - No second Schema evaluation is in scope.
+    - No business acceptance, Reader publication, or external model use is authorized.

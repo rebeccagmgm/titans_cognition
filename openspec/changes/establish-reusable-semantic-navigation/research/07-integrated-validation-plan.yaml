@@ -1,0 +1,1067 @@
+metadata:
+  plan_id: '07v:integrated-validation-plan-v1-candidate'
+  artifact_kind: LAYERED_RESEARCH_VALIDATION_PLAN
+  version: v1-candidate-rework-2
+  status: NOT_EXECUTED
+  scope: TITANS_TRADEFLOW
+  proposal_date: '2026-08-14'
+  suite_count: 3
+  suite_case_counts:
+    suite_a: 23
+    suite_b: 27
+    suite_c: 12
+  total_case_references_across_layers: 62
+  total_is_not_business_gold_count: true
+  parser_requirement: Standard YAML parsing must succeed; parsing is structural validation and is never a Gold result.
+  source_results_are_immutable: true
+  declaration_id_keys:
+    - plan_id
+    - source_suite_id
+    - suite_id
+    - case_id
+    - assertion_id
+    - decisive_case_id
+    - rule_id
+    - execution_state_id
+    - failure_stop_id
+    - journey_id
+    - review_requirement_id
+    - non_claim_id
+  declaration_registry:
+    declaration_count: 335
+    unique_declaration_count: 335
+    counting_scope: This plan plus 07-integrated-semantic-navigation-contract.yaml, traversing only declaration_id_keys from both metadata blocks.
+    duplicate_declaration_effect: STOP
+    unregistered_declaration_effect: STOP
+    physical_column_id_is_reference_not_declaration: true
+    runtime_identity_fields_not_declarations: [run_id, profile_ref, schema_name, candidate_id, candidate_version, decision_id, expression_id, reader_candidate_id, overlay_ref, review_case_ref]
+
+source_suite_references:
+  - source_suite_id: '07v:source-suite:field-evidence-06'
+    suite_name: Field Evidence Preparation Gold
+    path: openspec/changes/establish-reusable-semantic-navigation/research/06-field-evidence-gold-set.yaml
+    source_case_count: 23
+    source_status:
+      source_anchor: SOURCE_ANCHOR_VERIFIED
+      rule_execution: RULE_EXECUTION_NOT_PERFORMED
+    mutation_policy: REFERENCE_ONLY_DO_NOT_REWRITE
+  - source_suite_id: '07v:source-suite:semantic-navigation-06'
+    suite_name: Semantic Navigation Gold
+    path: openspec/changes/establish-reusable-semantic-navigation/research/06-gold-set.yaml
+    source_case_count: 27
+    source_physical_case_count: 24
+    source_non_evaluable_case_refs: [E02, E03, E04]
+    source_status:
+      revised_execution: PENDING_RERUN
+      field_evidence_integration: PENDING_INTEGRATION
+    mutation_policy: REFERENCE_ONLY_DO_NOT_REWRITE
+
+source_suite_hashes:
+  algorithm: SHA-256
+  hashes:
+    - source_suite_ref: '07v:source-suite:field-evidence-06'
+      expected_sha256: db804025bc3d311912fd854cf34abcc83d3ec676ecbe90a3c0fb00d4d04e1f5c
+      verification_status: SOURCE_FILE_HASH_VERIFIED
+    - source_suite_ref: '07v:source-suite:semantic-navigation-06'
+      expected_sha256: cbe07e7bc61bfd8f4167fc740805219f92c9122c7f0ab82d7deb8cec42828df0
+      verification_status: SOURCE_FILE_HASH_VERIFIED
+  mismatch_effect: STOP_ALL_SUITE_EXECUTION_AND_REESTABLISH_FROZEN_INPUT
+
+implementation_review_source_manifest_validation:
+  manifest_contract_ref: 07-integrated-semantic-navigation-contract.yaml#source_contracts.implementation_review_source_manifest
+  expected_manifest_source_refs_exact: [agent-a-proposal, agent-a-skeleton, agent-a-gold, agent-b-proposal, agent-b-contract, agent-b-gold, formal-review-05, current-status-baseline, integrated-review-08, preimplementation-review-09, stage0-columns, stage0-objects, stage3-manifest, stage5-manifest]
+  current_review_ref: openspec/changes/establish-reusable-semantic-navigation/research/09-independent-preimplementation-review.md
+  current_review_expected_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c
+  current_reviewed_predecessor_bundle_sha256: 689230de6524a629f1162a9a310e62b536ce8d5529c30b33b533b7a5721f7e71
+  current_review_disposition: REWORK_BOUNDED_AUTHORIZATION
+  current_allowed_implementation_steps: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+  zero_omission_required: true
+  extra_or_hash_mismatched_input_effect: STOP
+  candidate_bundle_validation:
+    contract_ref: 07-integrated-semantic-navigation-contract.yaml#source_contracts.reviewed_07_bundle
+    exact_path_count: 3
+    stable_algorithm_fields_required: [exact_relative_paths_in_order, self_reference_rule, per_file_payload, bundle_payload]
+    candidate_bundle_status: REWORK_PENDING_NEW_PREIMPLEMENTATION_REVIEW
+    predecessor_review_cannot_accept_candidate_bundle: true
+  execution_safety_expectations:
+    model_calls: 0
+    model_token_budget: 0
+    model_token_usage: NOT_USED
+    external_egress: false
+    business_rows_read: false
+    database_writes: 0
+  path_boundary_expectations:
+    canonical_workspace_root: 'E:/02_area/股衍数据-数据cookbook/titans-cognition'
+    canonical_output_root: 'E:/02_area/股衍数据-数据cookbook/titans-cognition/output'
+    symlink_or_junction_escape_allowed: false
+    write_outside_output_root_allowed: false
+
+preimplementation_defect_case_registry:
+  defect_refs_exact: [D-001, D-002, D-003, D-004, D-005, D-006, D-007, D-008, D-009, D-010, D-011, D-012]
+  defects:
+    - {defect_ref: D-001, case_refs_exact: [PRE09-D001-DECLARATION-REGISTRY]}
+    - {defect_ref: D-002, case_refs_exact: [PRE09-D002-CURRENCY-OVERLAYS]}
+    - {defect_ref: D-003, case_refs_exact: [PRE09-D003-UNREGISTERED-CANDIDATE]}
+    - {defect_ref: D-004, case_refs_exact: [PRE09-D004-BEHAVIOR-MATRIX]}
+    - {defect_ref: D-005, case_refs_exact: [PRE09-D005-SCOPED-GRAIN]}
+    - {defect_ref: D-006, case_refs_exact: [PRE09-D006-POSITION-IDENTITY]}
+    - {defect_ref: D-007, case_refs_exact: [PRE09-D007-SETTLEMENT-LAYERS]}
+    - {defect_ref: D-008, case_refs_exact: [PRE09-D008-BOUNDED-AUTHORIZATION]}
+    - {defect_ref: D-009, case_refs_exact: [PRE09-D009-GATE-RESULT]}
+    - {defect_ref: D-010, case_refs_exact: [PRE09-D010-SIX-READER-JOURNEYS]}
+    - {defect_ref: D-011, case_refs_exact: [PRE09-D011-SOURCE-OVERLAY-BUNDLE]}
+    - {defect_ref: D-012, case_refs_exact: [PRE09-D012-SECOND-SCHEMA-BOUNDARY]}
+  case_registry:
+    - {review_case_ref: PRE09-D001-DECLARATION-REGISTRY, evidence_types_exact: [DECLARATION_COUNT, DECLARATION_UNIQUENESS, REGISTERED_KEY_COVERAGE], current_status: STRUCTURALLY_RECOMPUTABLE}
+    - {review_case_ref: PRE09-D002-CURRENCY-OVERLAYS, evidence_types_exact: [HISTORICAL_VALUE, CANONICAL_COMPARISON_VALUE, OVERLAY_CONTENT_HASH], current_status: STRUCTURALLY_RECOMPUTABLE}
+    - {review_case_ref: PRE09-D003-UNREGISTERED-CANDIDATE, evidence_types_exact: [RAW_SPAN, PROVENANCE, SUGGESTED_DIMENSION, DEFERRED_REASON], current_status: NOT_EXECUTED}
+    - {review_case_ref: PRE09-D004-BEHAVIOR-MATRIX, evidence_types_exact: [PROMOTABLE_CASE, UNBOUND_CASE, MISLEADING_OR_CONFLICT_CASE], current_status: BLOCKED_NINE_CASES_NOT_PROVIDED}
+    - {review_case_ref: PRE09-D005-SCOPED-GRAIN, evidence_types_exact: [RUN_SCOPE, PROFILE_SCOPE, SCHEMA_SCOPE, CANDIDATE_VERSION, ACTIVE_UNIQUENESS], current_status: NOT_EXECUTED}
+    - {review_case_ref: PRE09-D006-POSITION-IDENTITY, evidence_types_exact: [OWNERSHIP_ANCHOR, QUANTITY_NEGATIVE, DIRECT_POSITIVE], current_status: BLOCKED_DIRECT_POSITIVE_NOT_PROVIDED}
+    - {review_case_ref: PRE09-D007-SETTLEMENT-LAYERS, evidence_types_exact: [OBLIGATION, CASH_FLOW_ITEM, FULFILLMENT_EVENT, SETTLEMENT_RESULT], current_status: NOT_EXECUTED}
+    - {review_case_ref: PRE09-D008-BOUNDED-AUTHORIZATION, evidence_types_exact: [REVIEW_HASH, REVIEWED_BUNDLE_HASH, ALLOWED_STEP_SET, PROHIBITED_STEP_SET], current_status: REWORK_BOUNDED_AUTHORIZATION}
+    - {review_case_ref: PRE09-D009-GATE-RESULT, evidence_types_exact: [EXPECTED_CASE_SET, OBSERVED_CASE_SET, PREDECESSOR_HASH, STATUS_DISTRIBUTION, SAFETY_ASSERTIONS], current_status: NOT_EXECUTED}
+    - {review_case_ref: PRE09-D010-SIX-READER-JOURNEYS, evidence_types_exact: [DIRECT_POSITIVE, BOUNDARY, BLOCKER_VISIBILITY, PHYSICAL_DETAIL, DEEP_LINK, RETURN_CONTEXT], current_status: BLOCKED_THREE_DIRECT_POSITIVES_NOT_PROVIDED}
+    - {review_case_ref: PRE09-D011-SOURCE-OVERLAY-BUNDLE, evidence_types_exact: [SOURCE_HASH, OVERLAY_HASH, BUNDLE_HASH], current_status: STRUCTURALLY_RECOMPUTABLE}
+    - {review_case_ref: PRE09-D012-SECOND-SCHEMA-BOUNDARY, evidence_types_exact: [USER_AUTHORIZATION, COLLISION_SCAN, FAILURE_RETENTION, INDEPENDENT_CASE_PACK], current_status: DEFERRED}
+  exact_registry_gate:
+    defect_count: 12
+    case_count: 12
+    zero_omission_required: true
+    symbolic_case_group_names_allowed: false
+
+reader_direct_positive_evidence_registry:
+  required_types_exact: [COUNTERPARTY_DIRECT_POSITIVE, ORDER_DIRECT_POSITIVE, TRADE_DIRECT_POSITIVE, NOTIONAL_DIRECT_POSITIVE, POSITION_DIRECT_POSITIVE, MARGIN_DIRECT_POSITIVE]
+  required_evidence_types_exact: [P0_PHYSICAL_COLUMN, P1_PREPARED_OBSERVATION, P2_OBJECT_AND_EXPRESSION_CANDIDATE, P3_ACCEPTED_IDENTITY_DECISION]
+  bindings:
+    - direct_positive_type: COUNTERPARTY_DIRECT_POSITIVE
+      direct_positive_case_ref: READER-POS-COUNTERPARTY-A01
+      source_case_refs: [A01]
+      binding_status: EXPECTATION_BOUND_NOT_EXECUTED
+      evidence_bindings: {P0_PHYSICAL_COLUMN: 'testdb:TITANS_TRADEFLOW:TABLE:TRD_LS_DEAL:COLUMN:CTPTY_SHORT_NAME', P1_PREPARED_OBSERVATION: REQUIRED_NOT_EXECUTED, P2_OBJECT_AND_EXPRESSION_CANDIDATE: REQUIRED_NOT_EXECUTED, P3_ACCEPTED_IDENTITY_DECISION: REQUIRED_NOT_EXECUTED}
+    - direct_positive_type: ORDER_DIRECT_POSITIVE
+      direct_positive_case_ref: READER-POS-ORDER-H01
+      source_case_refs: [H01]
+      binding_status: EXPECTATION_BOUND_NOT_EXECUTED
+      evidence_bindings: {P0_PHYSICAL_COLUMN: 'testdb:TITANS_TRADEFLOW:TABLE:TRD_ALLMARKET_ORDER_DEAL:COLUMN:KEY_STOCK_ORDER_ID', P1_PREPARED_OBSERVATION: REQUIRED_NOT_EXECUTED, P2_OBJECT_AND_EXPRESSION_CANDIDATE: REQUIRED_NOT_EXECUTED, P3_ACCEPTED_IDENTITY_DECISION: REQUIRED_NOT_EXECUTED}
+    - direct_positive_type: TRADE_DIRECT_POSITIVE
+      direct_positive_case_ref: READER-POS-TRADE-REQUIRED
+      source_case_refs: []
+      binding_status: REQUIRED_NOT_YET_PROVIDED
+      evidence_bindings: {P0_PHYSICAL_COLUMN: REQUIRED_NOT_YET_PROVIDED, P1_PREPARED_OBSERVATION: REQUIRED_NOT_YET_PROVIDED, P2_OBJECT_AND_EXPRESSION_CANDIDATE: REQUIRED_NOT_YET_PROVIDED, P3_ACCEPTED_IDENTITY_DECISION: REQUIRED_NOT_YET_PROVIDED}
+    - direct_positive_type: NOTIONAL_DIRECT_POSITIVE
+      direct_positive_case_ref: READER-POS-NOTIONAL-C01
+      source_case_refs: [C01]
+      binding_status: EXPECTATION_BOUND_NOT_EXECUTED
+      evidence_bindings: {P0_PHYSICAL_COLUMN: 'testdb:TITANS_TRADEFLOW:TABLE:REF_FAST_TRS:COLUMN:SHORT_DYNAMIC_NOTIONAL', P1_PREPARED_OBSERVATION: REQUIRED_NOT_EXECUTED, P2_OBJECT_AND_EXPRESSION_CANDIDATE: REQUIRED_NOT_EXECUTED, P3_ACCEPTED_IDENTITY_DECISION: REQUIRED_NOT_EXECUTED}
+    - direct_positive_type: POSITION_DIRECT_POSITIVE
+      direct_positive_case_ref: READER-POS-POSITION-REQUIRED
+      source_case_refs: []
+      binding_status: REQUIRED_NOT_YET_PROVIDED
+      evidence_bindings: {P0_PHYSICAL_COLUMN: REQUIRED_NOT_YET_PROVIDED, P1_PREPARED_OBSERVATION: REQUIRED_NOT_YET_PROVIDED, P2_OBJECT_AND_EXPRESSION_CANDIDATE: REQUIRED_NOT_YET_PROVIDED, P3_ACCEPTED_IDENTITY_DECISION: REQUIRED_NOT_YET_PROVIDED}
+    - direct_positive_type: MARGIN_DIRECT_POSITIVE
+      direct_positive_case_ref: READER-POS-MARGIN-REQUIRED
+      source_case_refs: []
+      binding_status: REQUIRED_NOT_YET_PROVIDED
+      evidence_bindings: {P0_PHYSICAL_COLUMN: REQUIRED_NOT_YET_PROVIDED, P1_PREPARED_OBSERVATION: REQUIRED_NOT_YET_PROVIDED, P2_OBJECT_AND_EXPRESSION_CANDIDATE: REQUIRED_NOT_YET_PROVIDED, P3_ACCEPTED_IDENTITY_DECISION: REQUIRED_NOT_YET_PROVIDED}
+  evidence_binding_rule: A source case is not a direct positive until all four required evidence types have concrete refs and the P3 decision is ACCEPTED for the scoped candidate version.
+  explicit_negative_role_bindings:
+    - {source_case_ref: M01, allowed_roles: [BOUNDARY, BLOCKER, UNRESOLVED_DIRECTION], prohibited_roles: [DIRECT_POSITIVE]}
+    - {source_case_ref: C03, allowed_roles: [BOUNDARY, UNRESOLVED_EXPRESSION_OWNERSHIP], prohibited_roles: [MARGIN_DIRECT_POSITIVE]}
+  current_missing_direct_positive_types: [TRADE_DIRECT_POSITIVE, POSITION_DIRECT_POSITIVE, MARGIN_DIRECT_POSITIVE]
+  any_missing_or_untyped_evidence_effect: BLOCK_READER_AND_WHOLE_PAGE_GATE
+
+gate_expected_case_sets:
+  required_step_refs_exact: ['07c:step:00-preimplementation-review', '07c:step:01-provider', '07c:step:02-full-evidence-pack', '07c:step:03-suite-a', '07c:step:04-handoff', '07c:step:05-bounded-adjudication', '07c:step:06-suite-b-c', '07c:step:07-fix-decisive-failures', '07c:step:08-generate-page', '07c:step:09-click-journeys', '07c:step:10-independent-review', '07c:step:11-business-acceptance-request', '07c:step:12-second-schema']
+  sets:
+    - step_ref: '07c:step:00-preimplementation-review'
+      expected_case_refs_exact: [PRE09-D001-DECLARATION-REGISTRY, PRE09-D002-CURRENCY-OVERLAYS, PRE09-D003-UNREGISTERED-CANDIDATE, PRE09-D004-BEHAVIOR-MATRIX, PRE09-D005-SCOPED-GRAIN, PRE09-D006-POSITION-IDENTITY, PRE09-D007-SETTLEMENT-LAYERS, PRE09-D008-BOUNDED-AUTHORIZATION, PRE09-D009-GATE-RESULT, PRE09-D010-SIX-READER-JOURNEYS, PRE09-D011-SOURCE-OVERLAY-BUNDLE, PRE09-D012-SECOND-SCHEMA-BOUNDARY]
+      expected_direct_positive_case_refs_exact: []
+    - step_ref: '07c:step:01-provider'
+      expected_case_refs_exact: [STEP01-PROVIDER-SCHEMA, STEP01-OUTPUT-BLOCKS, STEP01-ZERO-MODEL-EGRESS-ROWS-WRITES, STEP01-PATH-ALLOWLIST]
+      expected_direct_positive_case_refs_exact: []
+    - step_ref: '07c:step:02-full-evidence-pack'
+      expected_case_refs_exact: [STEP02-FULL-13611-CARDINALITY, STEP02-DUAL-SOURCE-HASH, STEP02-SCOPED-PHYSICAL-IDENTITY, STEP02-ZERO-MODEL-EGRESS-ROWS-WRITES, STEP02-PATH-ALLOWLIST]
+      expected_direct_positive_case_refs_exact: []
+    - step_ref: '07c:step:03-suite-a'
+      expected_case_refs_exact: [FEP-001, FEP-002, FEP-003, FEP-004, FEP-005, FEP-006, FEP-007, FEP-008, FEP-009, FEP-010, FEP-011, FEP-012, FEP-013, FEP-014, FEP-015, FEP-016, FEP-017, FEP-018, FEP-019, FEP-020, FEP-021, FEP-022, FEP-023]
+      expected_direct_positive_case_refs_exact: []
+    - step_ref: '07c:step:04-handoff'
+      expected_case_refs_exact: [BR-FIELD-IDENTIFIER, BR-FIELD-DESCRIPTIVE-TEXT, BR-FIELD-PARTY-RELATIONSHIP, BR-FIELD-BUSINESS-OBJECT-STATE, BR-FIELD-MEASURE, BR-FIELD-CURRENCY, BR-FIELD-TIME, BR-FIELD-AUDIT, BR-QUALIFIER-OBSERVATION-TIME-ROLE, BR-QUALIFIER-POSITION-SIDE, BR-QUALIFIER-TRADE-SIDE, BR-QUALIFIER-CASHFLOW-DIRECTION, BR-QUALIFIER-CURRENCY-BASIS, BR-QUALIFIER-PARTY-RELATIONSHIP-ROLE, BR-QUALIFIER-VARIABILITY, BR-QUALIFIER-AGGREGATION-STATE, BR-QUALIFIER-AVAILABILITY-CONDITION, BR-QUALIFIER-ESTIMATION-STATUS, BR-QUALIFIER-MEASURE-BASIS, BR-QUALIFIER-FLOW-SIDE, NON-TF-SOURCE-TARGET-001, NEW-DIMENSION-TOKEN-WITHOUT-REGISTRY]
+      expected_direct_positive_case_refs_exact: []
+    - step_ref: '07c:step:05-bounded-adjudication'
+      expected_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+      expected_direct_positive_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+    - step_ref: '07c:step:06-suite-b-c'
+      expected_case_refs_exact: [A01, A02, A03, A04, A05, B01, C01, C02, C03, C04, D01, D02, E01, E02, E03, E04, F01, G01, G02, H01, I01, I02, J01, J02, K01, L01, M01, CXL-001, CXL-002, CXL-003, CXL-004, CXL-005, CXL-006, CXL-007, CXL-008, CXL-009, CXL-010, CXL-011, CXL-012]
+      expected_direct_positive_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+    - step_ref: '07c:step:07-fix-decisive-failures'
+      expected_case_refs_exact: ['07v:decisive:raw-whitespace', '07v:decisive:name-direction', '07v:decisive:explicit-direction', '07v:decisive:semantic-only-qualifier-reachability', '07v:decisive:source-target', '07v:decisive:identifier-anchor', '07v:decisive:technical-isolation', '07v:decisive:conflict-preservation', '07v:decisive:order-trade-split', '07v:decisive:physical-identity-isolation', '07v:decisive:excluded-retention', '07v:decisive:expression-support', '07v:decisive:trade-positive-gap', '07v:decisive:position-positive-gap']
+      expected_direct_positive_case_refs_exact: [READER-POS-TRADE-REQUIRED, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+    - step_ref: '07c:step:08-generate-page'
+      expected_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+      expected_direct_positive_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+    - step_ref: '07c:step:09-click-journeys'
+      expected_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+      expected_direct_positive_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+    - step_ref: '07c:step:10-independent-review'
+      expected_case_refs_exact: [PRE09-D001-DECLARATION-REGISTRY, PRE09-D002-CURRENCY-OVERLAYS, PRE09-D003-UNREGISTERED-CANDIDATE, PRE09-D004-BEHAVIOR-MATRIX, PRE09-D005-SCOPED-GRAIN, PRE09-D006-POSITION-IDENTITY, PRE09-D007-SETTLEMENT-LAYERS, PRE09-D008-BOUNDED-AUTHORIZATION, PRE09-D009-GATE-RESULT, PRE09-D010-SIX-READER-JOURNEYS, PRE09-D011-SOURCE-OVERLAY-BUNDLE, PRE09-D012-SECOND-SCHEMA-BOUNDARY, READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+      expected_direct_positive_case_refs_exact: [READER-POS-COUNTERPARTY-A01, READER-POS-ORDER-H01, READER-POS-TRADE-REQUIRED, READER-POS-NOTIONAL-C01, READER-POS-POSITION-REQUIRED, READER-POS-MARGIN-REQUIRED]
+    - step_ref: '07c:step:11-business-acceptance-request'
+      expected_case_refs_exact: [USER-BUSINESS-ACCEPTANCE-DECISION]
+      expected_direct_positive_case_refs_exact: []
+    - step_ref: '07c:step:12-second-schema'
+      expected_case_refs_exact: [SECOND-SCHEMA-USER-AUTHORIZATION, SECOND-SCHEMA-IDENTITY-COLLISION-SCAN, SECOND-SCHEMA-FAILURE-RETENTION, SECOND-SCHEMA-INDEPENDENT-CASE-PACK]
+      expected_direct_positive_case_refs_exact: []
+  symbolic_case_group_names_allowed: false
+  zero_omission_required: true
+
+suite_a_field_evidence:
+  suite_id: '07v:suite:a-field-evidence'
+  source_suite_ref: '07v:source-suite:field-evidence-06'
+  layer_transition: P0_TO_P1
+  case_count: 23
+  case_refs:
+    - FEP-001
+    - FEP-002
+    - FEP-003
+    - FEP-004
+    - FEP-005
+    - FEP-006
+    - FEP-007
+    - FEP-008
+    - FEP-009
+    - FEP-010
+    - FEP-011
+    - FEP-012
+    - FEP-013
+    - FEP-014
+    - FEP-015
+    - FEP-016
+    - FEP-017
+    - FEP-018
+    - FEP-019
+    - FEP-020
+    - FEP-021
+    - FEP-022
+    - FEP-023
+  source_verification_status: SOURCE_ANCHOR_VERIFIED
+  rule_execution_status: RULE_EXECUTION_NOT_PERFORMED
+  semantic_adjudication_status: NOT_APPLICABLE
+  validates:
+    - immutable raw facts and whitespace
+    - canonical physical identity
+    - independent columns and objects artifact hashes
+    - non-destructive normalization and source spans
+    - longest phrase guard and nested observation unit
+    - technical candidate typing and isolation
+    - conflicts and unresolved items
+    - prohibited automatic semantic inference
+    - distinct physical identity for equal field names
+  test_vocabulary_adapter:
+    - source_expectation: expected_technical_class equals NOT_APPLICABLE
+      canonical_interpretation: technical_observations is an empty array
+    - source_expectation: expected_handoff_status equals TECHNICAL_ISOLATED
+      canonical_interpretation: P1-to-P2 route is TECHNICAL_CANDIDATE and business Reader eligibility is false
+    - source_expectation: expected_conflict includes COMPETING_MEASURE_INTERPRETATION
+      canonical_interpretation: emit a P2 semantic-measure-interpretation conflict; do not extend the P1 enum silently
+  result_recording:
+    source_verification: separate_record
+    rule_execution: separate_record
+    semantic_adjudication: not_applicable
+    yaml_parse: structural_only
+
+suite_b_semantic_navigation:
+  suite_id: '07v:suite:b-semantic-navigation'
+  source_suite_ref: '07v:source-suite:semantic-navigation-06'
+  layer_transition: P2_TO_P4
+  case_count: 27
+  physical_case_count: 24
+  non_evaluable_case_refs: [E02, E03, E04]
+  case_refs:
+    - A01
+    - A02
+    - A03
+    - A04
+    - A05
+    - B01
+    - C01
+    - C02
+    - C03
+    - C04
+    - D01
+    - D02
+    - E01
+    - E02
+    - E03
+    - E04
+    - F01
+    - G01
+    - G02
+    - H01
+    - I01
+    - I02
+    - J01
+    - J02
+    - K01
+    - L01
+    - M01
+  source_verification_status: SOURCE_FILE_HASH_VERIFIED
+  rule_execution_status: PENDING_RERUN
+  semantic_adjudication_status: PENDING_RERUN
+  current_observed_baseline_reference:
+    source: openspec/changes/establish-reusable-semantic-navigation/research/05-independent-review.md
+    result_counts:
+      historical_pass: 6
+      historical_fail: 17
+      historical_not_evaluable: 4
+    disposition: FAIL
+    use: COUNTEREVIDENCE_ONLY_NOT_REVISED_RESULT
+  validates:
+    - business concept identity
+    - attribute expression ownership
+    - formal field attribute
+    - formal qualifier after adjudication
+    - unique Reader identity
+    - publication blockers
+    - known misclassification regressions
+  canonical_expectation_overlays:
+    - overlay_ref: '07v:overlay:raw-a03:v1'
+      version: 1
+      source_suite_ref: '07v:source-suite:semantic-navigation-06'
+      source_case_ref: A03
+      authority: STAGE0_FROZEN_PHYSICAL_FACT
+      historical_value: {object_comment_raw: 'CLN 认购流水'}
+      canonical_comparison_value: {object_comment_raw: ' CLN 认购流水'}
+      physical_column_ref: 'testdb:TITANS_TRADEFLOW:TABLE:TRD_CLN_TRADE_DEAL:COLUMN:CTPTY_SHORT_NAME'
+      reason: Preserve the actual leading U+0020 without editing Suite B.
+      content_sha256: c6a285ca969c8a7a691db79a3c76143861b407ba448529afb4c18dffa8eb9bab
+    - overlay_ref: '07v:overlay:raw-b01:v1'
+      version: 1
+      source_suite_ref: '07v:source-suite:semantic-navigation-06'
+      source_case_ref: B01
+      authority: STAGE0_FROZEN_PHYSICAL_FACT
+      historical_value: {column_comment_raw: 交易对手长名, object_comment_raw: '交易-交易指令'}
+      canonical_comparison_value: {column_comment_raw: '交易对手长名 ', object_comment_raw: '交易- 交易指令'}
+      physical_column_ref: 'testdb:TITANS_TRADEFLOW:TABLE:TRD_TRS_ORDER:COLUMN:CTPTY_LONG_NAME'
+      reason: Preserve the actual trailing and internal U+0020 values without editing Suite B.
+      content_sha256: 59c73012cddcb810a459888dd96b10c557b508c5b7a4122f5491e77ac4061721
+    - overlay_ref: '07v:overlay:currency-fep009:v1'
+      version: 1
+      source_suite_ref: '07v:source-suite:field-evidence-06'
+      source_case_ref: FEP-009
+      authority: INTEGRATION_CANONICAL_ENUM_MAPPING_D002
+      historical_value: {forbidden_qualifier_values: ['position_side=SHORT', 'position_side=LONG', 'currency_basis=ORIGINAL']}
+      canonical_comparison_value: {forbidden_qualifier_values: ['position_side=SHORT', 'position_side=LONG', 'currency_basis=ORIGINAL_CURRENCY']}
+      reason: Preserve the historical negative expectation while mapping its currency value to the full Canonical enum.
+      content_sha256: 9446b1f592ce72fae659828988374acbe4b88fc34646a6796e2c8ffdcf23e4e4
+    - overlay_ref: '07v:overlay:currency-c01:v1'
+      version: 1
+      source_suite_ref: '07v:source-suite:semantic-navigation-06'
+      source_case_ref: C01
+      authority: INTEGRATION_CANONICAL_ENUM_MAPPING_D002
+      historical_value: {expected_currency_basis: SETTLEMENT}
+      canonical_comparison_value: {expected_currency_basis: SETTLEMENT_CURRENCY}
+      reason: Preserve the historical positive expectation while comparing with the full Canonical enum.
+      content_sha256: c8f9d66aa71327188d0f4dbc3adfc8d163630e641ce42d38b3fccde7f658e130
+    - overlay_ref: '07v:overlay:currency-c02:v1'
+      version: 1
+      source_suite_ref: '07v:source-suite:semantic-navigation-06'
+      source_case_ref: C02
+      authority: INTEGRATION_CANONICAL_ENUM_MAPPING_D002
+      historical_value: {expected_currency_basis: SETTLEMENT, forbidden_currency_basis: UNDERLYING, legacy_oracle_expected_currency_basis: UNDERLYING}
+      canonical_comparison_value: {expected_currency_basis: SETTLEMENT_CURRENCY, forbidden_currency_basis: UNDERLYING_CURRENCY, legacy_oracle_expected_currency_basis: UNDERLYING_CURRENCY}
+      reason: Map positive, negative, and legacy expectations; none of the historical values is rewritten.
+      content_sha256: 80147034e0cc3dd1deecbb953aab372a51d462c4f53fea1a6c9f62f22254bab1
+    - overlay_ref: '07v:overlay:currency-f01:v1'
+      version: 1
+      source_suite_ref: '07v:source-suite:semantic-navigation-06'
+      source_case_ref: F01
+      authority: INTEGRATION_CANONICAL_ENUM_MAPPING_D002
+      historical_value: {expected_currency_basis: SETTLEMENT}
+      canonical_comparison_value: {expected_currency_basis: SETTLEMENT_CURRENCY}
+      reason: Map the nonconflicting currency expectation while retaining the direction conflict.
+      content_sha256: 3948c049303d546c1d364161a809b0db2d1f19072dff4c9fa41917d416c3bc36
+  overlay_hash_contract:
+    algorithm: SHA-256
+    canonical_serialization: UTF-8 JSON with sorted keys and compact separators after removing content_sha256.
+    required_overlay_refs_exact: ['07v:overlay:raw-a03:v1', '07v:overlay:raw-b01:v1', '07v:overlay:currency-fep009:v1', '07v:overlay:currency-c01:v1', '07v:overlay:currency-c02:v1', '07v:overlay:currency-f01:v1']
+    historical_values_remain_visible: true
+    mutation_or_hash_mismatch_effect: STOP_ALL_SUITE_EXECUTION_AND_REESTABLISH_FROZEN_INPUT
+  full_currency_enum_assertion:
+    allowed_values_exact: [ORIGINAL_CURRENCY, LOCAL_CURRENCY, UNDERLYING_CURRENCY, SETTLEMENT_CURRENCY]
+    historical_short_values_allowed_only_under: historical_value
+    canonical_comparison_short_value_count_required: 0
+    violation_effect: STOP_BEFORE_SUITE_B_EXECUTION
+  result_recording:
+    source_verification: separate_record
+    rule_execution: separate_record
+    semantic_adjudication: separate_record
+    yaml_parse: structural_only
+    business_acceptance: never_inferred
+
+suite_c_cross_layer:
+  suite_id: '07v:suite:c-cross-layer'
+  layer_transition: P1_TO_P2_TO_P3_TO_P4
+  case_count: 12
+  source_verification_status: SOURCE_REFS_DEFINED
+  rule_execution_status: NOT_EXECUTED
+  semantic_adjudication_status: NOT_EXECUTED
+  handoff_contract_assertions:
+    - assertion_id: '07v:assert:all-p1-blocks-routed'
+      expectation: Every one of the 16 Provider output blocks has exactly one declared routing role before implementation.
+      current_execution_status: NOT_EXECUTED
+    - assertion_id: '07v:assert:closed-observation-vocabulary'
+      expectation: All 13 generic attribute values and both statuses, both abbreviation statuses, all 10 technical classes and both statuses, and all 5 candidate qualifier dimensions use only Provider-defined vocabulary and have explicit routes; every canonical currency comparison uses only the four full enum values.
+      current_execution_status: NOT_EXECUTED
+    - assertion_id: '07v:assert:acyclic-layer-direction'
+      expectation: P1-to-P2 candidate formation has no P3 prerequisite and P3 cannot rewrite or regenerate P2.
+      current_execution_status: NOT_EXECUTED
+    - assertion_id: '07v:assert:closed-resolution-status'
+      expectation: P2 semantic_resolution_status is one of CANDIDATE, UNBOUND, CONFLICT, DEFERRED, or NOT_APPLICABLE and never a P3 or publication state.
+      current_execution_status: NOT_EXECUTED
+    - assertion_id: '07v:assert:canonical-semantic-reachability'
+      expectation: All 8 field attributes and all 12 qualifier dimensions have an explicit direct or composite P2 candidate route and all three behavioral classes are executed with nonempty observations or explicit NOT_APPLICABLE; static route presence, empty sets, and unexecuted cases never pass.
+      current_execution_status: NOT_EXECUTED
+  cases:
+    - case_id: CXL-001
+      title: SHORT_NAME observation cannot become position_side
+      source_case_refs: [FEP-001, FEP-002, FEP-003, FEP-023, A01, B01]
+      physical_input: canonical_physical_field
+      p1_expectation: NAME_VARIANT_OBSERVATION with the naked SHORT or LONG rule suppressed
+      p2_expectation: DESCRIPTIVE_TEXT candidate only after owning object anchor
+      prohibited_result: formal position_side or Reader publication from name length
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-002
+      title: Explicit Chinese short direction is only a candidate before object applicability
+      source_case_refs: [FEP-007, C01]
+      physical_input: TITANS_TRADEFLOW.REF_FAST_TRS.SHORT_DYNAMIC_NOTIONAL
+      p1_expectation: candidate_qualifier_observations emits dimension position_side, value SHORT, and comment provenance
+      p2_expectation: a qualifier candidate requires bounded Notional ownership, position-side applicability, independent context, and dimension compatibility; otherwise emit UNBOUND or CONFLICT without formal promotion
+      p3_expectation: semantic decision is required before formal qualifier
+      prohibited_result: P3 prerequisite in candidate formation, P3-to-P2 feedback, or Reader publication directly from the P1 observation
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-003
+      title: SOURCE_CTPTY_ID mapping context cannot directly publish flow_side
+      source_case_refs: [FEP-006, D02]
+      physical_input: TITANS_TRADEFLOW.TRS_FAST_MAPPING_CONFIG.SOURCE_CTPTY_ID
+      p1_expectation: IDENTIFIER_SHAPE plus LINEAGE_METADATA candidate and mapping context
+      p2_expectation: flow-side candidate only after explicit input-output responsibility evidence
+      p3_expectation: TRADEFLOW-only semantic decision required
+      prohibited_result: formal flow_side or Counterparty publication directly from P1
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-004
+      title: IDENTIFIER_SHAPE without object anchor cannot become IDENTIFIER decision
+      source_case_refs: [FEP-015, FEP-017, H01]
+      p1_expectation: IDENTIFIER_SHAPE observation with retained missing context
+      p2_expectation: UNBOUND or competing object anchor candidate
+      prohibited_result: P3 IDENTIFIER or Reader identity without an adjudicated object
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-005
+      title: Technical candidate cannot enter a business Reader
+      source_case_refs: [FEP-019, FEP-020, FEP-021, FEP-022]
+      p1_expectation: technical status remains CANDIDATE or UNRESOLVED
+      p2_expectation: route to TECHNICAL_CANDIDATE governance state
+      prohibited_result: business Reader membership, silent deletion, or confirmed AUDIT before validation
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-006
+      title: Name-comment conflict blocks expression and critical Reader publication
+      source_case_refs: [FEP-009, F01]
+      physical_input: TITANS_TRADEFLOW.REF_LS_TRS.SHORT_DYNAMIC_NOTIONAL_ORG
+      p1_expectation: retain both raw direction claims and NAME_COMMENT_CONFLICT
+      p2_expectation: mutually visible interpretations and required next evidence
+      p4_expectation: Notional expression is blocked; Reader publication is blocked while identity-critical impact is open
+      prohibited_result: fixed name or comment priority
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-007
+      title: Order ID cannot inherit Trade identity
+      source_case_refs: [H01]
+      physical_input: TITANS_TRADEFLOW.TRD_ALLMARKET_ORDER_DEAL.KEY_STOCK_ORDER_ID
+      p2_expectation: Order identifier candidate only
+      p3_expectation: Order and Trade remain separate identities
+      prohibited_result: reader trade-order, reader Trade, or Trade identifier inheritance
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-008
+      title: Equal field names in different objects retain different physical identities
+      source_case_refs: [FEP-001, FEP-023]
+      physical_inputs:
+        - TITANS_TRADEFLOW.TRD_CLN_TRADE_DEAL.CTPTY_SHORT_NAME
+        - TITANS_TRADEFLOW.TRD_LS_DEAL.CTPTY_SHORT_NAME
+      p1_expectation: two Evidence Packs with different physical_column_id values
+      prohibited_result: name-based physical identity merge
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-009
+      title: EXCLUDED means retained package outside a named workset
+      source_contract_refs: ['07c:provider:field-evidence-preparation']
+      corpus_expectation:
+        full_physical_field_count: 13611
+        current_downstream_workset_field_count: 5512
+      p1_expectation: EXCLUDED record retains canonical anchor, minimum lexical evidence, provenance, and reason
+      prohibited_result: deletion, TRUE_UNKNOWN, or invalid-field conclusion
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-010
+      title: Reader expression support is computed independently
+      source_case_refs: [A01, A03, F01, M01]
+      p4_expectation: each expression has its own support, conflict, unresolved, and publication state
+      prohibited_result: all Reader expressions inherit SUPPORTED from one source concept or expression
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-011
+      title: TRADE_ID observation exposes the missing direct Trade positive decision
+      source_case_refs: [FEP-016]
+      physical_input: TITANS_TRADEFLOW.REF_IRS.TRADE_ID
+      p1_expectation: protected TRADE_ID and IDENTIFIER_SHAPE observation
+      p2_expectation: Trade anchor candidate with contract-reference counterevidence retained
+      prohibited_result: direct Trade decision or publication from the token and comment alone
+      gate_effect: DIRECT_TRADE_POSITIVE_GOLD_STILL_REQUIRED
+      current_execution_status: NOT_EXECUTED
+    - case_id: CXL-012
+      title: Position quantity observation is not Position or Risk Exposure by itself
+      source_case_refs: [FEP-018]
+      physical_input: TITANS_TRADEFLOW.TRD_FAST_TRS_HMS_POS_SUM.POSITION_TOTAL_QTY
+      p1_expectation: QUANTITY observation with competing quantity-balance interpretation
+      p2_expectation: Position ownership candidate and Risk Exposure counterexample remain separate
+      prohibited_result: confirmed Position, Position View, or Risk Exposure from tokens alone
+      gate_effect: DIRECT_POSITION_POSITIVE_GOLD_STILL_REQUIRED
+      current_execution_status: NOT_EXECUTED
+  result_recording:
+    source_verification: separate_record
+    rule_execution: separate_record
+    semantic_adjudication: separate_record
+    page_projection: separate_record
+
+behavioral_route_matrix:
+  required_behavior_classes: [PROMOTABLE_WITH_REQUIRED_EVIDENCE, INSUFFICIENT_OR_UNBOUND, MISLEADING_OR_CONFLICT_OR_EXPLICIT_NOT_APPLICABLE]
+  field_attribute_refs_exact: [IDENTIFIER, DESCRIPTIVE_TEXT, PARTY_RELATIONSHIP, BUSINESS_OBJECT_STATE, MEASURE, CURRENCY, TIME, AUDIT]
+  field_attributes:
+    - dimension_ref: IDENTIFIER
+      matrix_case_ref: BR-FIELD-IDENTIFIER
+      promotable: {case_refs: [H01], expected_route: IDENTIFIER_CANDIDATE_AFTER_BOUNDED_ORDER_ANCHOR, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [CXL-004], expected_route: UNBOUND, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [FEP-015], expected_route: NO_IDENTIFIER_DECISION_FROM_SHAPE_ALONE, execution_status: NOT_EXECUTED}
+    - dimension_ref: DESCRIPTIVE_TEXT
+      matrix_case_ref: BR-FIELD-DESCRIPTIVE-TEXT
+      promotable: {case_refs: [A01], expected_route: DESCRIPTIVE_TEXT_CANDIDATE_AFTER_COUNTERPARTY_ANCHOR, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [A03], expected_route: UNBOUND_WHILE_OBJECT_ANCHOR_COMPETES, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-001], expected_route: DESCRIPTIVE_TEXT_NOT_POSITION_SIDE, execution_status: NOT_EXECUTED}
+    - dimension_ref: PARTY_RELATIONSHIP
+      matrix_case_ref: BR-FIELD-PARTY-RELATIONSHIP
+      promotable: {case_type: PARTY_RELATIONSHIP_DIRECT_POSITIVE, expected_route: PARTY_RELATIONSHIP_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [A03], expected_route: UNBOUND_CUSTOMER_COUNTERPARTY_RELATION, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [D02], expected_route: SOURCE_TARGET_NOT_PARTY_RELATIONSHIP_ROLE, execution_status: NOT_EXECUTED}
+    - dimension_ref: BUSINESS_OBJECT_STATE
+      matrix_case_ref: BR-FIELD-BUSINESS-OBJECT-STATE
+      promotable: {case_type: BUSINESS_OBJECT_STATE_DIRECT_POSITIVE, expected_route: BUSINESS_OBJECT_STATE_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [E01], expected_route: UNBOUND_GENERIC_STATE, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [FEP-021], expected_route: TECHNICAL_STATE_NOT_BUSINESS_OBJECT_STATE, execution_status: NOT_EXECUTED}
+    - dimension_ref: MEASURE
+      matrix_case_ref: BR-FIELD-MEASURE
+      promotable: {case_refs: [C01], expected_route: NOTIONAL_MEASURE_CANDIDATE, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-011], expected_route: UNBOUND_NUMERIC_OR_BALANCE_OBSERVATION, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-012], expected_route: QUANTITY_NOT_POSITION_IDENTITY, execution_status: NOT_EXECUTED}
+    - dimension_ref: CURRENCY
+      matrix_case_ref: BR-FIELD-CURRENCY
+      promotable: {case_refs: [C01], expected_route: CURRENCY_CANDIDATE_WITH_MEASURE_OWNER, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-014], expected_route: UNBOUND_CURRENCY_OBSERVATION, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {overlay_refs: ['07v:overlay:currency-fep009:v1'], expected_route: HISTORICAL_SHORT_ENUM_REJECTED, execution_status: NOT_EXECUTED}
+    - dimension_ref: TIME
+      matrix_case_ref: BR-FIELD-TIME
+      promotable: {case_refs: [K01], expected_route: BUSINESS_TIME_CANDIDATE, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-013], expected_route: UNBOUND_TIME_OBSERVATION, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [FEP-020], expected_route: AUDIT_TIME_TECHNICAL_ONLY, execution_status: NOT_EXECUTED}
+    - dimension_ref: AUDIT
+      matrix_case_ref: BR-FIELD-AUDIT
+      promotable: {case_refs: [FEP-019, FEP-020], expected_route: AUDIT_CANDIDATE_TECHNICAL_ONLY_AFTER_SUITE_A, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-021], expected_route: TECHNICAL_CANDIDATE_OR_UNRESOLVED, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-005], expected_route: NO_BUSINESS_READER_MEMBERSHIP, execution_status: NOT_EXECUTED}
+  qualifier_refs_exact: [observation_time_role, position_side, trade_side, cashflow_direction, currency_basis, party_relationship_role, variability, aggregation_state, availability_condition, estimation_status, measure_basis, flow_side]
+  qualifiers:
+    - dimension_ref: observation_time_role
+      matrix_case_ref: BR-QUALIFIER-OBSERVATION-TIME-ROLE
+      promotable: {case_refs: [K01], expected_route: INITIAL_CANDIDATE_AFTER_BUSINESS_TIME_EVIDENCE, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-013], expected_route: UNBOUND_TIME_ROLE, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [FEP-020], expected_route: AUDIT_TIME_NOT_OBSERVATION_TIME_ROLE, execution_status: NOT_EXECUTED}
+    - dimension_ref: position_side
+      matrix_case_ref: BR-QUALIFIER-POSITION-SIDE
+      promotable: {case_refs: [C01], expected_route: SHORT_CANDIDATE_AFTER_OBJECT_APPLICABILITY, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-009, F01], expected_route: CONFLICT_OR_UNBOUND, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-001], expected_route: SHORT_NAME_NOT_POSITION_SIDE, execution_status: NOT_EXECUTED}
+    - dimension_ref: trade_side
+      matrix_case_ref: BR-QUALIFIER-TRADE-SIDE
+      promotable: {case_refs: [G01], expected_route: TRADE_SIDE_CANDIDATE_WITH_ORDER_OR_TRADE_CONTEXT, execution_status: NOT_EXECUTED}
+      insufficient: {case_type: TRADE_SIDE_INSUFFICIENT_CONTEXT, expected_route: UNBOUND, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      misleading_or_conflict: {case_refs: [D02], expected_route: SOURCE_TARGET_NOT_TRADE_SIDE, execution_status: NOT_EXECUTED}
+    - dimension_ref: cashflow_direction
+      matrix_case_ref: BR-QUALIFIER-CASHFLOW-DIRECTION
+      promotable: {case_type: CASHFLOW_DIRECTION_DIRECT_POSITIVE, expected_route: PAY_OR_RECEIVE_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [M01], expected_route: UNBOUND_WITHOUT_VALUE_SEMANTICS, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-003], expected_route: SOURCE_TARGET_NOT_CASHFLOW_DIRECTION, execution_status: NOT_EXECUTED}
+    - dimension_ref: currency_basis
+      matrix_case_ref: BR-QUALIFIER-CURRENCY-BASIS
+      promotable: {case_refs: [C01], expected_route: SETTLEMENT_CURRENCY_CANDIDATE, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-014], expected_route: UNBOUND_CURRENCY_BASIS, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {overlay_refs: ['07v:overlay:currency-fep009:v1', '07v:overlay:currency-c02:v1'], expected_route: SHORT_ENUM_VALUES_REJECTED_AFTER_OVERLAY, execution_status: NOT_EXECUTED}
+    - dimension_ref: party_relationship_role
+      matrix_case_ref: BR-QUALIFIER-PARTY-RELATIONSHIP-ROLE
+      promotable: {case_type: PARTY_RELATIONSHIP_ROLE_DIRECT_POSITIVE, expected_route: ROLE_CANDIDATE_AFTER_RELATION_ADJUDICATION, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [A03], expected_route: UNBOUND_CUSTOMER_COUNTERPARTY_ROLE, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [D02], expected_route: SOURCE_TARGET_NOT_PARTY_ROLE, execution_status: NOT_EXECUTED}
+    - dimension_ref: variability
+      matrix_case_ref: BR-QUALIFIER-VARIABILITY
+      promotable: {case_refs: [C01], expected_route: DYNAMIC_CANDIDATE_WITH_NOTIONAL_OWNER, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-008], expected_route: UNBOUND_VARIABILITY_WITHOUT_OWNER, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [F01], expected_route: RETAIN_CONFLICT_WITHOUT_PROMOTION, execution_status: NOT_EXECUTED}
+    - dimension_ref: aggregation_state
+      matrix_case_ref: BR-QUALIFIER-AGGREGATION-STATE
+      promotable: {case_type: AGGREGATION_STATE_DIRECT_POSITIVE, expected_route: ACCUMULATED_NET_OR_GROSS_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [G02], expected_route: UNBOUND_AGGREGATION_CONTEXT, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-012], expected_route: TECHNICAL_OR_SUMMARY_QUANTITY_NOT_AGGREGATION_STATE, execution_status: NOT_EXECUTED}
+    - dimension_ref: availability_condition
+      matrix_case_ref: BR-QUALIFIER-AVAILABILITY-CONDITION
+      promotable: {case_type: AVAILABILITY_CONDITION_DIRECT_POSITIVE, expected_route: AVAILABLE_OR_FROZEN_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [FEP-011], expected_route: UNBOUND_AVAILABILITY_CONTEXT, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-005], expected_route: TECHNICAL_STATE_NOT_BUSINESS_AVAILABILITY, execution_status: NOT_EXECUTED}
+    - dimension_ref: estimation_status
+      matrix_case_ref: BR-QUALIFIER-ESTIMATION-STATUS
+      promotable: {case_type: ESTIMATION_STATUS_DIRECT_POSITIVE, expected_route: ESTIMATED_OR_OBSERVED_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [FEP-013], expected_route: UNBOUND_WITHOUT_MEASUREMENT_PROVENANCE, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-005], expected_route: TECHNICAL_PROVENANCE_NOT_ESTIMATION_STATUS, execution_status: NOT_EXECUTED}
+    - dimension_ref: measure_basis
+      matrix_case_ref: BR-QUALIFIER-MEASURE-BASIS
+      promotable: {case_refs: [C03], expected_route: RATIO_CANDIDATE_WITH_EXPLICIT_BASIS, execution_status: NOT_EXECUTED}
+      insufficient: {case_refs: [FEP-011], expected_route: UNBOUND_NUMERIC_BASIS, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-012], expected_route: QUANTITY_NOT_ABSOLUTE_BASIS_BY_DEFAULT, execution_status: NOT_EXECUTED}
+    - dimension_ref: flow_side
+      matrix_case_ref: BR-QUALIFIER-FLOW-SIDE
+      promotable: {case_type: FLOW_SIDE_DIRECT_POSITIVE_WITH_MAPPING_RESPONSIBILITY, expected_route: TRADEFLOW_ONLY_SOURCE_OR_TARGET_CANDIDATE, execution_status: REQUIRED_NOT_YET_PROVIDED}
+      insufficient: {case_refs: [D01], expected_route: LINEAGE_CONTEXT_OR_UNBOUND, execution_status: NOT_EXECUTED}
+      misleading_or_conflict: {case_refs: [CXL-003], expected_route: SOURCE_TARGET_TOKEN_NOT_FLOW_SIDE, execution_status: NOT_EXECUTED}
+  non_tradeflow_source_target_negative_case:
+    review_case_ref: NON-TF-SOURCE-TARGET-001
+    synthetic_profile_ref: NON_TRADEFLOW_TEST_PROFILE
+    synthetic_schema_name: NON_TRADEFLOW_TEST_SCHEMA
+    observation: SOURCE_TARGET_TERM
+    context: explicit mapping-like source and target labels
+    expected_result: LINEAGE_CONTEXT_ONLY_NO_FLOW_SIDE_CANDIDATE
+    prohibited_results: [FLOW_SIDE_OR_LINEAGE_CANDIDATE, FORMAL_FLOW_SIDE, READER_MEMBERSHIP]
+    required_contract_guard: active profile and schema both equal TITANS_TRADEFLOW
+    external_or_business_data_used: false
+    current_execution_status: NOT_EXECUTED
+  new_dimension_counterexample:
+    counterexample_ref: NEW-DIMENSION-TOKEN-WITHOUT-REGISTRY
+    observed_value_raw: NOVEL_PAYMENT_TIMING_BASIS
+    expected_record_type: UNREGISTERED_CANDIDATE
+    required_fields: [raw_span, provenance_refs, suggested_dimension, deferred_reason]
+    expected_status: DEFERRED
+    prohibited_destinations: [P3, READER]
+    current_execution_status: NOT_EXECUTED
+  gate:
+    exact_8_plus_12_sets_required: true
+    each_behavior_class_nonempty_or_explicit_not_applicable: true
+    unexecuted_or_empty_counts_as_pass: false
+    zero_omission_required: true
+    required_not_yet_provided_cell_count: 9
+    required_not_yet_provided_case_types_exact: [PARTY_RELATIONSHIP_DIRECT_POSITIVE, BUSINESS_OBJECT_STATE_DIRECT_POSITIVE, TRADE_SIDE_INSUFFICIENT_CONTEXT, CASHFLOW_DIRECTION_DIRECT_POSITIVE, PARTY_RELATIONSHIP_ROLE_DIRECT_POSITIVE, AGGREGATION_STATE_DIRECT_POSITIVE, AVAILABILITY_CONDITION_DIRECT_POSITIVE, ESTIMATION_STATUS_DIRECT_POSITIVE, FLOW_SIDE_DIRECT_POSITIVE_WITH_MAPPING_RESPONSIBILITY]
+    all_nine_cells_remain_blocking_until_concrete_cases_execute: true
+    missing_case_type_cannot_be_replaced_by_empty_or_not_applicable: true
+    current_status: FAIL_REQUIRED_CASES_NOT_EXECUTED_OR_NOT_PROVIDED
+
+record_grain_validation:
+  candidate_key_exact: [run_id, profile_ref, schema_name, physical_column_id, candidate_type, candidate_value_ref, evidence_hash, candidate_version]
+  decision_grain_exact: [run_id, profile_ref, schema_name, candidate_id, candidate_version, decision_version]
+  expression_grain_exact: [run_id, profile_ref, schema_name, reader_ref, candidate_id, candidate_version, expression_key, expression_version]
+  reader_candidate_grain_exact: [run_id, profile_ref, schema_name, reader_ref, candidate_version, reader_candidate_version]
+  active_state_grain_exact: [run_id, profile_ref, schema_name, record_type, record_identity, candidate_version]
+  decision_cardinality: ONE_P3_DECISION_PER_COMPLETE_SCOPED_CANDIDATE_VERSION
+  expression_cardinality: ONE_EXPRESSION_PER_COMPLETE_SCOPED_READER_EXPRESSION_AND_CANDIDATE_VERSION
+  reader_candidate_cardinality: ONE_READER_CANDIDATE_PER_COMPLETE_SCOPED_VERSION
+  active_state_cardinality: ONE_ACTIVE_STATE_PER_COMPLETE_SCOPED_GRAIN
+  identical_input_rerun: SAME_IDS_AND_CONTENT_HASHES
+  duplicate_or_multiple_active_effect: STOP
+  current_execution_status: NOT_EXECUTED
+
+obligation_cashflow_settlement_boundary_validation:
+  distinct_layers_exact: [OBLIGATION, CASH_FLOW_SCHEDULE_OR_ITEM, FULFILLMENT_EVENT, SETTLEMENT_RESULT]
+  counterexample:
+    observation: Planned payment amount and due date exist.
+    allowed_result: CASH_FLOW_SCHEDULE_OR_ITEM_WITH_POSSIBLE_OBLIGATION_CONTEXT
+    prohibited_results: [PAYMENT_OCCURRED, TRANSFER_OCCURRED, DELIVERY_OCCURRED, SETTLEMENT_SUCCEEDED]
+  current_execution_status: NOT_EXECUTED
+
+decisive_cases:
+  - decisive_case_id: '07v:decisive:raw-whitespace'
+    case_refs: [FEP-001, FEP-002, A03, B01]
+    decisive_reason: Raw physical facts and source spans must survive integration unchanged.
+    failure_effect: STOP_BEFORE_P1_HANDOFF
+  - decisive_case_id: '07v:decisive:name-direction'
+    case_refs: [A01, A02, A04, B01, CXL-001]
+    decisive_reason: Name length must never become position direction.
+    failure_effect: BLOCK_ALL_AFFECTED_READERS_AND_PAGE_GENERATION
+  - decisive_case_id: '07v:decisive:explicit-direction'
+    case_refs: [FEP-007, C01, CXL-002]
+    decisive_reason: Explicit direction may form a candidate only through object applicability and adjudication.
+    failure_effect: BLOCK_NOTIONAL_EXPRESSION_AND_PAGE_GENERATION
+  - decisive_case_id: '07v:decisive:semantic-only-qualifier-reachability'
+    case_refs: [C03, K01]
+    decisive_reason: Explicit ratio and initial-time evidence must create measure_basis and observation_time_role P2 candidates before any P3 decision; RATE or TIME alone remains insufficient.
+    failure_effect: STOP_SUITE_B_SEMANTIC_ADJUDICATION
+  - decisive_case_id: '07v:decisive:source-target'
+    case_refs: [FEP-006, D02, CXL-003]
+    decisive_reason: Mapping context is required but is not itself a formal flow-side decision.
+    failure_effect: BLOCK_FLOW_SIDE_AND_COUNTERPARTY_PUBLICATION
+  - decisive_case_id: '07v:decisive:identifier-anchor'
+    case_refs: [FEP-015, FEP-017, H01, CXL-004]
+    decisive_reason: An IDENTIFIER candidate requires a single bounded owning-object candidate, and a formal IDENTIFIER decision requires confirmed P3 ownership.
+    failure_effect: BLOCK_ORDER_TRADE_AND_AFFECTED_EXPRESSIONS
+  - decisive_case_id: '07v:decisive:technical-isolation'
+    case_refs: [FEP-019, FEP-020, FEP-021, FEP-022, CXL-005]
+    decisive_reason: Technical candidates remain visible outside business Readers.
+    failure_effect: STOP_PAGE_GENERATION
+  - decisive_case_id: '07v:decisive:conflict-preservation'
+    case_refs: [FEP-009, F01, CXL-006]
+    decisive_reason: Conflicting raw claims cannot auto-resolve or disappear.
+    failure_effect: BLOCK_AFFECTED_EXPRESSION_AND_READER_PUBLICATION
+  - decisive_case_id: '07v:decisive:order-trade-split'
+    case_refs: [H01, CXL-007]
+    decisive_reason: Order and Trade require separate Reader identities and identifiers.
+    failure_effect: BLOCK_ORDER_AND_TRADE_READERS
+  - decisive_case_id: '07v:decisive:physical-identity-isolation'
+    case_refs: [FEP-001, FEP-023, CXL-008]
+    decisive_reason: Equal names across objects are separate physical instances.
+    failure_effect: STOP_PROVIDER_OUTPUT
+  - decisive_case_id: '07v:decisive:excluded-retention'
+    case_refs: [CXL-009]
+    decisive_reason: Full-corpus preparation must retain fields outside the downstream workset.
+    failure_effect: STOP_FULL_EVIDENCE_PACK_GATE
+  - decisive_case_id: '07v:decisive:expression-support'
+    case_refs: [CXL-010]
+    decisive_reason: Reader support is calculated per expression.
+    failure_effect: STOP_PAGE_GENERATION
+  - decisive_case_id: '07v:decisive:trade-positive-gap'
+    case_refs: [FEP-016, CXL-011]
+    decisive_reason: A protected Trade token is not a direct positive business decision.
+    failure_effect: BLOCK_TRADE_READER_PAGE_GENERATION_UNTIL_DIRECT_POSITIVE_EXISTS
+  - decisive_case_id: '07v:decisive:position-positive-gap'
+    case_refs: [FEP-018, CXL-012]
+    decisive_reason: Quantity and Position tokens do not distinguish Position from balance or Risk Exposure.
+    failure_effect: BLOCK_POSITION_READER_PAGE_GENERATION_UNTIL_DIRECT_POSITIVE_EXISTS
+
+evaluability_rules:
+  - rule_id: '07v:evaluability:physical-anchor'
+    rule: A physical case is evaluable only when its canonical physical_column_id resolves in the frozen Stage 0 artifacts.
+  - rule_id: '07v:evaluability:no-fabrication'
+    rule: Aggregate labels without a physical anchor remain NOT_EVALUABLE; no field is fabricated.
+  - rule_id: '07v:evaluability:source-hash'
+    rule: A source hash mismatch makes the entire referenced source suite not executable.
+  - rule_id: '07v:evaluability:layer-prerequisite'
+    rule: A semantic case cannot execute when its P1 Evidence Pack or required handoff record is absent.
+  - rule_id: '07v:evaluability:conflict'
+    rule: An open conflict is evaluable as a conflict and must not be converted to a semantic success or generic failure.
+  - rule_id: '07v:evaluability:explicit-non-evaluable'
+    rule: Suite B E02, E03, and E04 remain NOT_EVALUABLE until concrete physical anchors are separately authorized and added in a future suite version.
+  - rule_id: '07v:evaluability:handoff-input-closure'
+    rule: The handoff is executable only when all 16 P1 blocks and every declared generic, abbreviation, technical, and qualifier observation value and status have explicit routes.
+  - rule_id: '07v:evaluability:acyclic-layer-direction'
+    rule: P1-to-P2 candidate formation cannot consume a P3 decision; P2-to-P3 may accept, reject, or defer but cannot rewrite P2.
+  - rule_id: '07v:evaluability:p2-status-vocabulary'
+    rule: A P2 candidate is not evaluable when semantic_resolution_status is outside the five-value P2 vocabulary.
+  - rule_id: '07v:evaluability:canonical-semantic-reachability'
+    rule: Suite B cannot execute when an expected field attribute or qualifier lacks a declared P2 candidate route; P3 cannot fabricate the missing candidate.
+
+execution_states:
+  - execution_state_id: '07v:state:source-verification'
+    dimension: source_verification
+    current_by_suite:
+      suite_a: SOURCE_ANCHOR_VERIFIED
+      suite_b: SOURCE_FILE_HASH_VERIFIED_WITH_STAGE0_RAW_OVERLAYS
+      suite_c: SOURCE_REFS_DEFINED
+  - execution_state_id: '07v:state:rule-execution'
+    dimension: rule_execution
+    current_by_suite:
+      suite_a: RULE_EXECUTION_NOT_PERFORMED
+      suite_b: PENDING_RERUN
+      suite_c: NOT_EXECUTED
+  - execution_state_id: '07v:state:semantic-adjudication'
+    dimension: semantic_adjudication
+    current_by_suite:
+      suite_a: NOT_APPLICABLE
+      suite_b: PENDING_RERUN
+      suite_c: NOT_EXECUTED
+  - execution_state_id: '07v:state:page-validation'
+    dimension: page_validation
+    current: NOT_EXECUTED
+  - execution_state_id: '07v:state:independent-review'
+    dimension: independent_review
+    current: PREIMPLEMENTATION_REWORK_BOUNDED_AUTHORIZATION
+    current_review_ref: openspec/changes/establish-reusable-semantic-navigation/research/09-independent-preimplementation-review.md
+    current_review_content_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c
+    allowed_steps: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+    postimplementation_review: NOT_PERFORMED
+  - execution_state_id: '07v:state:business-acceptance'
+    dimension: business_acceptance
+    current: NOT_ACCEPTED
+  - execution_state_id: '07v:state:cross-schema'
+    dimension: cross_schema_validation
+    current: DEFERRED
+
+versioned_gate_result_validation:
+  schema_ref: 07-integrated-semantic-navigation-contract.yaml#gate_result_contract
+  required_scope_fields_exact: [run_id, profile_ref, schema_name, step_ref, gate_version]
+  required_direct_positive_fields_exact: [expected_direct_positive_case_types_exact, observed_direct_positive_case_types_exact, expected_direct_positive_case_refs_exact, observed_direct_positive_case_refs_exact, direct_positive_evidence_bindings]
+  required_step_refs_exact: ['07c:step:00-preimplementation-review', '07c:step:01-provider', '07c:step:02-full-evidence-pack', '07c:step:03-suite-a', '07c:step:04-handoff', '07c:step:05-bounded-adjudication', '07c:step:06-suite-b-c', '07c:step:07-fix-decisive-failures', '07c:step:08-generate-page', '07c:step:09-click-journeys', '07c:step:10-independent-review', '07c:step:11-business-acceptance-request', '07c:step:12-second-schema']
+  predecessor_contract:
+    authorization_is_not_gate_result: true
+    step_01: REWORK_BOUNDED_AUTHORIZATION explicitly covering step 01; no predecessor GateResult.
+    step_02: Same authorization explicitly covering step 02 plus step 01 PASS and exact content hash.
+    step_03_to_12: Immediate execution-step predecessor PASS plus fresh preimplementation authorization bound to the candidate 07 bundle and covering the target step.
+    predecessor_content_sha256_required: true
+  bounded_authorization_validation:
+    review_ref: openspec/changes/establish-reusable-semantic-navigation/research/09-independent-preimplementation-review.md
+    review_content_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c
+    reviewed_bundle_sha256: 689230de6524a629f1162a9a310e62b536ce8d5529c30b33b533b7a5721f7e71
+    disposition: REWORK_BOUNDED_AUTHORIZATION
+    allowed_step_refs_exact: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+    cannot_be_rewritten_as_pass: true
+  case_set_contract:
+    expected_case_refs_exact_required: true
+    observed_case_refs_exact_required: true
+    expected_equals_observed_required_for_pass: true
+    zero_omission_required: true
+    nonempty_execution_required: true
+    status_distribution_total_must_equal_observed_case_count: true
+    unexecuted_or_empty_cannot_pass: true
+  not_evaluable_whitelist_exact: [E02, E03, E04]
+  direct_positive_case_types_exact: [COUNTERPARTY_DIRECT_POSITIVE, ORDER_DIRECT_POSITIVE, TRADE_DIRECT_POSITIVE, NOTIONAL_DIRECT_POSITIVE, POSITION_DIRECT_POSITIVE, MARGIN_DIRECT_POSITIVE]
+  current_direct_positive_gaps: [TRADE_DIRECT_POSITIVE, POSITION_DIRECT_POSITIVE, MARGIN_DIRECT_POSITIVE]
+  active_grain: [run_id, profile_ref, schema_name, step_ref, gate_version]
+  one_active_record_per_grain: true
+  immediate_stop_conditions:
+    - GateResult missing for a started step.
+    - Step executes before its predecessor PASS and content hash are verified.
+    - An expected case is omitted, added, relabeled, or moved to NOT_EVALUABLE outside E02-E04.
+    - Any status distribution is empty or does not reconcile to observed case refs.
+    - More than one active GateResult exists at the same grain.
+    - Safety values differ from model_calls=0, model_token_budget=0, model_token_usage=NOT_USED, external_egress=false, business_rows_read=false, or database_writes=0.
+    - A read or write path escapes the canonical allowlisted root after symlink or junction resolution.
+  safety_values_exact:
+    model_calls: 0
+    model_token_budget: 0
+    model_token_usage: NOT_USED
+    external_egress: false
+    business_rows_read: false
+    database_writes: 0
+    path_allowlist_passed: true
+    symlink_escape_detected: false
+  current_status:
+    preimplementation_checkpoint: REWORK_BOUNDED_TO_STEPS_01_02
+    all_later_gate_results: NOT_EXECUTED
+
+pre_second_schema_boundary_validation:
+  current_status: DEFERRED
+  required_before_execution:
+    - explicit D-010 user authorization
+    - independent second-Schema case pack and source manifest
+    - identity collision scan scoped to the new run plus profile/schema
+    - retained encoding, parser, and source-locator failures
+    - traceable surrogate for every unresolved physical_column_id collision
+    - independent counterexamples and review
+  prohibited: [merge_colliding_columns, rename_source_identity, hide_parser_failure, inherit_TRADEFLOW_only_rules, claim_global_validation, claim_scale_authorization]
+  any_missing_prerequisite_effect: STOP
+
+failure_stop_conditions:
+  - failure_stop_id: '07v:stop:source-hash-mismatch'
+    condition: Either referenced 06 Gold file hash differs from source_suite_hashes.
+    stop_before: all_suite_execution
+  - failure_stop_id: '07v:stop:raw-overwrite'
+    condition: Any raw field, comment, whitespace, or source span is overwritten by normalization.
+    stop_before: p1_handoff
+  - failure_stop_id: '07v:stop:identity-loss'
+    condition: A physical field is missing, duplicated, merged by name, or cannot resolve its object source.
+    stop_before: p1_handoff
+  - failure_stop_id: '07v:stop:handoff-input-unrouted'
+    condition: Any Provider output block or declared observation value has no explicit P1-to-P2 route.
+    stop_before: p1_handoff_implementation
+  - failure_stop_id: '07v:stop:undefined-observation-vocabulary'
+    condition: A handoff mapping consumes an observation, dimension, value, or status not declared by the Provider or this Canonical adapter.
+    stop_before: p1_handoff_implementation
+  - failure_stop_id: '07v:stop:p3-to-p2-cycle'
+    condition: P1-to-P2 candidate formation requires a P3 decision, or P3 rewrites or regenerates a P2 candidate.
+    stop_before: semantic_adjudication
+  - failure_stop_id: '07v:stop:unreachable-formal-semantic'
+    condition: Any of the 8 field attributes or 12 qualifier dimensions lacks a direct or composite P2 candidate route, including measure_basis for C03 or observation_time_role for K01.
+    stop_before: suite_b_execution
+  - failure_stop_id: '07v:stop:semantic-leap'
+    condition: A token or P1 observation creates a P3 decision, formal qualifier, or Reader.
+    stop_before: semantic_adjudication
+  - failure_stop_id: '07v:stop:technical-leak'
+    condition: A technical candidate enters a business Reader or is silently removed.
+    stop_before: page_generation
+  - failure_stop_id: '07v:stop:open-decisive-conflict'
+    condition: A decisive conflict lacks both visible interpretations or required next evidence.
+    stop_before: page_generation
+  - failure_stop_id: '07v:stop:reader-identity-merge'
+    condition: Order and Trade share or inherit a Reader identity or identifier.
+    stop_before: reader_candidate_generation
+  - failure_stop_id: '07v:stop:reader-positive-gap'
+    condition: Any of the six Readers lacks a direct positive and a boundary or misleading-name counterexample.
+    stop_before: page_generation
+  - failure_stop_id: '07v:stop:schema-identity-collision'
+    condition: Configuration schema identity and Reader or result-bundle schema identity are not uniquely separated.
+    stop_before: provider_or_page_generation
+  - failure_stop_id: '07v:stop:legacy-seed-silent-migration'
+    condition: The ten first-reader entries are treated as deletion, replacement, or migration of the 31 legacy seeds without a versioned mapping.
+    stop_before: current_entry_replacement
+  - failure_stop_id: '07v:stop:expression-support-inheritance'
+    condition: An expression inherits support from another expression or source concept.
+    stop_before: page_generation
+  - failure_stop_id: '07v:stop:historical-suite-rewrite'
+    condition: A 06 Gold file or historical observed result is changed rather than overlaid and referenced.
+    stop_before: all_suite_execution
+  - failure_stop_id: '07v:stop:vacuous-gate'
+    condition: A Gate succeeds because decisive cases were omitted, not executed, or relabeled not applicable.
+    stop_before: independent_review
+  - failure_stop_id: '07v:stop:acceptance-claim'
+    condition: Gold, YAML parsing, page generation, or independent review is represented as business acceptance or cross-schema validation.
+    stop_before: delivery
+
+page_validation:
+  status: NOT_EXECUTED
+  prerequisite_step_refs:
+    - '07c:step:00-preimplementation-review'
+    - '07c:step:01-provider'
+    - '07c:step:02-full-evidence-pack'
+    - '07c:step:03-suite-a'
+    - '07c:step:04-handoff'
+    - '07c:step:05-bounded-adjudication'
+    - '07c:step:06-suite-b-c'
+    - '07c:step:07-fix-decisive-failures'
+    - '07c:step:08-generate-page'
+  journeys:
+    - journey_id: '07v:journey:entry-to-physical-detail'
+      path: topology entry -> unique Reader -> expression -> physical group -> physical instance -> object detail
+      expected: Every step resolves and preserves the selected context.
+    - journey_id: '07v:journey:multi-entry-single-reader'
+      path: two allowed entries -> same Reader identity
+      expected: Identity and definition are not duplicated.
+    - journey_id: '07v:journey:conflict-to-governance'
+      path: blocked expression -> Evidence and Conflict -> required next evidence -> governance queue
+      expected: Both interpretations remain visible.
+    - journey_id: '07v:journey:excluded-retention'
+      path: count explanation -> EXCLUDED preparation record -> retained physical detail
+      expected: EXCLUDED is not shown as deletion or Unknown.
+    - journey_id: '07v:journey:technical-isolation'
+      path: technical candidate -> technical governance state
+      expected: No business Reader route is offered before adjudication.
+  reader_journey_matrix:
+    required_reader_refs_exact: ['reader:counterparty', 'reader:order', 'reader:trade', 'reader:notional', 'reader:position', 'reader:margin']
+    required_checks_per_row: [direct_positive, boundary_or_misleading_counterexample, blocker_visibility, concrete_physical_field_detail, concrete_object_detail, deep_link_restore, return_context_preservation]
+    rows:
+      - reader_ref: 'reader:counterparty'
+        direct_positive: {case_ref: READER-POS-COUNTERPARTY-A01, source_case_refs: [A01], status: NOT_EXECUTED}
+        boundary_or_misleading: {case_refs: [A03, D02, CXL-001], status: NOT_EXECUTED}
+        blocker_visibility: {blocker_refs: [A03, D02], status: NOT_EXECUTED}
+        detail_and_navigation: {physical_field: REQUIRED, object_detail: REQUIRED, deep_link_restore: REQUIRED, return_context: REQUIRED, status: NOT_EXECUTED}
+      - reader_ref: 'reader:order'
+        direct_positive: {case_ref: READER-POS-ORDER-H01, source_case_refs: [H01], status: NOT_EXECUTED}
+        boundary_or_misleading: {case_refs: [CXL-007], status: NOT_EXECUTED}
+        blocker_visibility: {blocker_refs: [H01], status: NOT_EXECUTED}
+        detail_and_navigation: {physical_field: REQUIRED, object_detail: REQUIRED, deep_link_restore: REQUIRED, return_context: REQUIRED, status: NOT_EXECUTED}
+      - reader_ref: 'reader:trade'
+        direct_positive: {case_type: TRADE_DIRECT_POSITIVE, status: REQUIRED_NOT_YET_PROVIDED}
+        boundary_or_misleading: {case_refs: [CXL-007, CXL-011], status: NOT_EXECUTED}
+        blocker_visibility: {blocker_refs: [CXL-011], status: NOT_EXECUTED}
+        detail_and_navigation: {physical_field: REQUIRED, object_detail: REQUIRED, deep_link_restore: REQUIRED, return_context: REQUIRED, status: NOT_EXECUTED}
+      - reader_ref: 'reader:notional'
+        direct_positive: {case_ref: READER-POS-NOTIONAL-C01, source_case_refs: [C01], status: NOT_EXECUTED}
+        boundary_or_misleading: {case_refs: [F01, CXL-006], status: NOT_EXECUTED}
+        blocker_visibility: {blocker_refs: [F01], status: NOT_EXECUTED}
+        detail_and_navigation: {physical_field: REQUIRED, object_detail: REQUIRED, deep_link_restore: REQUIRED, return_context: REQUIRED, status: NOT_EXECUTED}
+      - reader_ref: 'reader:position'
+        direct_positive: {case_type: POSITION_DIRECT_POSITIVE, status: REQUIRED_NOT_YET_PROVIDED}
+        boundary_or_misleading: {case_refs: [CXL-012], status: NOT_EXECUTED}
+        blocker_visibility: {blocker_refs: [CXL-012], status: NOT_EXECUTED}
+        detail_and_navigation: {physical_field: REQUIRED, object_detail: REQUIRED, deep_link_restore: REQUIRED, return_context: REQUIRED, status: NOT_EXECUTED}
+      - reader_ref: 'reader:margin'
+        direct_positive: {case_type: MARGIN_DIRECT_POSITIVE, case_ref: READER-POS-MARGIN-REQUIRED, status: REQUIRED_NOT_YET_PROVIDED}
+        boundary_or_misleading: {case_refs: [C03, M01, CXL-005], status: NOT_EXECUTED}
+        blocker_visibility: {blocker_refs: [M01], status: NOT_EXECUTED}
+        detail_and_navigation: {physical_field: REQUIRED, object_detail: REQUIRED, deep_link_restore: REQUIRED, return_context: REQUIRED, status: NOT_EXECUTED}
+    whole_page_gate:
+      exact_six_rows_required: true
+      all_required_checks_executed_and_nonempty: true
+      trade_direct_positive_required: true
+      position_direct_positive_required: true
+      margin_direct_positive_required: true
+      current_status: STOP_TRADE_POSITION_AND_MARGIN_DIRECT_POSITIVES_MISSING
+  assertions:
+    - Left navigation shows contextual areas rather than 13 fixed first-level menus.
+    - Center panel shows one Reader identity and an expression-level matrix.
+    - Right panel shows Canonical physical details and working object-detail entries.
+    - Footer distinguishes all nine governance states.
+    - Counts expose grain and denominator.
+    - Candidate page makes no publication or acceptance claim.
+    - Expanded tree, selected Reader, expression, physical field, and detail state survive deep-link open and return navigation.
+
+independent_review_requirements:
+  current_status: PREIMPLEMENTATION_REWORK
+  inherited_disposition: NONE
+  preimplementation_review:
+    path: openspec/changes/establish-reusable-semantic-navigation/research/09-independent-preimplementation-review.md
+    content_sha256: 160423dbd3029303a09bfa0319927acc51f7d9cce761d2b4ba6d2f23af7a9c3c
+    reviewed_predecessor_bundle_sha256: 689230de6524a629f1162a9a310e62b536ce8d5529c30b33b533b7a5721f7e71
+    disposition: REWORK_BOUNDED_AUTHORIZATION
+    purpose: Freeze and challenge the 07 design before implementation.
+    allowed_implementation_steps: ['07c:step:01-provider', '07c:step:02-full-evidence-pack']
+    authorization_is_not_gate_result_pass: true
+    revised_candidate_bundle_requires_new_review_before_step_03: true
+    does_not_count_as_postimplementation_review: true
+  postimplementation_review:
+    current_status: NOT_PERFORMED
+    purpose: Review implemented Gold results, page projection, and real click journeys as a separate artifact.
+    predecessor_disposition_inheritance: PROHIBITED
+  current_formal_review_reference:
+    path: openspec/changes/establish-reusable-semantic-navigation/research/05-independent-review.md
+    disposition: REWORK
+  agent_a_self_reported_accept:
+    auditable_record_present: false
+    inherited: false
+  requirements:
+    - review_requirement_id: '07v:review:scope'
+      required_content: reviewer scope
+    - review_requirement_id: '07v:review:isolated-inputs'
+      required_content: isolated inputs, paths, manifests, and hashes
+    - review_requirement_id: '07v:review:positive-cases'
+      required_content: representative positive cases for every Reader
+    - review_requirement_id: '07v:review:ambiguous-cases'
+      required_content: ambiguous object, expression, and qualifier cases
+    - review_requirement_id: '07v:review:misleading-names'
+      required_content: SHORT_NAME, SOURCE_TARGET, generic token, and table-name counterexamples
+    - review_requirement_id: '07v:review:technical-cases'
+      required_content: technical, audit, excluded, unresolved, and unknown cases
+    - review_requirement_id: '07v:review:disposition'
+      required_content: exactly one future disposition among ACCEPT, REWORK, STOP, or DEFER
+    - review_requirement_id: '07v:review:reasons-action'
+      required_content: decisive reasons and smallest next action
+  output_rule: The future independent review must be stored as a separate file by a new independent Agent.
+  authority_boundary: Independent review cannot set business acceptance, Reader publication, second-Schema authorization, or scale authorization.
+
+non_claims:
+  - non_claim_id: '07v:nonclaim:yaml-is-not-gold'
+    statement: YAML parsing is not a Gold result.
+  - non_claim_id: '07v:nonclaim:source-anchor-is-not-rule-result'
+    statement: SOURCE_ANCHOR_VERIFIED does not mean preparation rules were executed.
+  - non_claim_id: '07v:nonclaim:suite-a-is-not-semantic'
+    statement: Suite A cannot validate a business concept, formal qualifier, or Reader.
+  - non_claim_id: '07v:nonclaim:layered-total-is-not-business-gold'
+    statement: 23, 27, and 12 are separate suite counts and are not one business Gold total.
+  - non_claim_id: '07v:nonclaim:gold-is-not-acceptance'
+    statement: Meeting Gold expectations is not business acceptance.
+  - non_claim_id: '07v:nonclaim:page-is-not-publication'
+    statement: Candidate page generation is not Reader publication or delivery.
+  - non_claim_id: '07v:nonclaim:self-check-is-not-independent-review'
+    statement: This validation plan and its structural checks are not an independent-review disposition.
+  - non_claim_id: '07v:nonclaim:tradeflow-is-not-cross-schema'
+    statement: TRADEFLOW results do not validate a second Schema or universal ontology.
+  - non_claim_id: '07v:nonclaim:no-current-reader-published'
+    statement: All six integrated Reader identities remain REWORKED_CANDIDATE and BLOCKED_PENDING_INTEGRATION.
+  - non_claim_id: '07v:nonclaim:no-current-accept'
+    statement: No ACCEPT disposition is produced by this integration work.

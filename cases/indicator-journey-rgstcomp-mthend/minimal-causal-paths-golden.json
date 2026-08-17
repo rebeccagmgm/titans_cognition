@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "minimal-causal-paths-v1",
+  "caseId": "indicator-journey-rgstcomp-mthend",
+  "expectedStatus": "PASS",
+  "paths": [
+    {
+      "pathId": "value-flow-option-dyna-nom-prin",
+      "pathType": "VALUE_FLOW",
+      "producerRole": "T98_OPTION_BRANCH",
+      "consumerRole": "INDICATOR_BUILD",
+      "stepTypes": [
+        "TASK_OUTPUT_EXPRESSION",
+        "MATERIALIZES_AS",
+        "READS_AS",
+        "AGGREGATES_TO",
+        "MATERIALIZES_AS"
+      ],
+      "edgeTypes": [
+        "FIELD_EXPRESSION_WRITES_FIELD",
+        "TASK_DATASET_FLOW",
+        "READ_RELATION_READS_FIELD_AS_EXPRESSION",
+        "FIELD_EXPRESSION_FEEDS_EXPRESSION",
+        "FIELD_EXPRESSION_WRITES_FIELD"
+      ],
+      "partition": {
+        "field": "grp_id",
+        "literal": "01",
+        "resolutionStatus": "PROFILE_DECLARED_NOT_SQL_IR_VERIFIED"
+      }
+    },
+    {
+      "pathId": "rowset-control-skip-report",
+      "pathType": "ROWSET_CONTROL",
+      "producerRole": "T05_REPORT_STATUS",
+      "consumerRole": "INDICATOR_BUILD",
+      "stepTypes": [
+        "TASK_OUTPUT_EXPRESSION",
+        "MATERIALIZES_AS",
+        "READS_AS",
+        "CONTROL_VALUE_FILTER",
+        "LEFT_JOIN_FORMATION",
+        "IS_NULL_FILTER",
+        "ROWSET_CONTROL"
+      ],
+      "edgeTypes": [
+        "FIELD_EXPRESSION_WRITES_FIELD",
+        "TASK_DATASET_FLOW",
+        "READ_RELATION_READS_FIELD_AS_EXPRESSION",
+        "ROWSET_CONTROL"
+      ]
+    }
+  ]
+}

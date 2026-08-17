@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://titans-cognition.local/schemas/p0-p1-reconciliation-gate-result-v1.json",
+  "title": "P0/P1 Reconciliation GateResult",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "run_id", "profile_ref", "schema_name", "gate_ref", "gate_version",
+    "step_ref", "predecessor_gate_ref", "predecessor_status",
+    "predecessor_content_sha256", "input_manifest_ref",
+    "input_manifest_content_sha256", "expected_case_refs_exact",
+    "observed_case_refs_exact", "expected_direct_positive_case_types_exact",
+    "observed_direct_positive_case_types_exact",
+    "expected_direct_positive_case_refs_exact",
+    "observed_direct_positive_case_refs_exact",
+    "direct_positive_evidence_bindings", "status", "status_distribution",
+    "not_evaluable_case_refs", "zero_omission_assertion",
+    "nonempty_execution_assertion", "content_sha256", "active",
+    "model_calls", "model_token_budget", "model_token_usage",
+    "external_egress", "business_rows_read", "database_writes",
+    "canonical_workspace_root", "canonical_output_root",
+    "path_allowlist_passed", "symlink_escape_detected"
+  ],
+  "properties": {
+    "status": {"enum": ["PASS", "FAIL", "STOP", "NOT_EXECUTED"]},
+    "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "expected_case_refs_exact": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "observed_case_refs_exact": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "not_evaluable_case_refs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "model_calls": {"const": 0},
+    "model_token_budget": {"const": 0},
+    "model_token_usage": {"const": "NOT_USED"},
+    "external_egress": {"const": false},
+    "business_rows_read": {"const": false},
+    "database_writes": {"const": 0},
+    "path_allowlist_passed": {"const": true},
+    "symlink_escape_detected": {"const": false}
+  }
+}

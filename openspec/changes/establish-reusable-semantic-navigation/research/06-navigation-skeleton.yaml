@@ -1,0 +1,1178 @@
+metadata:
+  skeleton_id: "otc-semantic-navigation-v3-reworked-candidate"
+  version: "v3-reworked-candidate"
+  status: "REWORKED_CANDIDATE"
+  scope: "TITANS_TRADEFLOW"
+  artifact_kind: "RESEARCH_CONFIGURATION_SKELETON"
+  proposal_date: "2026-08-14"
+  source_reports:
+    - "01-domain-skeleton.md"
+    - "02-field-corpus-analysis.md"
+    - "02-field-shapes.json"
+    - "03-disambiguation-audit.md"
+    - "03-gold-set.yaml"
+    - "04-integrated-navigation-proposal.md"
+    - "04-navigation-skeleton.yaml"
+    - "05-independent-review.md"
+  boundary_statement: >-
+    Research-only business skeleton and Reader candidate scope. This file is not
+    a published ontology, current runtime configuration, business acceptance,
+    cross-schema authorization, or scale authorization.
+  current_status_preserved:
+    reader_delivery: "NOT_DELIVERED"
+    business_acceptance: "NOT_ACCEPTED"
+    scale_authorization: "PROHIBITED"
+
+candidate_states:
+  reader_states:
+    - "CANDIDATE"
+    - "REWORKED_CANDIDATE"
+    - "EVIDENCE_SUPPORTED_CANDIDATE"
+    - "DEFERRED"
+  evidence_states:
+    - "SUPPORT"
+    - "CONTRADICT"
+    - "CONTEXT_ONLY"
+    - "NOT_APPLICABLE"
+    - "NOT_OBSERVED"
+  semantic_resolution_states:
+    - "CANDIDATE"
+    - "CONFLICT"
+    - "INSUFFICIENT_EVIDENCE"
+    - "UNKNOWN"
+    - "NOT_EVALUABLE"
+    - "OUT_OF_SCOPE"
+    - "UNRESOLVED"
+    - "DEFERRED"
+  publication_states:
+    - "PUBLISHED"
+    - "NOT_PUBLISHED"
+    - "BLOCKED_PENDING_INTEGRATION"
+    - "BLOCKED_BY_CONFLICT"
+    - "BLOCKED_BY_INSUFFICIENT_EVIDENCE"
+    - "BLOCKED_BY_UNRESOLVED_IDENTITY"
+    - "BLOCKED_BY_UNRESOLVED_MAPPING_ROLE"
+    - "BLOCKED_BY_UNRESOLVED_OBJECT"
+    - "BLOCKED_BY_UNRESOLVED_QUALIFIER"
+    - "NOT_IN_FIRST_READER_SCOPE"
+    - "PROHIBITED"
+  state_grain_invariants:
+    - "CONFLICT is a semantic-resolution state supported by contradictory evidence; it is not evidence itself."
+    - "INSUFFICIENT_EVIDENCE means a candidate lacks required support; UNKNOWN means no defensible interpretation is available."
+    - "NOT_EVALUABLE means required frozen input is absent; OUT_OF_SCOPE means the case is intentionally excluded."
+    - "NOT_PUBLISHED is a publication result and must not be converted to UNKNOWN."
+  integration_states:
+    - "PENDING_INTEGRATION"
+    - "INTEGRATED_NOT_VERIFIED"
+    - "VERIFIED_FOR_CASE"
+  prohibited_claims:
+    - "VALIDATED"
+    - "ACCEPTED"
+    - "CONFIRMED"
+    - "BUSINESS_APPROVED"
+
+journey_entries:
+  - id: "journey:trade-preparation"
+    label_zh: "交易准备"
+    definition: "使客户、交易对手、产品和交易关系具备进入交易流程条件的入口。"
+    entry_kind: "JOURNEY_ENTRY"
+    ends_when: "可以发起询价、报价或订单；不代表交易已达成。"
+  - id: "journey:inquiry-quote-order"
+    label_zh: "询价、报价与订单"
+    definition: "从交易意图、询价和报价到形成可执行订单的入口。"
+    entry_kind: "JOURNEY_ENTRY"
+    ends_when: "订单被执行、拒绝、撤销或失效；Order 不因此成为 Trade。"
+  - id: "journey:execution-trade-formation"
+    label_zh: "执行与交易形成"
+    definition: "执行订单或协商结果并形成 Trade 经济事实的入口。"
+    entry_kind: "JOURNEY_ENTRY"
+    ends_when: "Trade 被唯一识别；不自动等于法律合同已形成。"
+  - id: "journey:contract-formation"
+    label_zh: "合同形成"
+    definition: "把 Trade 与适用 Agreement、Trade Contract、Leg 和 Economic Terms 关联的入口。"
+    entry_kind: "JOURNEY_ENTRY"
+    ends_when: "合同身份及其适用条款形成，进入合同存在包络。"
+
+contract_envelopes:
+  - id: "envelope:contract-existence"
+    label_zh: "合同存在包络"
+    definition: "从合同形成到到期、终止或其他关闭结果之间，承载状态、义务和重复活动的持续边界。"
+    entry_kind: "ENVELOPE"
+    begins_at_relation: "journey:contract-formation may produce this envelope"
+    is_serial_stage: false
+    contains_relationships:
+      - "concept:agreement governs concept:trade-contract"
+      - "concept:trade-contract composed_of concept:contract-leg"
+      - "concept:trade-contract and concept:contract-leg specified_by concept:economic-terms"
+
+repeating_activities:
+  - id: "activity:lifecycle-events"
+    label_zh: "生命周期事件"
+    definition: "在合同存在期间可多次改变条款、主体、数量或状态的事件。"
+    activity_kind: "REPEATING_ACTIVITY"
+  - id: "activity:valuation-risk"
+    label_zh: "估值与风险"
+    definition: "在不同时点、方法和范围下反复计算价值与风险敞口。"
+    activity_kind: "REPEATING_ACTIVITY"
+  - id: "activity:margin-collateral"
+    label_zh: "保证金与抵押品"
+    definition: "反复计算履约保障要求并记录抵押品的提供、占用或释放。"
+    activity_kind: "REPEATING_ACTIVITY"
+  - id: "activity:cashflow-obligation"
+    label_zh: "现金流与结算义务"
+    definition: "由条款或事件产生计划/实际现金流并形成应收应付义务。"
+    activity_kind: "REPEATING_ACTIVITY"
+  - id: "activity:clearing"
+    label_zh: "清算"
+    definition: "对义务进行确认、匹配、净额化或形成结算指令。"
+    activity_kind: "REPEATING_ACTIVITY"
+  - id: "activity:payment-transfer-delivery"
+    label_zh: "支付、转移与交割"
+    definition: "履行资金、资产或标的交付义务的动作。"
+    activity_kind: "REPEATING_ACTIVITY"
+  - id: "activity:settlement-result"
+    label_zh: "结算结果"
+    definition: "记录结算义务履行的成功、失败、部分完成或待处理结果。"
+    activity_kind: "REPEATING_ACTIVITY"
+
+crosscutting_planes:
+  - id: "crosscut:market-reference-business-configuration"
+    label_zh: "市场参考与业务配置"
+    definition: "为旅程入口和重复活动提供市场参考、日历、曲线、映射和业务参数。"
+    plane_kind: "CROSSCUTTING_SUPPORT"
+  - id: "crosscut:operations-reconciliation-reporting"
+    label_zh: "运营、对账与报表"
+    definition: "跨旅程和合同包络执行运营处理、核对、报表和监管报送。"
+    plane_kind: "CROSSCUTTING_SUPPORT"
+  - id: "crosscut:technical-processing-audit"
+    label_zh: "技术加工与审计"
+    definition: "记录批次、同步、加工血缘、创建修改和技术控制。"
+    plane_kind: "CROSSCUTTING_SUPPORT"
+
+topology_relation_contract:
+  journey_relation_kind: "CANDIDATE_PRECEDES_OR_PRODUCES"
+  journey_is_universal_sequence: false
+  repeating_activity_cardinality: "ZERO_OR_MANY"
+  repeating_activity_order: "PARTIAL_ORDER_WITH_BRANCHES_AND_REENTRY"
+  settlement_chain_is_mandatory: false
+  counterexamples:
+    - "An existing contract may receive an amendment or termination event without a new inquiry or order."
+    - "Valuation, risk, and margin can repeat before, between, or after cash-flow events."
+    - "A lifecycle event can create no settlement obligation, one obligation, or multiple obligations."
+    - "Clearing, payment/transfer, and delivery can branch by product and obligation type; failure can re-enter operations or settlement handling."
+
+business_areas:
+  - id: "area:parties-relations"
+    label_zh: "参与主体与关系"
+    definition: "法律实体、机构、人员以及客户和交易对手关系。"
+    includes: ["Party", "Customer relation", "Counterparty relation", "机构", "人员"]
+    excludes: ["BUY/SELL", "SOURCE/TARGET", "名称长短"]
+    object_event_relations: ["Party", "Customer", "Counterparty", "participates_in"]
+    tradeflow_evidence: "对手方 ID/名称可定位；Customer/Counterparty 边界仍有反证。"
+    reader_eligibility: ["reader:counterparty"]
+  - id: "area:products-underlyings"
+    label_zh: "产品与标的"
+    definition: "可交易产品定义、产品实例、标的及其引用关系。"
+    includes: ["Product", "Underlying", "references"]
+    excludes: ["单笔 Trade Contract", "行情值", "Valuation result"]
+    object_event_relations: ["Product", "Underlying", "references"]
+    tradeflow_evidence: "存在字段候选，但稳定身份尚未裁定。"
+    reader_eligibility: []
+  - id: "area:inquiry-quote-order-trade"
+    label_zh: "询价、报价、订单与交易"
+    definition: "从交易意向到执行事实的对象和事件。"
+    includes: ["Inquiry", "Quote", "Order", "Trade", "execution"]
+    excludes: ["Trade Contract", "Position", "Settlement Result"]
+    object_event_relations: ["Inquiry", "Quote", "Order", "Trade", "precedes", "executes"]
+    tradeflow_evidence: "Order ID 与 Trade ID 可区分；当前合并 Reader 是反证。"
+    reader_eligibility: ["reader:order", "reader:trade"]
+  - id: "area:agreements-contracts-terms"
+    label_zh: "协议、合同与条款"
+    definition: "Agreement、Trade Contract、Contract Leg 与 Economic Terms 的层级和关系。"
+    includes: ["Agreement", "Trade Contract", "Contract Leg", "Economic Terms"]
+    excludes: ["Lifecycle Event", "Order", "运营批次"]
+    object_event_relations: ["governs", "composed_of", "specified_by"]
+    tradeflow_evidence: "合同、腿和名义本金字段提供候选锚点，关系未获业务确认。"
+    reader_eligibility: ["reader:notional"]
+  - id: "area:lifecycle-events"
+    label_zh: "生命周期事件"
+    definition: "合同存在期间改变主体、条款、数量或状态的业务事件。"
+    includes: ["reset", "exercise", "amendment", "increase", "termination"]
+    excludes: ["INITIAL/CURRENT qualifier", "技术任务状态"]
+    object_event_relations: ["changes contract", "changes position"]
+    tradeflow_evidence: "当前 Stage 5 没有 BUSINESS_EVENT 入口。"
+    reader_eligibility: []
+  - id: "area:positions-risk"
+    label_zh: "持仓、头寸与风险"
+    definition: "持仓记录、按口径形成的头寸视图以及风险敞口。"
+    includes: ["Position", "Position View", "Risk Exposure"]
+    excludes: ["Order quantity", "sync task count", "Notional"]
+    object_event_relations: ["position_of", "aggregated_as", "measured_as"]
+    tradeflow_evidence: "持仓数量有字段支持；任务同步总数是名称反例。"
+    reader_eligibility: ["reader:position"]
+  - id: "area:valuation"
+    label_zh: "估值"
+    definition: "在给定时点和方法下计算合同或持仓价值。"
+    includes: ["Valuation", "valuation input", "valuation result"]
+    excludes: ["Market Reference identity", "Margin", "Risk Exposure"]
+    object_event_relations: ["values", "uses_reference"]
+    tradeflow_evidence: "估值来源字段只提供上下文，不能单独确认过程。"
+    reader_eligibility: []
+  - id: "area:margin-collateral"
+    label_zh: "保证金与抵押品"
+    definition: "履约保障要求/金额与为其提供的资产。"
+    includes: ["Margin", "Collateral", "secures"]
+    excludes: ["Valuation", "Cash Flow", "generic amount"]
+    object_event_relations: ["Margin", "Collateral", "secures obligation"]
+    tradeflow_evidence: "Margin 有当前候选；Collateral 相关语义仍有 Conflict。"
+    reader_eligibility: ["reader:margin"]
+  - id: "area:cashflow-clearing-settlement"
+    label_zh: "现金流、清算与结算"
+    definition: "从现金流和结算义务到清算、支付/转移、交割和结果的链。"
+    includes: ["Cash Flow", "Settlement Obligation", "Clearing", "Payment/Transfer", "Delivery", "Settlement Result"]
+    excludes: ["含结算字样的技术任务", "Valuation"]
+    object_event_relations: ["creates_obligation", "clears", "fulfills", "results_in"]
+    tradeflow_evidence: "当前 clearing/settlement 阶段为空，不能声称覆盖。"
+    reader_eligibility: []
+  - id: "area:market-reference"
+    label_zh: "市场参考"
+    definition: "市场、汇率、曲线、日历等业务参考数据。"
+    includes: ["Market Reference", "rate", "curve", "calendar"]
+    excludes: ["SOURCE token", "ETL source", "Valuation result"]
+    object_event_relations: ["observes", "prices", "references"]
+    tradeflow_evidence: "VALUATION_RATE_SOURCE_ID 只提供定位线索。"
+    reader_eligibility: []
+  - id: "area:business-configuration"
+    label_zh: "业务配置与控制"
+    definition: "明确改变业务处理的参数、映射和控制规则。"
+    includes: ["Business Rule", "Business Mapping", "control parameter"]
+    excludes: ["generic TYPE", "generic FLAG", "technical configuration"]
+    object_event_relations: ["governs", "maps"]
+    tradeflow_evidence: "映射表名只能提供 CONTEXT_ONLY。"
+    reader_eligibility: []
+  - id: "area:operations-reconciliation-reporting"
+    label_zh: "运营、对账与报表"
+    definition: "跨业务过程的运营处理、核对、报表和监管报送。"
+    includes: ["operations", "reconciliation", "reporting"]
+    excludes: ["business concept identity", "technical audit field"]
+    object_event_relations: ["reconciles", "reports"]
+    tradeflow_evidence: "横切入口，不作为字段多数投票器。"
+    reader_eligibility: []
+  - id: "area:technical-processing-audit"
+    label_zh: "技术加工与审计"
+    definition: "批次、同步、加工血缘、创建修改和技术控制观察。"
+    includes: ["batch", "sync", "lineage", "created/updated audit"]
+    excludes: ["Customer", "Trade", "Contract", "business Reader"]
+    object_event_relations: ["processed_by", "audited_by"]
+    tradeflow_evidence: "技术字段候选必须隔离且保留原始事实。"
+    reader_eligibility: []
+
+semantic_layers:
+  - layer: "A"
+    id: "BUSINESS_CONCEPT"
+    definition: "稳定识别对象、事件、过程、度量、控制或关系。"
+    example: "concept:notional"
+    prohibited_escalation: "Token, table name, sibling count, or field count cannot create a concept."
+  - layer: "B"
+    id: "ATTRIBUTE_EXPRESSION"
+    definition: "业务概念在具体业务语境中的表达。"
+    example: "空头动态名义本金（结算币种）"
+    prohibited_escalation: "Expression variants cannot duplicate concept identity."
+  - layer: "C"
+    id: "FIELD_ATTRIBUTE"
+    definition: "跨业务概念复用的字段属性形态。"
+    example: "MEASURE"
+    prohibited_escalation: "Broad DIRECTION or CONFIGURATION is not allowed."
+  - layer: "D"
+    id: "QUALIFIER"
+    definition: "对表达或字段属性的正交限定，不改变概念身份。"
+    example: "position_side=SHORT"
+    prohibited_escalation: "Qualifier observations cannot publish a Reader."
+  - layer: "E"
+    id: "PHYSICAL_IMPLEMENTATION"
+    definition: "可定位 Schema/Table/Column 事实及证据。"
+    example: "TITANS_TRADEFLOW.REF_FAST_TRS.SHORT_DYNAMIC_NOTIONAL"
+    prohibited_escalation: "Raw names/comments are immutable; equal column names do not merge instances."
+
+concepts:
+  - id: "concept:customer"
+    label_zh: "客户"
+    stable_definition: "与本机构存在服务、准入或账户关系的 Party-in-relation。"
+    excludes: ["Counterparty by default", "Party master identity"]
+    concept_type: "RELATION"
+    navigation_entries: ["journey:trade-preparation", "area:parties-relations"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "客户短名不足以证明 Customer 与 Counterparty 同义。"
+  - id: "concept:counterparty"
+    label_zh: "交易对手"
+    stable_definition: "在协议、订单或交易关系中承担对手方关系的 Party-in-relation。"
+    excludes: ["Customer by default", "SOURCE/TARGET", "SHORT/LONG name form"]
+    concept_type: "RELATION"
+    navigation_entries: ["journey:trade-preparation", "journey:execution-trade-formation", "area:parties-relations"]
+    reader_status: "REWORKED_CANDIDATE"
+    evidence_boundary: "ID/名称字段支持；当前方向误标仍是反证。"
+  - id: "concept:product"
+    label_zh: "产品"
+    stable_definition: "定义可交易经济结构和规则的产品类别或实例。"
+    excludes: ["Trade Contract", "Underlying", "generic TYPE"]
+    concept_type: "OBJECT"
+    navigation_entries: ["journey:trade-preparation", "area:products-underlyings"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "稳定身份尚未审阅。"
+  - id: "concept:underlying"
+    label_zh: "标的"
+    stable_definition: "决定衍生价值或交付内容的资产、指数或参考项。"
+    excludes: ["Product", "market value", "Valuation result"]
+    concept_type: "OBJECT"
+    navigation_entries: ["area:products-underlyings", "area:agreements-contracts-terms"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "跨产品线歧义未裁定。"
+  - id: "concept:inquiry"
+    label_zh: "询价"
+    stable_definition: "发起获取可交易条件的信息请求。"
+    excludes: ["Quote", "Order", "Trade"]
+    concept_type: "EVENT"
+    navigation_entries: ["journey:inquiry-quote-order", "area:inquiry-quote-order-trade"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "无稳定 Reader 证据链。"
+  - id: "concept:quote"
+    label_zh: "报价"
+    stable_definition: "针对询价或交易意图给出的价格和条款提议。"
+    excludes: ["Order", "Trade", "Valuation"]
+    concept_type: "OBJECT"
+    navigation_entries: ["journey:inquiry-quote-order", "area:inquiry-quote-order-trade"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "报价与价格/估值需消歧。"
+  - id: "concept:order"
+    label_zh: "订单"
+    stable_definition: "指示拟执行交易的意图或指令，可撤销、拒绝或未成交。"
+    excludes: ["Trade", "Trade Contract"]
+    concept_type: "OBJECT"
+    navigation_entries: ["journey:inquiry-quote-order", "area:inquiry-quote-order-trade"]
+    reader_status: "REWORKED_CANDIDATE"
+    evidence_boundary: "订单主键是与 Trade 拆分的决定性反例。"
+  - id: "concept:trade"
+    label_zh: "交易"
+    stable_definition: "已经执行并形成经济事实的交易记录。"
+    excludes: ["Order", "Trade Contract"]
+    concept_type: "OBJECT"
+    navigation_entries: ["journey:execution-trade-formation", "area:inquiry-quote-order-trade"]
+    reader_status: "REWORKED_CANDIDATE"
+    evidence_boundary: "Trade ID 不得继承 Order ID。"
+  - id: "concept:trade-contract"
+    label_zh: "合约"
+    stable_definition: "合同形成后承载一笔或一组交易权利义务的合同身份。"
+    excludes: ["Agreement", "Trade", "Economic Terms collection"]
+    concept_type: "OBJECT"
+    navigation_entries: ["journey:contract-formation", "envelope:contract-existence", "area:agreements-contracts-terms"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "法律层级需业务材料。"
+  - id: "concept:contract-leg"
+    label_zh: "合约腿"
+    stable_definition: "合约中具有独立付款、标的或计算安排的组成部分。"
+    excludes: ["Notional", "leg identifier as concept"]
+    concept_type: "OBJECT"
+    navigation_entries: ["envelope:contract-existence", "area:agreements-contracts-terms"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "腿字段可定位，组成关系未审阅。"
+  - id: "concept:economic-terms"
+    label_zh: "经济条款"
+    stable_definition: "约束合同或合约腿经济结果的数值和条件集合。"
+    excludes: ["Trade Contract legal identity", "Lifecycle Event"]
+    concept_type: "CONTROL"
+    navigation_entries: ["envelope:contract-existence", "area:agreements-contracts-terms"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "当前只作组织层候选。"
+  - id: "concept:position"
+    label_zh: "持仓"
+    stable_definition: "指定时点、范围和口径下的持有记录或数量状态。"
+    excludes: ["Order quantity", "sync task count", "Risk Exposure"]
+    concept_type: "OBJECT"
+    navigation_entries: ["envelope:contract-existence", "activity:valuation-risk", "area:positions-risk"]
+    reader_status: "REWORKED_CANDIDATE"
+    evidence_boundary: "持仓数量有多物理实现；需按字段实例和表分别去重。"
+  - id: "concept:position-view"
+    label_zh: "头寸"
+    stable_definition: "对持仓按账户、组合、方向或净额口径形成的业务视图或度量。"
+    excludes: ["Position by default", "Risk Exposure"]
+    concept_type: "MEASURE"
+    navigation_entries: ["area:positions-risk"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "术语与持仓混用，需业务裁定。"
+  - id: "concept:notional"
+    label_zh: "名义本金"
+    stable_definition: "用于计算现金流、风险或条款规模的合同度量基准。"
+    excludes: ["Position", "Margin", "Payment amount"]
+    concept_type: "MEASURE"
+    navigation_entries: ["envelope:contract-existence", "activity:valuation-risk", "area:agreements-contracts-terms"]
+    reader_status: "REWORKED_CANDIDATE"
+    evidence_boundary: "初始/动态/币种/方向表达有字段支持和冲突。"
+  - id: "concept:valuation"
+    label_zh: "估值"
+    stable_definition: "在给定时点和方法下计算合同或持仓价值的过程。"
+    excludes: ["price input", "Risk Exposure", "Margin"]
+    concept_type: "PROCESS"
+    navigation_entries: ["activity:valuation-risk", "area:valuation"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "来源字段不能单独确认过程。"
+  - id: "concept:risk-exposure"
+    label_zh: "风险敞口"
+    stable_definition: "基于风险方法、情景或净额计算的潜在损失或敏感度度量。"
+    excludes: ["Position", "Notional"]
+    concept_type: "MEASURE"
+    navigation_entries: ["activity:valuation-risk", "area:positions-risk"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "无首批独立证据链。"
+  - id: "concept:margin"
+    label_zh: "保证金"
+    stable_definition: "为覆盖履约风险而计算、要求或记录的保证金额度或状态。"
+    excludes: ["Collateral asset", "Valuation", "generic amount"]
+    concept_type: "MEASURE"
+    navigation_entries: ["activity:margin-collateral", "activity:valuation-risk", "area:margin-collateral"]
+    reader_status: "REWORKED_CANDIDATE"
+    evidence_boundary: "MARGIN_DIRECTION 的收付含义仍未解析。"
+  - id: "concept:collateral"
+    label_zh: "抵押品"
+    stable_definition: "为满足保证金或信用支持义务而提供、占用或释放的资产。"
+    excludes: ["Margin amount", "Notional"]
+    concept_type: "OBJECT"
+    navigation_entries: ["activity:margin-collateral", "area:margin-collateral"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "相关语义存在 Conflict，不补造实体。"
+  - id: "concept:cash-flow"
+    label_zh: "现金流"
+    stable_definition: "由合同条款或事件产生的计划或实际收付义务记录。"
+    excludes: ["Payment event", "Settlement Result"]
+    concept_type: "OBJECT"
+    navigation_entries: ["activity:cashflow-obligation", "area:cashflow-clearing-settlement"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "当前 Reader 阶段为空且语料碎片化。"
+  - id: "concept:delivery"
+    label_zh: "交割"
+    stable_definition: "按义务交付约定资产或标的的履行动作。"
+    excludes: ["Clearing", "Settlement Result"]
+    concept_type: "EVENT"
+    navigation_entries: ["activity:payment-transfer-delivery", "area:cashflow-clearing-settlement"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "交割 token 不足以证明业务链位置。"
+  - id: "concept:clearing"
+    label_zh: "清算"
+    stable_definition: "对交易义务进行确认、匹配、净额化或形成结算指令的过程。"
+    excludes: ["Payment", "Delivery", "Settlement Result"]
+    concept_type: "PROCESS"
+    navigation_entries: ["activity:clearing", "area:cashflow-clearing-settlement"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "当前清算入口为空。"
+  - id: "concept:settlement-result"
+    label_zh: "结算结果"
+    stable_definition: "记录结算义务履行成功、失败、部分完成或待处理的结果。"
+    excludes: ["Cash Flow", "Settlement Obligation", "technical task status"]
+    concept_type: "OBJECT"
+    navigation_entries: ["activity:settlement-result", "area:cashflow-clearing-settlement"]
+    reader_status: "DEFERRED"
+    evidence_boundary: "需区分业务结果与作业状态。"
+
+supporting_identities_not_in_22:
+  - id: "concept:agreement"
+    purpose: "Distinguish legal/master agreement from Trade Contract."
+    reader_status: "DEFERRED"
+  - id: "concept:settlement-obligation"
+    purpose: "Distinguish payable/receivable obligation from Cash Flow and fulfillment events."
+    reader_status: "DEFERRED"
+  - id: "concept:payment-transfer"
+    purpose: "Distinguish movement event from Delivery and Settlement Result."
+    reader_status: "DEFERRED"
+
+reader_scope:
+  - reader_id: "reader:counterparty"
+    concept_id: "concept:counterparty"
+    status: "REWORKED_CANDIDATE"
+    publication_status: "BLOCKED_PENDING_INTEGRATION"
+    exclusions: ["concept:customer", "position_side from SHORT/LONG name", "flow_side from SOURCE/TARGET"]
+  - reader_id: "reader:order"
+    concept_id: "concept:order"
+    status: "REWORKED_CANDIDATE"
+    publication_status: "BLOCKED_PENDING_INTEGRATION"
+    exclusions: ["concept:trade", "Trade identifiers"]
+  - reader_id: "reader:trade"
+    concept_id: "concept:trade"
+    status: "REWORKED_CANDIDATE"
+    publication_status: "BLOCKED_PENDING_INTEGRATION"
+    exclusions: ["concept:order", "Order identifiers", "concept:trade-contract"]
+  - reader_id: "reader:notional"
+    concept_id: "concept:notional"
+    status: "REWORKED_CANDIDATE"
+    publication_status: "BLOCKED_PENDING_INTEGRATION"
+    exclusions: ["concept:position", "concept:margin", "conflicting collateral-notional expressions"]
+  - reader_id: "reader:position"
+    concept_id: "concept:position"
+    status: "REWORKED_CANDIDATE"
+    publication_status: "BLOCKED_PENDING_INTEGRATION"
+    exclusions: ["Order quantity", "technical sync count", "concept:risk-exposure", "concept:position-view by default"]
+  - reader_id: "reader:margin"
+    concept_id: "concept:margin"
+    status: "REWORKED_CANDIDATE"
+    publication_status: "BLOCKED_PENDING_INTEGRATION"
+    exclusions: ["concept:collateral", "generic amount", "unresolved MARGIN_DIRECTION publication"]
+
+reader_identity_prohibitions:
+  - forbidden_combination_id: "combined-order-trade-reader"
+    component_reader_ids: ["reader:order", "reader:trade"]
+    reason: "Order and Trade are independent identities; identifiers cannot inherit across objects."
+
+attribute_axes:
+  - id: "IDENTIFIER"
+    label_zh: "标识"
+    definition: "在明确对象语境内标识实例。"
+    exclusions: ["bare ID", "UUID", "batch number as business concept"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "DESCRIPTIVE_TEXT"
+    label_zh: "名称与描述"
+    definition: "名称、简称、描述和备注等可读表达。"
+    exclusions: ["short/long name as position side", "abbreviation as concept"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "PARTY_RELATIONSHIP"
+    label_zh: "主体关系"
+    definition: "明确描述 Party 与机构、协议或交易之间的关系。"
+    exclusions: ["BUY/SELL", "SOURCE/TARGET", "LONG/SHORT"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "BUSINESS_OBJECT_STATE"
+    label_zh: "业务对象状态"
+    definition: "必须命名所属业务对象的状态属性。"
+    exclusions: ["bare 状态", "technical job status", "cross-object state merge"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "MEASURE"
+    label_zh: "度量"
+    definition: "数量、金额、比率或其他可计算度量。"
+    exclusions: ["bare 金额/数量 as concept"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "CURRENCY"
+    label_zh: "币种"
+    definition: "币种身份或度量的币种基准。"
+    exclusions: ["bare 币种 as concept", "data source"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "TIME"
+    label_zh: "业务时间"
+    definition: "业务日期、时点、区间或期限。"
+    exclusions: ["created/updated audit time"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+  - id: "AUDIT"
+    label_zh: "审计与处理追踪"
+    definition: "创建、修改、版本、批次和处理追踪。"
+    exclusions: ["business object promotion from co-location"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+
+rejected_attribute_axes:
+  - id: "DIRECTION"
+    reason: "Conflates position, trade, cashflow, mapping, and source meanings."
+  - id: "CONFIGURATION"
+    reason: "Technical/business configuration is context or area, not a reusable field attribute."
+  - id: "OPEN"
+    reason: "Governance state is not a field attribute axis."
+
+qualifier_registry:
+  - id: "observation_time_role"
+    label_zh: "观察时点角色"
+    definition: "表达相对于业务观察时点的角色。"
+    allowed_values: ["INITIAL", "CURRENT", "END", "BEFORE_ADJUSTMENT", "AFTER_ADJUSTMENT"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["lifecycle stage", "audit timestamp"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "初始名义本金"
+    negative_example: "CREATED_DATETIME"
+    status: "CANDIDATE"
+  - id: "position_side"
+    label_zh: "持仓方向"
+    definition: "持仓或明确仓位语境的多空方向。"
+    allowed_values: ["LONG", "SHORT"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["name length", "SHORT_NAME", "LONG_NAME", "BUY/SELL"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "空头动态名义本金"
+    negative_example: "交易对手短名"
+    status: "CANDIDATE"
+  - id: "trade_side"
+    label_zh: "交易买卖侧"
+    definition: "交易或明确成交语境的买卖侧。"
+    allowed_values: ["BUY", "SELL"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["position LONG/SHORT", "SOURCE/TARGET"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "买入数量"
+    negative_example: "源侧交易对手"
+    status: "CANDIDATE"
+  - id: "cashflow_direction"
+    label_zh: "现金流收付方向"
+    definition: "经济现金流的支付或收取方向。"
+    allowed_values: ["PAY", "RECEIVE"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["generic direction", "position side", "mapping side"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "保证金支付方向"
+    negative_example: "保证金方向（无值语义）"
+    status: "CANDIDATE"
+  - id: "currency_basis"
+    label_zh: "币种基准"
+    definition: "度量或表达采用的币种口径。"
+    allowed_values: ["ORIGINAL", "LOCAL", "UNDERLYING", "SETTLEMENT"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["currency code identity", "source system"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "动态名义本金（结算币种）"
+    negative_example: "币种"
+    status: "CANDIDATE"
+  - id: "party_relationship_role"
+    label_zh: "主体关系角色"
+    definition: "Party 在明确机构、协议或交易关系中的角色。"
+    allowed_values: ["CUSTOMER", "COUNTERPARTY", "INTERNAL_PARTY", "EXTERNAL_PARTY"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["BUY", "SELL", "SOURCE", "TARGET", "LONG", "SHORT"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "合同交易对手"
+    negative_example: "目标交易对手的裸 TARGET"
+    status: "CANDIDATE"
+  - id: "variability"
+    label_zh: "可变性"
+    definition: "条款或度量是否按规则动态变化。"
+    allowed_values: ["DYNAMIC", "FIXED"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["CURRENT", "INITIAL"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "动态名义本金"
+    negative_example: "当前名义本金"
+    status: "CANDIDATE"
+  - id: "aggregation_state"
+    label_zh: "聚合口径"
+    definition: "明确声明的累计、净额或总额口径。"
+    allowed_values: ["ACCUMULATED", "NET", "GROSS"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["TOTAL token without context", "table-level voting"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "注释明确汇总前数量求和"
+    negative_example: "字段名含 TOTAL"
+    status: "DEFERRED"
+  - id: "availability_condition"
+    label_zh: "可用条件"
+    definition: "度量或资产是否可用或冻结。"
+    allowed_values: ["AVAILABLE", "FROZEN"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["business object lifecycle state", "technical task freeze"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "可用保证金"
+    negative_example: "冻结任务"
+    status: "CANDIDATE"
+  - id: "estimation_status"
+    label_zh: "估算状态"
+    definition: "度量是估算值还是观察值。"
+    allowed_values: ["ESTIMATED", "OBSERVED"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["SUPPORTED", "PROVISIONAL", "evidence state"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "估算现金流"
+    negative_example: "Reader SUPPORTED"
+    status: "CANDIDATE"
+  - id: "measure_basis"
+    label_zh: "度量基准"
+    definition: "度量采用绝对值、比率或百分比口径。"
+    allowed_values: ["ABSOLUTE", "RATIO", "PERCENTAGE"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["measure_state", "generic amount"]
+    portability: "CROSS_SCHEMA_CANDIDATE"
+    positive_example: "内在价值系数"
+    negative_example: "金额"
+    status: "CANDIDATE"
+  - id: "flow_side"
+    label_zh: "数据流侧"
+    definition: "明确数据加工或映射语境中的源侧或目标侧。"
+    allowed_values: ["SOURCE", "TARGET"]
+    applicable_layers: ["B", "D"]
+    exclusions: ["business source", "event source", "valuation source", "party role"]
+    portability: "TRADEFLOW_ONLY"
+    positive_example: "明确源侧映射输入"
+    negative_example: "事件来源类型"
+    status: "CANDIDATE"
+
+rejected_qualifiers:
+  - id: "lifecycle_stage"
+    reason: "Navigation placement is not a field qualifier."
+  - id: "measure_state"
+    reason: "Duplicates object state, time role, or aggregation semantics."
+  - id: "attribute_kind"
+    reason: "IDENTIFIER belongs to the field attribute layer."
+
+semantic_prohibitions:
+  - id: "PROHIBIT-BARE-SHORT-LONG"
+    trigger: "Bare SHORT or LONG token"
+    forbidden_decision: "Create position_side or publish a Reader expression."
+    required_context: ["protected phrase", "raw comment", "business object context"]
+    correct_home: "Name expression or unresolved qualifier observation."
+    unresolved_result: "UNRESOLVED_OBSERVATION"
+  - id: "PROHIBIT-BARE-SOURCE-TARGET"
+    trigger: "Bare SOURCE or TARGET token"
+    forbidden_decision: "Create flow_side or party role."
+    required_context: ["explicit processing/mapping context", "raw name/comment", "table context"]
+    correct_home: "Business source, mapping role, or TRADEFLOW-only flow_side."
+    unresolved_result: "UNRESOLVED_OBSERVATION"
+  - id: "PROHIBIT-GENERIC-CONCEPT"
+    trigger: "状态/类型/金额/币种/日期/简称/缩写"
+    forbidden_decision: "Publish as a standalone business concept."
+    required_context: ["object anchor", "same-field evidence"]
+    correct_home: "Field attribute or unbound attribute observation."
+    unresolved_result: "UNBOUND_ATTRIBUTE_OBSERVATION"
+  - id: "PROHIBIT-ORDER-TRADE-MERGE"
+    trigger: "Order and Trade share a table, token, or physical name."
+    forbidden_decision: "Merge Reader identity or inherit identifiers."
+    required_context: ["object responsibility", "event state", "identifier evidence"]
+    correct_home: "reader:order or reader:trade"
+    unresolved_result: "NOT_PUBLISHED"
+  - id: "PROHIBIT-CUSTOMER-COUNTERPARTY-MERGE"
+    trigger: "Customer/Counterparty wording overlap"
+    forbidden_decision: "Treat the relations as synonyms."
+    required_context: ["eligibility relationship", "agreement/trade relationship"]
+    correct_home: "concept:customer or concept:counterparty"
+    unresolved_result: "CONFLICT"
+  - id: "PROHIBIT-POSITION-EXPOSURE-MERGE"
+    trigger: "Position, 头寸, and Risk Exposure wording overlap"
+    forbidden_decision: "Reuse one concept identity."
+    required_context: ["time point", "aggregation scope", "risk method"]
+    correct_home: "Position, Position View, or Risk Exposure"
+    unresolved_result: "DEFERRED"
+  - id: "PROHIBIT-VALUE-MARGIN-COLLATERAL-CASHFLOW-MERGE"
+    trigger: "Co-location in valuation or margin tables"
+    forbidden_decision: "Reuse one concept identity."
+    required_context: ["process/measure/asset/obligation role"]
+    correct_home: "Valuation, Margin, Collateral, or Cash Flow"
+    unresolved_result: "NOT_PUBLISHED"
+  - id: "PROHIBIT-CONTRACT-LAYER-MERGE"
+    trigger: "合同/合约 wording"
+    forbidden_decision: "Merge Agreement, Trade Contract, Contract Leg, and Economic Terms."
+    required_context: ["legal scope", "composition", "term carrier"]
+    correct_home: "One explicit contract-layer identity"
+    unresolved_result: "DEFERRED"
+  - id: "PROHIBIT-SETTLEMENT-CHAIN-MERGE"
+    trigger: "结算/清算/交割 wording"
+    forbidden_decision: "Collapse obligation, process, fulfillment, delivery, and result."
+    required_context: ["input obligation", "action", "asset kind", "result"]
+    correct_home: "Clearing, Settlement Obligation, Payment/Transfer, Delivery, or Settlement Result"
+    unresolved_result: "DEFERRED"
+  - id: "PROHIBIT-TECHNICAL-PROMOTION"
+    trigger: "CREATED/UPDATED/BATCH/PUSH/UUID or technical-field candidate"
+    forbidden_decision: "Publish as a business concept or Reader."
+    required_context: ["raw physical fact", "technical observation"]
+    correct_home: "AUDIT or technical-processing area"
+    unresolved_result: "ISOLATED_TECHNICAL"
+  - id: "PROHIBIT-CONFLICT-AUTO-RESOLUTION"
+    trigger: "Column name and comment conflict"
+    forbidden_decision: "Overwrite one source or choose a fixed priority."
+    required_context: ["both raw strings", "table context", "independent evidence"]
+    correct_home: "Conflict record with competing interpretations"
+    unresolved_result: "CONFLICT"
+  - id: "PROHIBIT-TABLE-VOTING"
+    trigger: "Table name or sibling majority"
+    forbidden_decision: "Vote a field into a concept, qualifier, or Reader."
+    required_context: ["locatable field-level evidence"]
+    correct_home: "CONTEXT_ONLY"
+    unresolved_result: "UNRESOLVED"
+
+candidate_reader_entry_contract:
+  entry_kind: "UNPUBLISHED_CANDIDATE_READER_ENTRY"
+  publication_status: "NOT_PUBLISHED"
+  definition: >-
+    Each entry references one of the six actual first-scope Reader identities,
+    but its navigation placement is still a configuration seed. It is neither
+    an evidence-backed entry nor a published Reader entry.
+  upgrade_rule: "A non-null independent Evidence ID and separate review are required before publication."
+
+candidate_reader_entries:
+  - entry_id: "entry:counterparty:trade-preparation"
+    reader_id: "reader:counterparty"
+    concept_id: "concept:counterparty"
+    navigation_entry_id: "journey:trade-preparation"
+    role: "RELATION"
+    relation: "participates_in eligibility"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Customer is not a synonym; A03 remains unresolved."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:counterparty:trade-formation"
+    reader_id: "reader:counterparty"
+    concept_id: "concept:counterparty"
+    navigation_entry_id: "journey:execution-trade-formation"
+    role: "RELATION"
+    relation: "counterparty_to Trade"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "SOURCE/TARGET and SHORT/LONG cannot create the relationship."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:order:order-intent"
+    reader_id: "reader:order"
+    concept_id: "concept:order"
+    navigation_entry_id: "journey:inquiry-quote-order"
+    role: "OBJECT"
+    relation: "records instruction"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Order identifiers cannot inherit Trade identity."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:trade:trade-formation"
+    reader_id: "reader:trade"
+    concept_id: "concept:trade"
+    navigation_entry_id: "journey:execution-trade-formation"
+    role: "OBJECT"
+    relation: "records execution"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Trade identifiers cannot inherit Order identity."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:notional:contract-terms"
+    reader_id: "reader:notional"
+    concept_id: "concept:notional"
+    navigation_entry_id: "envelope:contract-existence"
+    role: "MEASURE"
+    relation: "specifies Trade Contract or Contract Leg"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Notional is not Position, Margin, or payment amount."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:notional:valuation-risk"
+    reader_id: "reader:notional"
+    concept_id: "concept:notional"
+    navigation_entry_id: "activity:valuation-risk"
+    role: "MEASURE"
+    relation: "calculation_basis_for Valuation"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "A second entry cannot duplicate concept identity."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:position:contract-envelope"
+    reader_id: "reader:position"
+    concept_id: "concept:position"
+    navigation_entry_id: "envelope:contract-existence"
+    role: "OBJECT"
+    relation: "position_of Trade Contract"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Position View and Risk Exposure remain separate."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:position:valuation-risk"
+    reader_id: "reader:position"
+    concept_id: "concept:position"
+    navigation_entry_id: "activity:valuation-risk"
+    role: "OBJECT"
+    relation: "input_to Valuation"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Risk Exposure is a computed measure, not Position."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:margin:margin-collateral"
+    reader_id: "reader:margin"
+    concept_id: "concept:margin"
+    navigation_entry_id: "activity:margin-collateral"
+    role: "MEASURE"
+    relation: "secures Settlement Obligation"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "Collateral asset does not inherit Margin identity."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+  - entry_id: "entry:margin:valuation-risk"
+    reader_id: "reader:margin"
+    concept_id: "concept:margin"
+    navigation_entry_id: "activity:valuation-risk"
+    role: "MEASURE"
+    relation: "derived_from Risk Exposure"
+    placement_basis: "CONFIGURATION_SEED"
+    evidence_id: null
+    counterevidence: "MARGIN_DIRECTION lacks resolved cashflow direction."
+    status: "REWORKED_CANDIDATE"
+    publication_status: "NOT_PUBLISHED"
+
+legacy_configuration_seeds:
+  - {legacy_area: "participants", legacy_entry: "trade-preparation", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "participants", legacy_entry: "trade-agreement", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "participants", legacy_entry: "contract-lifecycle", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "participants", legacy_entry: "valuation-risk", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "products-underlyings", legacy_entry: "trade-preparation", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "products-underlyings", legacy_entry: "trade-agreement", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "products-underlyings", legacy_entry: "contract-lifecycle", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "products-underlyings", legacy_entry: "valuation-risk", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "inquiry-order-trade", legacy_entry: "trade-agreement", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "inquiry-order-trade", legacy_entry: "contract-lifecycle", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "inquiry-order-trade", legacy_entry: "clearing-settlement", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "contract-structure", legacy_entry: "trade-agreement", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "contract-structure", legacy_entry: "contract-lifecycle", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "contract-structure", legacy_entry: "valuation-risk", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "lifecycle", legacy_entry: "contract-lifecycle", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "lifecycle", legacy_entry: "valuation-risk", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "lifecycle", legacy_entry: "clearing-settlement", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "position-risk", legacy_entry: "contract-lifecycle", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "position-risk", legacy_entry: "valuation-risk", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "position-risk", legacy_entry: "clearing-settlement", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "valuation-collateral-cashflow", legacy_entry: "trade-preparation", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "valuation-collateral-cashflow", legacy_entry: "contract-lifecycle", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "valuation-collateral-cashflow", legacy_entry: "valuation-risk", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "valuation-collateral-cashflow", legacy_entry: "clearing-settlement", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "clearing-settlement", legacy_entry: "contract-lifecycle", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "clearing-settlement", legacy_entry: "valuation-risk", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "clearing-settlement", legacy_entry: "clearing-settlement", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "reference-configuration", legacy_entry: "trade-preparation", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "reference-configuration", legacy_entry: "valuation-risk", role: "CROSS_STAGE", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "reference-configuration", legacy_entry: "operations-governance", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+  - {legacy_area: "operations-reporting-data", legacy_entry: "operations-governance", role: "CORE_OBJECT", basis: "CONFIGURATION_SEED", migration_status: "DEFERRED"}
+
+field_evidence_input_contract:
+  provider_contract_reference: "06-field-evidence-preparation-contract.yaml"
+  provider_contract_status: "CANDIDATE_CONTRACT_OBSERVED"
+  integration_status: "PENDING_INTEGRATION"
+  reason: >-
+    The provider output is marked REQUIRES_IMPLEMENTATION and no reproducible
+    normalized observation bundle has been consumed or verified by this skeleton.
+  accepted_payload_types:
+    - "normalized_field_observations"
+    - "raw_physical_facts"
+    - "table_context"
+    - "evidence_state"
+    - "conflicts_and_unresolved"
+  required_fields:
+    physical_identity:
+      - "physical_column_id"
+      - "schema_name"
+      - "table_name"
+      - "column_name"
+    raw_physical_fact:
+      - "raw_column_name"
+      - "raw_column_comment"
+      - "raw_table_name"
+      - "raw_table_comment"
+      - "data_type"
+    normalized_observation:
+      - "normalized_tokens"
+      - "protected_phrases"
+      - "technical_field_candidates"
+      - "candidate_qualifier_observations"
+    evidence_and_conflict:
+      - "evidence_state"
+      - "name_comment_conflicts"
+      - "unresolved_observations"
+      - "source_spans"
+      - "applied_rule_ids"
+      - "provenance"
+  consumer_invariants:
+    - "Raw field name, raw field comment, table context, data type, and identity are immutable."
+    - "Tokenization and protected-phrase matches are observations, never business concepts."
+    - "Candidate qualifier observations require semantic adjudication before becoming formal qualifiers."
+    - "Technical-field candidates cannot publish a business Reader."
+    - "Name/comment conflicts cannot be auto-resolved or hidden."
+    - "Table context is CONTEXT_ONLY unless independent field-level evidence supports a claim."
+  dependent_rules:
+    - {rule_id: "NAV-PROTECTED-PHRASE-GUARD", status: "PENDING_INTEGRATION"}
+    - {rule_id: "NAV-SOURCE-TARGET-CONTEXT-GUARD", status: "PENDING_INTEGRATION"}
+    - {rule_id: "NAV-GENERIC-WORD-DEMOTION", status: "PENDING_INTEGRATION"}
+    - {rule_id: "NAV-TECHNICAL-FIELD-ISOLATION", status: "PENDING_INTEGRATION"}
+    - {rule_id: "NAV-NAME-COMMENT-CONFLICT-BLOCK", status: "PENDING_INTEGRATION"}
+    - {rule_id: "NAV-READER-PUBLICATION-GATE", status: "PENDING_INTEGRATION"}
+  non_goals:
+    - "No character-normalization algorithm is defined here."
+    - "No tokenization or protected-phrase matching algorithm is defined here."
+    - "No conflict auto-resolution algorithm is defined here."
+    - "No business concept, qualifier, or Reader is decided by lexical output alone."
+
+count_registry:
+  - name: "tradeflow_physical_columns"
+    value: 13611
+    grain: "Stage 0 physical column instance"
+  - name: "tradeflow_physical_tables"
+    value: 477
+    grain: "Stage 0 physical table instance"
+  - name: "source_concept_candidates"
+    value: 1375
+    grain: "Stage 3 run-scoped source concept candidate"
+  - name: "attribute_expressions"
+    value: 1559
+    grain: "Stage 3 attribute expression candidate"
+  - name: "semantic_observations"
+    value: 5347
+    grain: "Stage 3 observation record"
+  - name: "semantic_observation_unique_field_instances"
+    value: 5342
+    grain: "Unique field instance referenced by observations"
+  - name: "candidate_linked_field_instances"
+    value: 4294
+    grain: "Unique field instance referenced by published candidates"
+  - name: "source_fields"
+    value: 5512
+    grain: "Stage 3 manifest source-field denominator"
+  - name: "candidate_covered_tables"
+    value: 233
+    grain: "Physical table with at least one published candidate field reference"
+  - name: "direct_attach_source_concepts"
+    value: 57
+    grain: "02 classification source concept candidates"
+  - name: "likely_concept_candidates"
+    value: 48
+    grain: "02 unclassified-analysis investigation candidates"
+  - name: "current_bounded_reader_identities"
+    value: 5
+    grain: "Current Stage 5 Reader identities"
+  - name: "proposed_first_reader_identities"
+    value: 6
+    grain: "06 research candidate Reader identities"
+  - name: "current_reader_expressions"
+    value: 95
+    grain: "Current Stage 5 expressions across five Readers"
+  - name: "navigation_unattached_source_concepts"
+    value: 1326
+    grain: "Stage 5 source concepts not attached to a Reader identity"
+  - name: "insufficient_hypotheses"
+    value: 618
+    grain: "Stage 3/5 semantic hypothesis"
+  - name: "out_of_scope_count"
+    value: "NOT_COMPUTED"
+    grain: "No explicit exclusion universe"
+  - name: "true_unknown_count"
+    value: "NOT_COMPUTED"
+    grain: "No unified Unknown grain"
+count_invariants:
+  - "Reader identity, source concept, expression, field instance, physical column, and table counts never add together."
+  - "1326 unpublished source concepts are not Unknown and are not added to six proposed Readers."
+  - "Unpublished is not Unknown; out-of-scope is not insufficient evidence."
+  - "Reader-level SUPPORTED cannot be inherited by all member expressions."
+
+gold_set_contract:
+  file: "06-gold-set.yaml"
+  case_count: 27
+  preserved_case_ids:
+    - "A01"
+    - "A02"
+    - "A03"
+    - "A04"
+    - "A05"
+    - "B01"
+    - "C01"
+    - "C02"
+    - "C03"
+    - "C04"
+    - "D01"
+    - "D02"
+    - "E01"
+    - "E02"
+    - "E03"
+    - "E04"
+    - "F01"
+    - "G01"
+    - "G02"
+    - "H01"
+    - "I01"
+    - "I02"
+    - "J01"
+    - "J02"
+    - "K01"
+    - "L01"
+    - "M01"
+  current_observed_baseline:
+    pass: 6
+    fail: 17
+    not_evaluable: 4
+    disposition: "FAIL"
+  revised_execution_status: "PENDING_RERUN"
+  authority: "RESEARCH_REGRESSION_INPUT_NOT_BUSINESS_GOLD"
+  locatable_physical_cases: 24
+  explicitly_non_locatable_cases: ["E02", "E03", "E04"]
+
+reader_page_projection:
+  page_count: 1
+  layout: "THREE_COLUMN"
+  left_column:
+    - "journey entries"
+    - "contract envelope"
+    - "repeating activities"
+    - "crosscutting planes"
+    - "business areas"
+  center_column:
+    - "single concept identity"
+    - "Reader status"
+    - "attribute expressions"
+    - "field attributes"
+    - "qualifiers"
+    - "counterevidence"
+  right_column_required_fields:
+    - "physical field name"
+    - "implementation count"
+    - "unique table count"
+    - "schema"
+    - "table name"
+    - "table comment"
+    - "field comment"
+    - "data type"
+    - "evidence state"
+    - "conflicts"
+    - "Stage 0 table detail link"
+  display_invariants:
+    - "Configuration seeds are labeled non-evidence."
+    - "Empty areas remain visible."
+    - "Unpublished, Unknown, out-of-scope, and insufficient evidence remain distinct."
+    - "Multiple entries never duplicate concept identity."
+
+implementation_prerequisites:
+  - id: "PREP-01"
+    status: "PENDING_INTEGRATION"
+    requirement: "Produce and validate a versioned field-evidence observation bundle."
+  - id: "PREP-02"
+    status: "DEFERRED"
+    requirement: "Resolve the reusable-semantic-navigation-v1 config/result schema-name collision."
+  - id: "PREP-03"
+    status: "PENDING_RERUN"
+    requirement: "Run all 27 revised Gold cases and preserve FAIL/NOT_EVALUABLE."
+  - id: "PREP-04"
+    status: "PENDING_REVIEW"
+    requirement: "Perform an independent user-facing counterexample review."
+  - id: "PREP-05"
+    status: "DEFERRED"
+    requirement: "Obtain separate implementation authorization before changing code, current config, or formal output."
+
+deferred_issues:
+  - id: "DEFER-FIELD-EVIDENCE-INTEGRATION"
+    status: "PENDING_INTEGRATION"
+    blocking_scope: "Reader publication only"
+  - id: "DEFER-SECOND-SCHEMA"
+    status: "DEFERRED"
+    blocking_scope: "Cross-schema validity only"
+    next_decision: "D-010 authorization and independent case pack"
+  - id: "DEFER-CUSTOMER-COUNTERPARTY"
+    status: "DEFERRED"
+    blocking_scope: "Customer identity and A03 adjudication"
+  - id: "DEFER-AGREEMENT-CONTRACT"
+    status: "DEFERRED"
+    blocking_scope: "Legal hierarchy publication"
+  - id: "DEFER-POSITION-VIEW"
+    status: "DEFERRED"
+    blocking_scope: "Position View identity"
+  - id: "DEFER-MARGIN-DIRECTION"
+    status: "DEFERRED"
+    blocking_scope: "MARGIN_DIRECTION qualifier publication"
+  - id: "DEFER-LEGACY-SEEDS"
+    status: "DEFERRED"
+    blocking_scope: "Migration of 31 configuration seeds"
+  - id: "DEFER-GOLD-AUTHORITY"
+    status: "DEFERRED"
+    blocking_scope: "Business Gold and acceptance"
+
+self_check_contract:
+  - "Three requested 06 files exist."
+  - "Both YAML files load with a standard YAML parser."
+  - "First Reader statuses contain no validated, accepted, or confirmed claim."
+  - "No combined Order/Trade Reader identity exists in the candidate Reader scope."
+  - "Bare SHORT/LONG cannot produce position_side."
+  - "Bare SOURCE/TARGET cannot produce flow_side."
+  - "Generic words are not publishable business concepts."
+  - "All ten 05 rework actions have an explicit disposition."
+  - "Second Schema is DEFERRED, not a current blocker or validated scope."
+  - "No file outside the three requested artifacts is modified by this task."

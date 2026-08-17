@@ -10,6 +10,12 @@ second Candidate, Evidence, Review Decision, or reader/business delivery state.
   reusable stage order, required Artifact roles, checkpoints and model policy.
 - A Schema Case Pack owns only Schema-specific references, local policy and
   budget. TRADEFLOW uses `cases/tradeflow/semantic-navigation-case-pack.yaml`.
+- The field-navigation governance case does not require a Stage 4
+table-semantic Manifest. The TRADEFLOW Case Pack freezes only field-semantic
+Artifacts (`FROZEN_INPUTS`, `SEMANTIC_CONFIG`, `FIELD_MANIFEST`,
+`CONTEXT_MANIFEST`); tables appear in field navigation only as the physical
+location of a field. The table-semantic map is governed later by its own Case
+Pack, and the Runner keeps validating the `TABLE_MANIFEST` role for that case.
 - The code-owned operation registry is fixed. Profile and Case files cannot
   provide commands, scripts or alternate stage order.
 - The generated JSON is a rebuildable `DERIVED_AUDIT_PROJECTION`. Its

@@ -1,0 +1,75 @@
+{
+  "schema_version": "indicator-processing-graph-profile-v1",
+  "case_id": "indicator-journey-rgstcomp-mthend",
+  "indicator_id": "ind2024070561739587",
+  "dialect": "databricks",
+  "target_field": "dm_index_n.index_grp1_CompScal_OtcDeriRgstComp_MthEnd.index_val",
+  "schema_evidence": "output/indicator-processing-graph-rgstcomp-mthend/szdata-schema-evidence.json",
+  "minimal_causal_paths": [
+    {
+      "path_id": "value-flow-option-dyna-nom-prin",
+      "path_type": "VALUE_FLOW",
+      "producer_role": "T98_OPTION_BRANCH",
+      "producer_field": "dyna_nom_prin",
+      "consumer_role": "INDICATOR_BUILD",
+      "target_field": "index_val",
+      "partition_assertion": {
+        "field": "grp_id",
+        "literal": "01"
+      }
+    },
+    {
+      "path_id": "rowset-control-skip-report",
+      "path_type": "ROWSET_CONTROL",
+      "producer_role": "T05_REPORT_STATUS",
+      "producer_field": "rgst_stat_cd",
+      "consumer_role": "INDICATOR_BUILD",
+      "target_field": "index_val",
+      "control_literal": "SKIP_REPORT"
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "162610",
+      "role": "INDICATOR_BUILD",
+      "sql_snapshot": ".evidence-cache/tasksql-162610-20260816122434.txt",
+      "writes": "dm_index_n.index_grp1_CompScal_OtcDeriRgstComp_MthEnd",
+      "focus_outputs": ["index_val"]
+    },
+    {
+      "task_id": "86840",
+      "role": "T98_OPTION_BRANCH",
+      "sql_snapshot": ".evidence-cache/tasksql-86840-20260816122735.txt",
+      "writes": "pdata_n.T98_OTC_DERI_COMP_SALE_INFO",
+      "focus_outputs": ["dyna_nom_prin"]
+    },
+    {
+      "task_id": "86841",
+      "role": "T98_TRS_BRANCH",
+      "sql_snapshot": ".evidence-cache/tasksql-86841-20260816122832.txt",
+      "writes": "pdata_n.T98_OTC_DERI_COMP_SALE_INFO",
+      "focus_outputs": ["dyna_nom_prin"]
+    },
+    {
+      "task_id": "86842",
+      "role": "T98_KS_BRANCH",
+      "sql_snapshot": ".evidence-cache/tasksql-86842-20260816122925.txt",
+      "writes": "pdata_n.T98_OTC_DERI_COMP_SALE_INFO",
+      "focus_outputs": ["dyna_nom_prin"]
+    },
+    {
+      "task_id": "220650",
+      "role": "T98_FAST_TRS_BRANCH",
+      "sql_snapshot": ".evidence-cache/tasksql-220650-20260816122926.txt",
+      "writes": "pdata_n.T98_OTC_DERI_COMP_SALE_INFO",
+      "focus_outputs": ["dyna_nom_prin"]
+    },
+    {
+      "task_id": "106204",
+      "role": "T05_REPORT_STATUS",
+      "sql_snapshot": ".evidence-cache/tasksql-106204-20260816122833.txt",
+      "writes": "pdata_n.T05_OTC_COMP_RGST_SAC_EVT",
+      "focus_outputs": ["rgst_stat_cd", "otc_comp_agt_id"]
+    }
+  ]
+}
