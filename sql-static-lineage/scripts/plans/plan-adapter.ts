@@ -31,6 +31,10 @@ import type {
 	GrainInference,
 	JoinRelation,
 	PlanFacts,
+	PlanLineageHopEdge,
+	PlanLineageHopNode,
+	PlanLineageHopProjection,
+	PlanLineageHopRoot,
 	PlanRelation,
 	ProjectRelation,
 	ReadRelation,
@@ -39,8 +43,8 @@ import type {
 	WindowInputBinding,
 	WindowSpecFacts,
 } from "./plan-contract.js";
-import type { SelectExpr, Expr } from "../../src/ir/ir.js";
-import { lineageAt } from "../../src/lineage/hops.js";
+import type { Projection, SelectExpr, Expr } from "../../src/ir/ir.js";
+import { lineageAt, lineageOf, type LineageHop } from "../../src/lineage/hops.js";
 import { originsOf } from "../../src/lineage/lineage.js";
 
 // ---------------------------------------------------------------------------
@@ -713,10 +717,301 @@ export interface PlanAdapterOptions {
 	include_expression_dependencies?: boolean;
 }
 
-const CONTRACT_VERSION = "1.1.2";
-const ADAPTER_VERSION = "0.2.2";
-const EXPRESSION_DEPENDENCY_CONTRACT_VERSION = "1.1.4";
-export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.12";
+type HopRequest = {
+	projection?: Projection;
+	scope: Scope;
+	relationId: string;
+	expressionId: string;
+	expression: ExprSpec;
+};
+
+function exprHasSubquery(expr: Expr | null | undefined): boolean {
+	if (!expr) return false;
+	switch (expr.kind) {
+		case "subquery":
+		case "exists":
+			return true;
+		case "binary":
+			return exprHasSubquery(expr.left) || exprHasSubquery(expr.right);
+		case "unary":
+			return exprHasSubquery(expr.operand);
+		case "function":
+			return expr.args.some((arg) => exprHasSubquery(arg));
+		case "case":
+			return expr.whens.some((branch) => exprHasSubquery(branch.when) || exprHasSubquery(branch.then)) || exprHasSubquery(expr.elseExpr);
+		case "cast":
+			return exprHasSubquery(expr.expr);
+		case "predicate":
+			return exprHasSubquery(expr.operand) || expr.args.some((arg) => exprHasSubquery(arg));
+		case "subscript":
+			return exprHasSubquery(expr.base) || exprHasSubquery(expr.index) || exprHasSubquery(expr.end) || exprHasSubquery(expr.step);
+		case "lambda":
+			return exprHasSubquery(expr.body);
+		case "with":
+			return expr.bindings.some((binding) => exprHasSubquery(binding.value)) || exprHasSubquery(expr.result);
+		default:
+			return false;
+	}
+}
+
+function scopeHasUnsupportedHopCoverage(scope: Scope, visiting = new Set<Scope>()): boolean {
+	if (visiting.has(scope)) return true;
+	const next = new Set(visiting).add(scope);
+	const body = scope.body as any;
+	if (body.kind === "pipe" || body.pivot || body.unpivot) return true;
+	if (Array.isArray(body.unsupported) && body.unsupported.length > 0) return true;
+	for (const source of scope.sources.values() as Iterable<any>) {
+		if (["lateral", "pivot", "unpivot", "tvf", "tableFunction", "graphtable"].includes(String(source.kind))) return true;
+		const child = source.scope ?? source.ref?.scope;
+		if (child && scopeHasUnsupportedHopCoverage(child, next)) return true;
+	}
+	return false;
+}
+
+function physicalFieldsOf(expression: ExprSpec, candidate: boolean): { table: string; column: string }[] {
+	const fields: { table: string; column: string }[] = [];
+	for (const input of expression.input_columns ?? []) {
+		if (candidate && input.resolution === "SQL_CANDIDATE") {
+			fields.push(...(input.sql_candidate ?? []));
+		} else if (!candidate && input.resolution === "PHYSICAL") {
+			fields.push(...(input.physical ?? []));
+		}
+	}
+	const seen = new Set<string>();
+	return fields.filter((field) => {
+		const key = `${field.table}.${field.column}`.toLowerCase();
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+function localFieldKey(field: { table: string; column: string }): string {
+	return `${field.table}.${field.column}`.toLowerCase();
+}
+
+function descendantRelationIds(relationId: string, byId: Map<string, JsonLikeRelation>, seen = new Set<string>()): Set<string> {
+	if (seen.has(relationId)) return seen;
+	seen.add(relationId);
+	const relation = byId.get(relationId);
+	if (!relation) return seen;
+	for (const child of [relation.source, relation.left, relation.right, ...(relation.branches ?? [])]) {
+		if (child) descendantRelationIds(child, byId, seen);
+	}
+	return seen;
+}
+
+type JsonLikeRelation = {
+	id: string;
+	type: string;
+	source?: string;
+	left?: string;
+	right?: string;
+	branches?: string[];
+};
+
+function setopBranchOf(
+	relationId: string,
+	relations: readonly PlanRelation[],
+): { relation_id: string; ordinal: number } | undefined {
+	const byId = new Map(relations.map((relation) => [relation.id, relation as JsonLikeRelation]));
+	for (const relation of relations) {
+		if (relation.type !== "setop") continue;
+		for (const [ordinal, branch] of relation.branches.entries()) {
+			const descendants = descendantRelationIds(branch, byId);
+			if (descendants.has(relationId)) return { relation_id: relation.id, ordinal };
+		}
+	}
+	return undefined;
+}
+
+function nativeHopProjection(
+	cellBase: number,
+	sql: string,
+	schema: unknown,
+	dialect: string,
+	relations: readonly PlanRelation[],
+	relationScopes: ReadonlyMap<string, Scope>,
+	scopeRelationIds: ReadonlyMap<Scope, string>,
+	projectionLocators: ReadonlyMap<Scope, ReadonlyMap<Projection, { relationId: string; expressionId: string }>>,
+	requests: readonly HopRequest[],
+): PlanLineageHopProjection {
+	const roots: PlanLineageHopRoot[] = [];
+	const nodes = new Map<string, PlanLineageHopNode>();
+	const edges = new Map<string, PlanLineageHopEdge>();
+
+	for (const request of requests) {
+		const physicalInputs = physicalFieldsOf(request.expression, false);
+		const candidateInputs = physicalFieldsOf(request.expression, true);
+		const base = {
+			flow_kind: "VALUE_LINEAGE" as const,
+			root_expression_id: request.expressionId,
+			physical_input_fields: physicalInputs,
+			candidate_input_fields: candidateInputs,
+		};
+		if (request.expression.output_name_status === "STAR_EXPANSION" || request.expression.output === "*") {
+			roots.push({
+				...base,
+				head_hop_id: null,
+				coverage_state: "NOT_EVALUABLE",
+				projection_status: "NOT_EVALUABLE",
+				reason_code: "NATIVE_STAR_COLUMN_ANCHOR_UNAVAILABLE",
+				reason: "Adapter-synthesized Star Expansion field has no native per-column Projection anchor",
+			});
+			continue;
+		}
+
+		const locator = request.projection ? projectionLocators.get(request.scope)?.get(request.projection) : undefined;
+		const scopeRelationId = locator?.relationId ?? scopeRelationIds.get(request.scope);
+		const unsupported = scopeHasUnsupportedHopCoverage(request.scope);
+		const flatOnly = exprHasSubquery(request.projection?.expr);
+		const unknownExpr = request.projection?.expr.kind === "other";
+		let head: LineageHop | null = null;
+		let nativeFailure: string | undefined;
+		if (!scopeRelationId) {
+			nativeFailure = "NATIVE_SCOPE_RELATION_MAPPING_UNAVAILABLE";
+		} else {
+			try {
+				if (!request.projection) throw new Error("NATIVE_PROJECTION_MAPPING_UNAVAILABLE");
+				head = lineageOf(request.projection, request.scope, schema as never);
+			} catch (error) {
+				nativeFailure = `NATIVE_LINEAGE_FAILED: ${error instanceof Error ? error.message : String(error)}`;
+			}
+		}
+
+		const localNodes = new Map<string, PlanLineageHopNode>();
+		const localEdges = new Map<string, PlanLineageHopEdge>();
+		let mappingFailure = nativeFailure;
+		const serializedIds = new Map<LineageHop, string>();
+		const active = new Set<string>();
+		const serialize = (hop: LineageHop, preferredLocator?: { relationId: string; expressionId: string }): string | null => {
+			const hopLocator = preferredLocator ?? (hop.projection ? projectionLocators.get(hop.scope)?.get(hop.projection) : undefined);
+			const relationId = hopLocator?.relationId ?? scopeRelationIds.get(hop.scope);
+			if (!relationId) {
+				mappingFailure ??= "NATIVE_SCOPE_RELATION_MAPPING_UNAVAILABLE";
+				return null;
+			}
+			const span = spanOfCst(cellBase, hop.expr.cst);
+			const expressionId = hopLocator?.expressionId;
+			const localId = `hop:${relationId}:${expressionId ?? `span:${span.start}:${span.end}`}:${hop.expr.kind}`;
+			const existing = serializedIds.get(hop);
+			if (existing) return existing;
+			if (active.has(localId)) {
+				mappingFailure ??= "NATIVE_HOP_CYCLE";
+				return localId;
+			}
+			serializedIds.set(hop, localId);
+			active.add(localId);
+			const terminalFields = Array.isArray(hop.terminal) ? hop.terminal.map((origin) => ({ table: origin.table.join("."), column: origin.column })) : [];
+			const via = [];
+			for (const step of hop.via ?? []) {
+				const viaRelation = scopeRelationIds.get(step.scope);
+				if (!viaRelation) mappingFailure ??= "NATIVE_SCOPE_RELATION_MAPPING_UNAVAILABLE";
+				else via.push({ relation_id: viaRelation, kind: step.kind });
+			}
+			const node: PlanLineageHopNode = {
+				hop_id: localId,
+				scope_relation_id: relationId,
+				...(expressionId ? { expression_id: expressionId } : {}),
+				expr_kind: hop.expr.kind,
+				expression_text: fullTextOf(sql, cellBase, hop.expr.cst as any),
+				source_span: span,
+				terminal_fields: terminalFields,
+				terminal: hop.terminal === "unresolved" ? "UNRESOLVED" : terminalFields.length > 0 ? "PRESENT" : "NONE",
+				has_downstream: hop.downstream.length > 0,
+				via,
+				flow_kind: "VALUE_LINEAGE",
+			};
+			localNodes.set(localId, node);
+			for (const field of terminalFields) {
+				const edgeId = `hop-edge:physical:${localFieldKey(field)}->${localId}`;
+				localEdges.set(edgeId, {
+					edge_id: edgeId,
+					edge_type: "PHYSICAL_FIELD_TO_HOP",
+					from_field: field,
+					to_hop_id: localId,
+					flow_kind: "VALUE_LINEAGE",
+				});
+			}
+			for (const downstream of hop.downstream) {
+				const downstreamId = serialize(downstream);
+				if (!downstreamId) continue;
+				const branch = setopBranchOf(scopeRelationIds.get(downstream.scope) ?? "", relations);
+				const edgeId = `hop-edge:hop:${downstreamId}->${localId}:${branch?.relation_id ?? ""}:${branch?.ordinal ?? ""}`;
+				localEdges.set(edgeId, {
+					edge_id: edgeId,
+					edge_type: "HOP_TO_HOP",
+					from_hop_id: downstreamId,
+					to_hop_id: localId,
+					...(branch ? { branch_relation_id: branch.relation_id, branch_ordinal: branch.ordinal } : {}),
+					flow_kind: "VALUE_LINEAGE",
+				});
+			}
+			active.delete(localId);
+			return localId;
+		};
+
+		const headLocator = head?.projection === request.projection && request.projection
+			? { relationId: request.relationId, expressionId: request.expressionId }
+			: undefined;
+		const headId = head ? serialize(head, headLocator) : null;
+		const terminalByHop = new Map<string, PlanLineageHopNode>();
+		for (const node of localNodes.values()) terminalByHop.set(node.hop_id, node);
+		const terminalKeys = new Set<string>();
+		const collectTerminals = (hopId: string, seen = new Set<string>()): void => {
+			if (seen.has(hopId)) return;
+			seen.add(hopId);
+			const node = terminalByHop.get(hopId);
+			if (!node) return;
+			for (const field of node.terminal_fields) terminalKeys.add(localFieldKey(field));
+			for (const edge of localEdges.values()) if (edge.edge_type === "HOP_TO_HOP" && edge.to_hop_id === hopId && edge.from_hop_id) collectTerminals(edge.from_hop_id, seen);
+		};
+		if (headId) collectTerminals(headId);
+		const expectedKeys = new Set(physicalInputs.map(localFieldKey));
+		const conservationMismatch = ![...expectedKeys].every((key) => terminalKeys.has(key)) || ![...terminalKeys].every((key) => expectedKeys.has(key));
+		let coverageState: PlanLineageHopRoot["coverage_state"] = "FULL_HOP";
+		if (nativeFailure || mappingFailure) {
+			coverageState = nativeFailure === "NATIVE_SCOPE_RELATION_MAPPING_UNAVAILABLE" || mappingFailure === "NATIVE_SCOPE_RELATION_MAPPING_UNAVAILABLE"
+				? "NOT_EVALUABLE"
+				: "UNKNOWN_COVERAGE";
+		}
+		else if (unsupported || unknownExpr) coverageState = "UNKNOWN_COVERAGE";
+		else if (flatOnly) coverageState = "FLAT_ORIGIN_ONLY";
+		const hasCandidate = candidateInputs.length > 0;
+		const hasUnresolved = (request.expression.input_columns ?? []).some((input) => input.resolution !== "PHYSICAL" && input.resolution !== "DERIVED_OUTPUT" && input.resolution !== "SQL_CANDIDATE") || [...localNodes.values()].some((node) => node.terminal === "UNRESOLVED");
+		let projectionStatus: PlanLineageHopRoot["projection_status"] = "PROJECTED";
+		let reasonCode: string | undefined;
+		if (coverageState === "NOT_EVALUABLE") {
+			projectionStatus = "NOT_EVALUABLE";
+			reasonCode = nativeFailure ?? mappingFailure;
+		} else if (coverageState !== "FULL_HOP" || hasCandidate || hasUnresolved || conservationMismatch || !headId) {
+			projectionStatus = "PARTIAL_NATIVE";
+			reasonCode = nativeFailure ?? mappingFailure ?? (conservationMismatch ? "ORIGIN_CONSERVATION_MISMATCH" : flatOnly ? "NATIVE_SCALAR_OR_EXISTS_FLATTENED" : hasCandidate ? "NATIVE_INPUT_CANDIDATE" : hasUnresolved ? "NATIVE_UNRESOLVED" : unsupported || unknownExpr ? "NATIVE_UNSUPPORTED_COVERAGE" : !headId ? "NATIVE_HEAD_UNAVAILABLE" : undefined);
+		}
+		if (projectionStatus === "PROJECTED" || projectionStatus === "PARTIAL_NATIVE") {
+			for (const [id, node] of localNodes) nodes.set(id, node);
+			for (const [id, edge] of localEdges) edges.set(id, edge);
+		}
+		roots.push({
+			...base,
+			head_hop_id: projectionStatus === "NOT_EVALUABLE" ? null : headId,
+			coverage_state: coverageState,
+			projection_status: projectionStatus,
+			...(reasonCode ? { reason_code: reasonCode, reason: reasonCode } : {}),
+		});
+	}
+
+	return {
+		roots,
+		nodes: [...nodes.values()].sort((left, right) => left.hop_id.localeCompare(right.hop_id)),
+		edges: [...edges.values()].sort((left, right) => left.edge_id.localeCompare(right.edge_id)),
+	};
+}
+
+const CONTRACT_VERSION = "1.2.0";
+const ADAPTER_VERSION = "0.3.0";
+const EXPRESSION_DEPENDENCY_CONTRACT_VERSION = "1.2.0";
+export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.3.0";
 
 export function buildPlanFacts(
 	cell: { scopes: ScopeTree; span: { start: number } },
@@ -728,6 +1023,8 @@ export function buildPlanFacts(
 	const nativeLineageFailures = new Set<string>();
 	const physical = new Set<string>();
 	const relationScopes = new Map<string, Scope>();
+	const scopeRelationIds = new Map<Scope, string>();
+	const projectionLocators = new Map<Scope, Map<Projection, { relationId: string; expressionId: string }>>();
 	const roots: string[] = [];
 	const root = cell.scopes.root;
 	const cellBase = cell.span.start ?? 0;
@@ -1176,6 +1473,7 @@ export function buildPlanFacts(
 		};
 		relations.push(pr);
 		relationScopes.set(pid, scope);
+		scopeRelationIds.set(scope, pid);
 		if (!computedOut) {
 			unknowns.push({
 				node_id: pid,
@@ -1187,13 +1485,56 @@ export function buildPlanFacts(
 		rootIds.set(scope, pid);
 
 		// 表达式子查询 / CTE 子块
-		for (const child of scope.children) {
-			if (!rootIds.has(child)) buildScope(child, `${path}.(child)`);
+		for (const [childIndex, child] of scope.children.entries()) {
+			if (!rootIds.has(child)) buildScope(child, `${path}.(child${childIndex === 0 ? "" : `-${childIndex}`})`);
 		}
 		return pid;
 	}
 
 	roots.push(buildScope(root, "root"));
+
+	// Keep the native IR objects alive long enough to invoke lineageOf().  The
+	// writer later globalizes these local locators; it must not try to recover
+	// Projection/Scope identity from already-serialized relation JSON.
+	const hopRequests: HopRequest[] = [];
+	for (const relation of relations) {
+		const scope = relationScopes.get(relation.id);
+		if (!scope) continue;
+		if (relation.type === "project" && scope.body.kind === "select") {
+			let ordinal = 0;
+			for (const projection of scope.body.projections) {
+				if (projection.isStar) {
+					while (ordinal < relation.expressions.length) {
+						const expression = relation.expressions[ordinal];
+						if (expression.output_name_status !== "STAR_EXPANSION" && expression.output !== "*") break;
+						const expressionId = `${relation.id}:expression:project_expression:${ordinal}`;
+					hopRequests.push({ scope, relationId: relation.id, expressionId, expression });
+					ordinal++;
+					}
+					continue;
+				}
+				const expression = relation.expressions[ordinal];
+				if (!expression) continue;
+				const expressionId = `${relation.id}:expression:project_expression:${ordinal}`;
+				const locators = projectionLocators.get(scope) ?? new Map<Projection, { relationId: string; expressionId: string }>();
+				locators.set(projection, { relationId: relation.id, expressionId });
+				projectionLocators.set(scope, locators);
+				hopRequests.push({ projection, scope, relationId: relation.id, expressionId, expression });
+				ordinal++;
+			}
+		} else if (relation.type === "aggregate" && scope.body.kind === "select") {
+			const measures = scope.body.projections.filter((projection) => projection.expr.kind === "function" && (projection.expr as { aggregate?: boolean }).aggregate);
+			for (const [ordinal, projection] of measures.entries()) {
+				const expression = relation.measures[ordinal];
+				if (!expression) continue;
+				const expressionId = `${relation.id}:expression:aggregate_measure:${ordinal}`;
+				const locators = projectionLocators.get(scope) ?? new Map<Projection, { relationId: string; expressionId: string }>();
+				locators.set(projection, { relationId: relation.id, expressionId });
+				projectionLocators.set(scope, locators);
+				hopRequests.push({ projection, scope, relationId: relation.id, expressionId, expression });
+			}
+		}
+	}
 
 	// Resolve ordinary derived-table outputs from the already-built child project
 	// facts. This complements the SETOP-specific resolver above: a parent scope
@@ -1374,6 +1715,18 @@ export function buildPlanFacts(
 		}
 	}
 
+	const lineageHops: PlanLineageHopProjection = nativeHopProjection(
+		cellBase,
+		sql,
+		schema,
+		dialect,
+		relations,
+		relationScopes,
+		scopeRelationIds,
+		projectionLocators,
+		hopRequests,
+	);
+
 	// parser 版本 (sql-static-lineage package.json)
 	let parserVersion = "unknown";
 	try {
@@ -1402,6 +1755,7 @@ export function buildPlanFacts(
 		roots,
 		physical_inputs: [...physical],
 		unknowns,
+		lineage_hops: lineageHops,
 	};
 }
 

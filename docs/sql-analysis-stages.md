@@ -115,8 +115,8 @@ sql-static-lineage IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsO
 | `struct-views-demo.ts` / `struct-views-118141.ts` | 1 | clausesOf/frameAt/nodeAt/setOpArmsOf 验证 |
 | `schema-118141.ts` / `schema-experiment.ts` | 2 | pdata_n 库 schema 实测（info 92 列/det 23 列/m 60 列），物理解析输入 |
 | `compare-demo.ts` / `resolve-audit.ts` | 1 | 对比 / 解析审计（辅助） |
-| `plan-contract.ts` | 2 | Logical Plan Facts 契约（v1.1.0）定义 |
-| `plan-adapter.ts` | 2 | sql-static-lineage IR → plan-facts 适配器（v0.2.0，26KB，核心） |
+| `plan-contract.ts` | 2 | Logical Plan Facts 契约（v1.2.0）定义 |
+| `plan-adapter.ts` | 2 | sql-static-lineage IR → plan-facts 适配器（v0.3.0，含原生 LineageHop 投影） |
 | `scripts/plans/plan-118141.ts` | 2 | 生成 `output/118141/plan-facts-118141.json` |
 | `plan-batch.ts` / `plan-fingerprint.ts` / `plan-explain.ts` | 2 | 批量 / 指纹 / 解释工具 |
 | `verify-golden.ts` | 2 | golden 回归：22 断言 + 与 golden 完全一致性比对 |
@@ -171,6 +171,21 @@ machine-facts/
 ├─ registry/tasks/<task_id>/bundle/*.jsonl
 └─ indexes/task-fact-index.jsonl
 ```
+
+当前 Bundle 还包含原生值传播 Hop 投影：
+
+```text
+registry/tasks/<task_id>/bundle/
+├─ lineage-hop-roots.jsonl   # requested expression → native head + coverage/status
+├─ lineage-hop-nodes.jsonl   # native Hop、Scope Relation、terminal、has_downstream、via
+└─ lineage-hop-edges.jsonl   # 仅 PHYSICAL_FIELD_TO_HOP / HOP_TO_HOP，生产者→消费者
+```
+
+这三份文件直接由 `sql-static-lineage` 的 `lineageOf()` / `LineageHop` 生成；Relation Facts 不会反向猜测 Hop。`via=rename/expand` 保留在 Node 上，物理表只作为 terminal，Setop 只保留原生分支 Hop，不伪造 Setop Hop。`column-lineage-edges.jsonl` 继续是 Physical Base Origin → Field Expression 的来源摘要，不能用它替代 Hop DAG。
+
+每个 Hop Root 都声明 `flow_kind=VALUE_LINEAGE`，并保留 `FULL_HOP`、`FLAT_ORIGIN_ONLY`、`UNKNOWN_COVERAGE` 或 `NOT_EVALUABLE` 与 `PROJECTED`、`PARTIAL_NATIVE` 或 `NOT_EVALUABLE`。Scalar/EXISTS 当前只压平到 Origins；Adapter 合成的最终 Star 字段因没有原生逐字段锚点而不可评测；candidate、unresolved 和未建模 Expr/Source 不得升级为完整投影。对 `FULL_HOP` 且已投影的 Root，发布前必须验证可达 physical terminal 与既有来源摘要守恒。
+
+Hop 只表达任务内值传播，不表达 Filter、Join、Group By 的行集控制、Window Role、Grain 或 Cardinality。需要解释完整加工因果时，Consumer 必须组合 Hop Facts、Relation Facts 和 Expression Facts；Hop DAG 不是业务因果图，也不生成跨 Task 边。所有 Hop 的 Relation、Expression、Field、Node 和 Edge ID 在 Adapter 使用 Task/Statement 内稳定结构身份持久化，缺失 Scope 映射时不发布悬空节点。
 
 共享物理 Schema Facts 作为 Machine Facts 的附加 Projection，不按 Task 或路线复制，也不使用 Schema Bundle/Scope Hash 作为目录层级：
 
