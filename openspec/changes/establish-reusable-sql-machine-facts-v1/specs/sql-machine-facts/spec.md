@@ -183,6 +183,21 @@
 - **WHEN** 表达式是字面量、运行时函数或已知派生输出，且没有可直接绑定的物理字段
 - **THEN** 系统保留字段表达式及其 `input_dependency_status`，不得仅因 `input_fields` 为空追加物理字段绑定 Unknown
 
+### Requirement: Window 输入角色保留
+每个带 OVER(...) 的字段表达式 SHALL 在表达式级保留 window_spec。其中每次 VALUE、PARTITION BY 和 ORDER BY 输入 SHALL 以独立绑定记录保存 Role、Ordinal、完整表达式文本、Source Span、解析到的输入字段和未解析输入。ORDER BY 绑定 SHALL 保存 ASC/DESC 以及 NULLS FIRST/LAST/UNSPECIFIED。这些角色属于表达式中的一次输入绑定，不得写入或覆盖物理字段身份；同一物理字段可以在同一个 Window 中承担多个角色。
+
+#### Scenario: Window 输入角色可直接读取
+- **WHEN** row_number() OVER (PARTITION BY key_instrument_id ORDER BY calc_date DESC NULLS LAST) 被分析
+- **THEN** Machine Facts 直接提供 WINDOW_PARTITION 和 WINDOW_ORDER 绑定及其 Ordinal、物理输入、DESC 和 LAST，同时保留原有 input_fields
+
+#### Scenario: Window 结构不替代 Grain 证据
+- **WHEN** 下游 Consumer 读取 Window Partition 或 Order 绑定
+- **THEN** 这些事实只能作为候选分组边界和组内选择顺序的结构证据，不得单独证明唯一性、基数或真实业务 Grain
+
+#### Scenario: 未解析 Window 输入
+- **WHEN** Window 的 Partition 或 Order 表达式包含无法解析的字段
+- **THEN** 对应绑定保留完整文本、Source Span 和 unresolved_input_columns，并维持 PARTIAL 或 UNRESOLVED 状态，不得静默丢弃
+
 ### Requirement: 可重建发现索引
 系统 SHALL 仅根据任务 `analysis-status.json` 和已校验的当前 Bundle Manifest 生成 `machine-facts/indexes/task-fact-index.jsonl`。索引 SHALL 为每个 `SUCCESS` 且状态所引 Manifest Hash 与 Bundle 一致的任务保留至多一条确定性记录，并且无需读取案例 Profile 即可重建。
 

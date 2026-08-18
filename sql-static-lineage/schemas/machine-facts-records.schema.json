@@ -11,7 +11,31 @@
     "dataset-io.jsonl": { "type": "object", "required": ["task_id", "direction", "dataset_id", "physical_dataset", "provenance", "resolution_status"] },
     "relation-nodes.jsonl": { "type": "object", "required": ["relation_id", "task_id", "statement_id", "relation_type", "source_span", "provenance", "relation"] },
     "relation-edges.jsonl": { "type": "object", "required": ["edge_id", "task_id", "statement_id", "from_relation_id", "to_relation_id", "edge_type", "provenance", "source_span"] },
-    "field-expression-nodes.jsonl": { "type": "object", "required": ["expression_id", "task_id", "statement_id", "relation_id", "role", "ordinal", "expression_text", "source_span", "input_fields", "unresolved_input_columns", "input_dependency_status"] },
+    "field-expression-nodes.jsonl": {
+      "type": "object",
+      "required": ["expression_id", "task_id", "statement_id", "relation_id", "role", "ordinal", "expression_text", "source_span", "input_fields", "unresolved_input_columns", "input_dependency_status"],
+      "properties": {
+        "window_spec": {
+          "type": "object",
+          "required": ["expression_text", "display_text", "source_span", "input_bindings"],
+          "properties": {
+            "input_bindings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["role", "ordinal", "expression_text", "display_text", "source_span", "input_fields", "unresolved_input_columns", "input_dependency_status"],
+                "properties": {
+                  "role": { "type": "string", "pattern": "^(VALUE|WINDOW_PARTITION|WINDOW_ORDER)$" },
+                  "ordinal": { "type": "number" },
+                  "direction": { "type": "string", "pattern": "^(ASC|DESC)$" },
+                  "nulls": { "type": "string", "pattern": "^(FIRST|LAST|UNSPECIFIED)$" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "column-lineage-edges.jsonl": { "type": "object", "required": ["edge_id", "task_id", "statement_id", "from_field_id", "to_expression_id", "method", "resolution_provenance"] },
     "output-field-bindings.jsonl": { "type": "object", "required": ["binding_id", "task_id", "statement_id", "expression_id", "target_dataset_id", "target_field_id", "target_dataset", "target_field", "source_ordinal", "target_ordinal", "binding_method", "binding_status", "target_schema_status", "static_partition_columns", "evidence_refs"] },
     "unknowns.jsonl": { "type": "object", "required": ["outcome_class", "reason_code", "message"] }

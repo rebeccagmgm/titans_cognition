@@ -30,6 +30,12 @@
 // v1.1.2 变更:
 //   - ColumnRef 保留 physical / derived-output / unresolved 解析状态;
 //   - ExprSpec 为匿名表达式保留稳定的合成输出名和命名状态。
+//
+// v1.1.4 变更:
+//   - ExprSpec 增加表达式级 window_spec；
+//   - Window 输入按一次表达式绑定保留 VALUE / WINDOW_PARTITION / WINDOW_ORDER
+//     角色、ordinal、span、物理解析状态；
+//   - Window ORDER 输入保留 ASC/DESC 与 NULLS FIRST/LAST/UNSPECIFIED。
 // ============================================================================
 
 /** 可溯源的源文本区间 (文档坐标, end 为 exclusive)。 */
@@ -45,7 +51,16 @@ export interface ColumnRef {
 	/** 限定符 (info.agt_id → "info"; 裸 agt_id → 无)。 */
 	qualifier?: string;
 	/** 该引用出现在哪个子句 (IR ColumnRef.clause 原样搬运)。 */
-	clause: "projection" | "where" | "join" | "groupBy" | "having" | "qualify" | "orderBy";
+	clause:
+		| "projection"
+		| "where"
+		| "join"
+		| "groupBy"
+		| "having"
+		| "qualify"
+		| "orderBy"
+		| "windowPartition"
+		| "windowOrder";
 	/** 物理解析结果 (喂 schema 后): 追到基表的 库.表 + 物理列。
 	 *  ARRAY —— case 等表达式多分支可能对应多个基表来源。
 	 *  null = 未解析 (无 schema / 解析失败 / 需要外部元数据)。 */
@@ -67,6 +82,37 @@ export interface ExpressionFacts {
 	comparisons: { operator: string; columns: string[]; literals: string[] }[];
 }
 
+export type WindowInputRole = "VALUE" | "WINDOW_PARTITION" | "WINDOW_ORDER";
+export type WindowNullOrdering = "FIRST" | "LAST" | "UNSPECIFIED";
+
+/** One expression occurrence inside a single output expression's window. */
+export interface WindowInputBinding {
+	/** Role belongs to this occurrence, never to the physical field identity. */
+	role: WindowInputRole;
+	/** Position within the corresponding role list (0-based). */
+	ordinal: number;
+	/** Complete source text for this value/partition/order expression. */
+	expression_text: string;
+	/** Human preview of the same expression. */
+	display_text: string;
+	/** Source span of this occurrence, in document coordinates. */
+	span: SourceSpan;
+	/** Syntactic refs plus native lineage evidence for this occurrence. */
+	input_columns: ColumnRef[];
+	/** Only present for WINDOW_ORDER. SQL's omitted direction is ASC by default. */
+	direction?: "ASC" | "DESC";
+	/** NULLS rule as written; omitted SQL syntax remains UNSPECIFIED. */
+	nulls?: WindowNullOrdering;
+}
+
+/** The expression-level OVER(...) structure; this is not a standalone relation. */
+export interface WindowSpecFacts {
+	source_span: SourceSpan;
+	expression_text: string;
+	display_text: string;
+	input_bindings: WindowInputBinding[];
+}
+
 /** 一个输出列的表达形式 —— project / aggregate 的表达式清单。 */
 export interface ExprSpec {
 	/** 输出列名 (显式别名, 或裸列引用时的列名; star 时为 "*")。 */
@@ -77,6 +123,8 @@ export interface ExprSpec {
 	expr_kind: string;
 	/** 是否为窗口函数表达式 (function + OVER)。v1 作为 project 属性, 不单列节点。 */
 	window?: boolean;
+	/** 表达式级 OVER(...) 结构；不改变现有 input_columns 的兼容语义。 */
+	window_spec?: WindowSpecFacts;
 	/** 是否为聚合函数表达式 (sum/count/max/...)。 */
 	aggregate?: boolean;
 	/** 完整原文 (machine truth, 不截断)。 */
