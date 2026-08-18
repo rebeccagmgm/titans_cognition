@@ -898,7 +898,10 @@ function nativeHopProjection(
 			if (existing) return existing;
 			if (active.has(localId)) {
 				mappingFailure ??= "NATIVE_HOP_CYCLE";
-				return localId;
+				// Do not serialize a back-edge. Returning the active id would still
+				// make the caller persist an HOP_TO_HOP edge and turn a native
+				// uncertainty into an invalid graph. The root is downgraded below.
+				return null;
 			}
 			serializedIds.set(hop, localId);
 			active.add(localId);
@@ -918,7 +921,8 @@ function nativeHopProjection(
 				source_span: span,
 				terminal_fields: terminalFields,
 				terminal: hop.terminal === "unresolved" ? "UNRESOLVED" : terminalFields.length > 0 ? "PRESENT" : "NONE",
-				has_downstream: hop.downstream.length > 0,
+				// This is finalized from the edges that are actually persisted.
+				has_downstream: false,
 				via,
 				flow_kind: "VALUE_LINEAGE",
 			};
@@ -955,8 +959,17 @@ function nativeHopProjection(
 			? { relationId: request.relationId, expressionId: request.expressionId }
 			: undefined;
 		const headId = head ? serialize(head, headLocator) : null;
+		const persistedDownstream = new Set(
+			[...localEdges.values()]
+				.filter((edge) => edge.edge_type === "HOP_TO_HOP")
+				.map((edge) => edge.to_hop_id),
+		);
+		const finalizedNodes = [...localNodes.values()].map((node) => ({
+			...node,
+			has_downstream: persistedDownstream.has(node.hop_id),
+		}));
 		const terminalByHop = new Map<string, PlanLineageHopNode>();
-		for (const node of localNodes.values()) terminalByHop.set(node.hop_id, node);
+		for (const node of finalizedNodes) terminalByHop.set(node.hop_id, node);
 		const terminalKeys = new Set<string>();
 		const collectTerminals = (hopId: string, seen = new Set<string>()): void => {
 			if (seen.has(hopId)) return;
@@ -978,7 +991,7 @@ function nativeHopProjection(
 		else if (unsupported || unknownExpr) coverageState = "UNKNOWN_COVERAGE";
 		else if (flatOnly) coverageState = "FLAT_ORIGIN_ONLY";
 		const hasCandidate = candidateInputs.length > 0;
-		const hasUnresolved = (request.expression.input_columns ?? []).some((input) => input.resolution !== "PHYSICAL" && input.resolution !== "DERIVED_OUTPUT" && input.resolution !== "SQL_CANDIDATE") || [...localNodes.values()].some((node) => node.terminal === "UNRESOLVED");
+		const hasUnresolved = (request.expression.input_columns ?? []).some((input) => input.resolution !== "PHYSICAL" && input.resolution !== "DERIVED_OUTPUT" && input.resolution !== "SQL_CANDIDATE") || finalizedNodes.some((node) => node.terminal === "UNRESOLVED");
 		let projectionStatus: PlanLineageHopRoot["projection_status"] = "PROJECTED";
 		let reasonCode: string | undefined;
 		if (coverageState === "NOT_EVALUABLE") {
@@ -989,7 +1002,10 @@ function nativeHopProjection(
 			reasonCode = nativeFailure ?? mappingFailure ?? (conservationMismatch ? "ORIGIN_CONSERVATION_MISMATCH" : flatOnly ? "NATIVE_SCALAR_OR_EXISTS_FLATTENED" : hasCandidate ? "NATIVE_INPUT_CANDIDATE" : hasUnresolved ? "NATIVE_UNRESOLVED" : unsupported || unknownExpr ? "NATIVE_UNSUPPORTED_COVERAGE" : !headId ? "NATIVE_HEAD_UNAVAILABLE" : undefined);
 		}
 		if (projectionStatus === "PROJECTED" || projectionStatus === "PARTIAL_NATIVE") {
-			for (const [id, node] of localNodes) nodes.set(id, node);
+			for (const node of finalizedNodes) {
+				const existing = nodes.get(node.hop_id);
+				nodes.set(node.hop_id, existing ? { ...node, has_downstream: existing.has_downstream || node.has_downstream } : node);
+			}
 			for (const [id, edge] of localEdges) edges.set(id, edge);
 		}
 		roots.push({

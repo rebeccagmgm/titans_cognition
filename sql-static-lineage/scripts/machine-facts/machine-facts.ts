@@ -720,6 +720,29 @@ function planRecords(
 	const reads: JsonRecord[] = [];
 	const planRelations = plan.relations as JsonRecord[];
 	const relationIds = new Set(plan.relations.map((relation) => globalRelationId(task.task_id, statementIndex, relation.id)));
+	const hopNodesById = new Map(Array.from(plan.lineage_hops.nodes as readonly JsonRecord[]).map((node) => [String(node.hop_id), node]));
+	const hopIncoming = new Map<string, string[]>();
+	for (const edge of plan.lineage_hops.edges as readonly JsonRecord[]) {
+		if (edge.edge_type !== "HOP_TO_HOP" || !edge.from_hop_id) continue;
+		hopIncoming.set(String(edge.to_hop_id), [...(hopIncoming.get(String(edge.to_hop_id)) ?? []), String(edge.from_hop_id)]);
+	}
+	const hopInputRefsByExpression = new Map<string, JsonRecord[]>();
+	for (const root of plan.lineage_hops.roots as readonly JsonRecord[]) {
+		const refs: JsonRecord[] = [
+			...(root.physical_input_fields ?? []).map((field: JsonRecord) => ({ resolution: "PHYSICAL", physical: [field] })),
+			...(root.candidate_input_fields ?? []).map((field: JsonRecord) => ({ resolution: "SQL_CANDIDATE", sql_candidate: [field] })),
+		];
+		const seenHops = new Set<string>();
+		const visitHop = (hopId: string): void => {
+			if (seenHops.has(hopId)) return;
+			seenHops.add(hopId);
+			const node = hopNodesById.get(hopId);
+			for (const field of node?.terminal_fields ?? []) refs.push({ resolution: "PHYSICAL", physical: [field] });
+			for (const upstream of hopIncoming.get(hopId) ?? []) visitHop(upstream);
+		};
+		if (root.head_hop_id) visitHop(String(root.head_hop_id));
+		hopInputRefsByExpression.set(globalExpressionId(task.task_id, statementIndex, String(root.root_expression_id)), refs);
+	}
 
 	for (const table of plan.physical_inputs) {
 		reads.push({
@@ -809,9 +832,12 @@ function planRecords(
 			for (const [ordinal, expression] of expressions.entries()) {
 				const expressionId = `${relationId}:expression:${role.toLowerCase()}:${ordinal}`;
 				const expressionSpan = expression.span as SourceSpan;
-				const fieldsForExpression = fieldInputsForRefs(logicalSourceId, expression.input_columns ?? []);
+				const nativeHopRefs = hopInputRefsByExpression.get(expressionId) ?? [];
+				const effectiveInputRefs = [...(expression.input_columns ?? []), ...nativeHopRefs];
+				const fieldsForExpression = fieldInputsForRefs(logicalSourceId, effectiveInputRefs);
 				const uniqueInputs = fieldsForExpression.inputFields;
 				const uniqueCandidates = fieldsForExpression.candidateFields;
+				const planInputIds = new Set(fieldInputsForRefs(logicalSourceId, expression.input_columns ?? []).inputFields.map((input) => input.field_id));
 				fields.push({
 					expression_id: expressionId,
 					task_id: task.task_id,
@@ -826,7 +852,7 @@ function planRecords(
 					input_fields: uniqueInputs,
 					candidate_input_fields: uniqueCandidates,
 					unresolved_input_columns: unresolvedInputColumns(expression),
-					input_dependency_status: inputDependencyStatus(expression),
+					input_dependency_status: inputDependencyStatus({ input_columns: effectiveInputRefs }),
 					window_spec: windowSpecRecord(logicalSourceId, expression),
 					artifact_id: artifactId,
 				});
@@ -837,7 +863,7 @@ function planRecords(
 						statement_id: statementId,
 						from_field_id: input.field_id,
 						to_expression_id: expressionId,
-						method: "SQL_PLAN_LINEAGE",
+						method: planInputIds.has(input.field_id) ? "SQL_PLAN_LINEAGE" : "NATIVE_HOP_LINEAGE",
 						resolution_provenance: "SCHEMA_BOUND",
 					});
 				}

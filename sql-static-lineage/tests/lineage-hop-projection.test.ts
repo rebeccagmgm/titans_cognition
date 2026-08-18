@@ -96,6 +96,39 @@ describe("native LineageHop projection", () => {
 		expect(mixed.lineage_hops.edges.some((edge) => edge.edge_type === "HOP_TO_HOP")).toBe(true);
 	});
 
+	it("keeps nested Setop Hop edges acyclic and derives downstream flags from persisted edges", () => {
+		const plan = planOf(
+			"WITH first AS (SELECT id + 1 AS value FROM demo.a UNION ALL SELECT id + 2 AS value FROM demo.b), second AS (SELECT value FROM first UNION ALL SELECT value + 3 AS value FROM first) SELECT value + 4 AS result FROM second",
+			{
+				"demo.a": { id: "int" },
+				"demo.b": { id: "int" },
+			},
+		);
+		const nodes = new Map(plan.lineage_hops.nodes.map((node) => [node.hop_id, node]));
+		const adjacency = new Map<string, string[]>();
+		for (const edge of plan.lineage_hops.edges) {
+			if (edge.edge_type !== "HOP_TO_HOP" || !edge.from_hop_id) continue;
+			adjacency.set(edge.from_hop_id, [...(adjacency.get(edge.from_hop_id) ?? []), edge.to_hop_id]);
+		}
+		const visiting = new Set<string>();
+		const visited = new Set<string>();
+		const visit = (hopId: string): void => {
+			expect(visiting.has(hopId)).toBe(false);
+			if (visited.has(hopId)) return;
+			visiting.add(hopId);
+			for (const next of adjacency.get(hopId) ?? []) visit(next);
+			visiting.delete(hopId);
+			visited.add(hopId);
+		};
+		for (const hopId of nodes.keys()) visit(hopId);
+		const consumers = new Set(
+			plan.lineage_hops.edges
+				.filter((edge) => edge.edge_type === "HOP_TO_HOP")
+				.map((edge) => edge.to_hop_id),
+		);
+		for (const node of nodes.values()) expect(node.has_downstream).toBe(consumers.has(node.hop_id));
+	});
+
 	it("retains candidate and unsupported coverage as partial/unknown", () => {
 		const candidate = planOf("SELECT id FROM demo.unverified", { "demo.other": { id: "int" } });
 		expect(rootOf(candidate)?.projection_status).toBe("PARTIAL_NATIVE");
