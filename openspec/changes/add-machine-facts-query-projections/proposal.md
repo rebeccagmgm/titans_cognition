@@ -22,7 +22,7 @@ Machine Facts 已经能保存任务、关系、字段表达式和列血缘，但
 
 ## Impact
 
-- 新增 `sqllens/scripts/query/` 投影适配和 CLI。
+- 新增 `sql-static-lineage/scripts/query/` 投影适配和 CLI。
 - 新增 `machine-facts/projections/` 派生产物。
 - 不改变 `registry/tasks/*/bundle` 的 Canonical Fact 身份和文件边界。
 - 依赖现有本地 JSONL、Profile 和 Machine Facts Manifest，不增加远程服务或数据库。

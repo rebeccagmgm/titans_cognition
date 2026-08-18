@@ -1,7 +1,7 @@
-// 测试 sqllens 解析数综加工 SQL(insert into ... select + ${}模板变量)
+// 测试 sql-static-lineage 解析数综加工 SQL(insert into ... select + ${}模板变量)
 // 用法: npx tsx scripts/notional_lineage/test-parse.ts
 import { readFileSync } from "node:fs";
-import { SqlSession, lineage } from "../../sqllens/src/index.ts";
+import { SqlSession, lineage } from "../../sql-static-lineage/src/index.ts";
 
 const sql = readFileSync(
 	"e:/02_area/股衍数据-数据cookbook/titans-cognition/output/titans-collection-20260815/data/downstream-tasks-sql/tasksql-103943-20260816114217.txt",

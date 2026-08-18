@@ -9,13 +9,13 @@ SQL 分析任务按三个递进阶段划分（来源：项目实践约定，未�
 
 | 阶段 | 名称 | 回答的问题 | 主要载体 |
 |---|---|---|---|
-| 1 | **列血缘 / Column Provenance** | 这个字段的值从哪里来、怎么算出来 | sqllens `originsOf` / `lineageAt` 逐跳血缘 |
+| 1 | **列血缘 / Column Provenance** | 这个字段的值从哪里来、怎么算出来 | sql-static-lineage `originsOf` / `lineageAt` 逐跳血缘 |
 | 2 | **转换 / Logical Plan Facts** | JOIN/WHERE/GROUP BY/WINDOW/LATERAL VIEW 等加工结构是什么 | `plan-adapter.ts` 输出的 `plan-facts-*.json` |
 | 3 | **粒度 / Grain Inference** | 处理后每行的业务含义、扩行/压行风险 | plan-facts 内的 `grain_inference` 块 + Grain Resolver |
 
 设计原则（源自架构决策）：
 
-- 阶段 1 由 sqllens 负责，阶段 2 将 sqllens IR 适配为简化的 Logical Plan Facts（语义对齐 Calcite/Substrait 标准操作符：Read/Filter/Join/Aggregate/Window），不自创 Transformation Facts 语义。
+- 阶段 1 由 sql-static-lineage 负责，阶段 2 将 sql-static-lineage IR 适配为简化的 Logical Plan Facts（语义对齐 Calcite/Substrait 标准操作符：Read/Filter/Join/Aggregate/Window），不自创 Transformation Facts 语义。
 - 阶段 3 的 Grain Resolver 独立成层：基于结构规则（GROUP BY 必压行、JOIN 类型有扩行风险）+ 可选元数据（PK/UK/FK/统计）推断；无证据时诚实标注 `unknown`（never-wrong 原则）。
 - 前两层是翻译与重组，研发重心在第三层。
 
@@ -43,13 +43,13 @@ SQL 分析任务按三个递进阶段划分（来源：项目实践约定，未�
 |---|---|
 | ① 所有输出列有 lineage | 92/92 列命中（平面血缘 `originsOf`），穿透 4~5 层嵌套 |
 | ② terminal 追到物理字段 | 逐跳血缘直达输入表物理列；阶段 2 中 57/60 条件列物理解析成功（见 golden README 断言 8） |
-| ③ 派生表达式完整保留 | 逐跳血缘每跳输出 scope/投影/表达式原文（含注释）/IR 结构摘要，见 `sqllens/output/118141/sqllens-118141-hops.txt` |
+| ③ 派生表达式完整保留 | 逐跳血缘每跳输出 scope/投影/表达式原文（含注释）/IR 结构摘要，见 `sql-static-lineage/output/118141/sql-static-lineage-118141-hops.txt` |
 | ④ unresolved 显式 unknown | 3 处 lateral view 盲区（c_sp/c_ba/cc 的 `busi_date`）显式记录，不猜测 |
 | ⑤ 代表性 golden case | Union（3 分支，`setOpArmsOf`）、Window、CASE、lateral explode 均有覆盖 |
 
 ### 2.4 结构化视图 API 验证（阶段 1 的副产品，阶段 2 的输入）
 
-sqllens IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsOf` 均已实测：
+sql-static-lineage IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsOf` 均已实测：
 
 - `frameAt` 定位字段所属查询块（如 `Ddct_Ptrn` 在子查询 T 内，`Curr_Prvs_Sales_Income` 在主查询）；
 - `nodeAt` 返回光标处最小表达式；
@@ -60,10 +60,10 @@ sqllens IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsOf` 均已�
 
 | 阶段 | 状态 | 关键证据 |
 |---|---|---|
-| 2 转换/Logical Plan Facts | 118141 单案例闭环完成 | `sqllens/output/118141/plan-facts-118141.json`（246KB）；`scripts/verification/verify-golden.ts` 22 断言 0 失败，与 `golden/118141/plan-facts.json` 结构一致（忽略易变 `generated_at`） |
+| 2 转换/Logical Plan Facts | 118141 单案例闭环完成 | `sql-static-lineage/output/118141/plan-facts-118141.json`（246KB）；`scripts/verification/verify-golden.ts` 22 断言 0 失败，与 `golden/118141/plan-facts.json` 结构一致（忽略易变 `generated_at`） |
 | 3 粒度/Grain Inference | 首版原型随 plan-facts 输出 | `grain_inference` 块含 grain_candidate/cardinality/confidence/requires/evidence |
 
-### 3.1 阶段 2 固定断言要点（详见 `sqllens/golden/118141/README.md`）
+### 3.1 阶段 2 固定断言要点（详见 `sql-static-lineage/golden/118141/README.md`）
 
 - 47 个关系节点、9 张物理表、4 层嵌套；
 - JOIN 链：`join.1`(inner, det) + `join.2..7`(left)，左深链；
@@ -81,42 +81,42 @@ sqllens IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsOf` 均已�
 
 ## 4. 关键约定与踩坑（重跑前必读）
 
-1. **Spark SQL 一律用 databricks 方言解析**（基于 sqllens 实测验证的硬性约定），其他方言见 sqllens CLAUDE.md 方言表。
+1. **Spark SQL 一律用 databricks 方言解析**（基于 sql-static-lineage 实测验证的硬性约定），其他方言见 sql-static-lineage CLAUDE.md 方言表。
 2. **`clausesOf` 坐标系陷阱**：多语句 SQL 文档必须用 `doc.clausesOf(scope)` 实例方法（自动平移坐标），自由函数 `clausesOf` 在多语句文档中返回空。
 3. **JOIN 深嵌套**：必须递归遍历所有 scope 层，不能只检查顶层（118141 的 7 个 JOIN 在最内层 t 层）。
 4. **`lineageAt` offset 是 cell 坐标**（与 IR 的 cst/partSpans 同坐标系），且 `nodeAt` 是裸数值比较 —— 必须精确锚定到列名 token 起始位置（`ColumnRef.partSpans[0].start`），否则命中父表达式导致"张冠李戴"（返回整个投影的来源）。输出 span 才是 doc 坐标（需加 cell.span.start 平移）。
 5. **调度模板占位符先做等长可逆预处理**：`${yyyyMM}`、`${yyyyMM,-1M}` 等只作为解析哨兵，不解释日期语义；解析完成后恢复原文，避免破坏表名、字段名和 span。
-5. **`hop.terminal` 两种失败形态**：字符串 `"unresolved"`（sqllens 显式判定）与 `undefined`（followColumn 无来源，如 lateral view 子查询别名列在 JOIN ON 中引用）。`JSON.stringify(undefined)` 返回字符串 `"undefined"` 易误判，必须用严格 `===` 区分。
+5. **`hop.terminal` 两种失败形态**：字符串 `"unresolved"`（sql-static-lineage 显式判定）与 `undefined`（followColumn 无来源，如 lateral view 子查询别名列在 JOIN ON 中引用）。`JSON.stringify(undefined)` 返回字符串 `"undefined"` 易误判，必须用严格 `===` 区分。
 6. **PowerShell 重定向中文乱码**：不要用 `> file` 重定向脚本输出；用 `fs.createWriteStream(path, { encoding: "utf8" })` 直接写文件。
-7. sqllens 工具本身**无 transform provenance 与 grain 模型**（`grain` 零匹配、hop 血缘明确排除 WHERE/JOIN 条件），但 IR 保留完整结构（where/joins/groupBy/joinConditions），是阶段 2/3 的原料。
+7. sql-static-lineage 工具本身**无 transform provenance 与 grain 模型**（`grain` 零匹配、hop 血缘明确排除 WHERE/JOIN 条件），但 IR 保留完整结构（where/joins/groupBy/joinConditions），是阶段 2/3 的原料。
 
-## 5. 产物与脚本索引（sqllens/ 目录）
+## 5. 产物与脚本索引（sql-static-lineage/ 目录）
 
 ### 5.1 证据文件
 
 | 文件 | 内容 |
 |---|---|
 | `.evidence-cache/tasksql-118141-20260814.txt` | 118141 SQL 原文（阶段 1/2 唯一输入） |
-| `sqllens/output/118141/sqllens-118141-output.txt` | 平面血缘输出（92 列） |
-| `sqllens/output/118141/sqllens-118141-hops.txt` | 逐跳血缘 + 加工表达式还原 |
-| `sqllens/output/118141/sqllens-118141-full-output.txt` | 完整解析输出 |
-| `sqllens/output/118141/struct-views-118141.txt` | 结构化视图 API 验证结果 |
-| `sqllens/output/118141/plan-facts-118141.json` | 阶段 2 产物（plan + grain_inference） |
-| `sqllens/output/118141/plan-facts-118141.explain.txt` / `fingerprint-118141.json` | plan 解释 / 指纹 |
-| `sqllens/golden/118141/` | golden 回归基准（README / plan-facts.json / sql.txt） |
+| `sql-static-lineage/output/118141/sql-static-lineage-118141-output.txt` | 平面血缘输出（92 列） |
+| `sql-static-lineage/output/118141/sql-static-lineage-118141-hops.txt` | 逐跳血缘 + 加工表达式还原 |
+| `sql-static-lineage/output/118141/sql-static-lineage-118141-full-output.txt` | 完整解析输出 |
+| `sql-static-lineage/output/118141/struct-views-118141.txt` | 结构化视图 API 验证结果 |
+| `sql-static-lineage/output/118141/plan-facts-118141.json` | 阶段 2 产物（plan + grain_inference） |
+| `sql-static-lineage/output/118141/plan-facts-118141.explain.txt` / `fingerprint-118141.json` | plan 解释 / 指纹 |
+| `sql-static-lineage/golden/118141/` | golden 回归基准（README / plan-facts.json / sql.txt） |
 
-### 5.2 脚本清单（运行方式均为 `cd sqllens && npx tsx <script>.ts`）
+### 5.2 脚本清单（运行方式均为 `cd sql-static-lineage && npx tsx <script>.ts`）
 
 | 脚本 | 阶段 | 用途 |
 |---|---|---|
-| `spark-demo.ts` / `demo.ts` | 1 | sqllens 探索：databricks 方言解析 Spark ETL 验证 |
+| `spark-demo.ts` / `demo.ts` | 1 | sql-static-lineage 探索：databricks 方言解析 Spark ETL 验证 |
 | `real-sql-demo.ts` | 1 | 118141 解析 + 平面血缘（92 列） |
-| `scripts/demos/hop-demo.ts` | 1 | 逐跳血缘 + 表达式还原 → `output/118141/sqllens-118141-hops.txt` |
+| `scripts/demos/hop-demo.ts` | 1 | 逐跳血缘 + 表达式还原 → `output/118141/sql-static-lineage-118141-hops.txt` |
 | `struct-views-demo.ts` / `struct-views-118141.ts` | 1 | clausesOf/frameAt/nodeAt/setOpArmsOf 验证 |
 | `schema-118141.ts` / `schema-experiment.ts` | 2 | pdata_n 库 schema 实测（info 92 列/det 23 列/m 60 列），物理解析输入 |
 | `compare-demo.ts` / `resolve-audit.ts` | 1 | 对比 / 解析审计（辅助） |
 | `plan-contract.ts` | 2 | Logical Plan Facts 契约（v1.1.0）定义 |
-| `plan-adapter.ts` | 2 | sqllens IR → plan-facts 适配器（v0.2.0，26KB，核心） |
+| `plan-adapter.ts` | 2 | sql-static-lineage IR → plan-facts 适配器（v0.2.0，26KB，核心） |
 | `scripts/plans/plan-118141.ts` | 2 | 生成 `output/118141/plan-facts-118141.json` |
 | `plan-batch.ts` / `plan-fingerprint.ts` / `plan-explain.ts` | 2 | 批量 / 指纹 / 解释工具 |
 | `verify-golden.ts` | 2 | golden 回归：22 断言 + 与 golden 完全一致性比对 |
@@ -124,9 +124,9 @@ sqllens IR 之上的 `clausesOf` / `frameAt` / `nodeAt` / `setOpArmsOf` 均已�
 ### 5.3 重跑命令
 
 ```bash
-cd sqllens
+cd sql-static-lineage
 npx tsx scripts/demos/real-sql-demo.ts      # 阶段1：平面血缘
-npx tsx scripts/demos/hop-demo.ts           # 阶段1：逐跳血缘 → output/118141/sqllens-118141-hops.txt
+npx tsx scripts/demos/hop-demo.ts           # 阶段1：逐跳血缘 → output/118141/sql-static-lineage-118141-hops.txt
 npx tsx scripts/plans/plan-118141.ts        # 阶段2：重新生成 output/118141/plan-facts-118141.json
 npx tsx scripts/verification/verify-golden.ts      # 阶段2：回归校验（当前 22 通过 / 0 失败）
 # output/118141/plan-facts 与 golden/118141/plan-facts.json diff，任何节点级差异都需说明
@@ -137,7 +137,7 @@ npx tsx scripts/verification/verify-golden.ts      # 阶段2：回归校验（�
 机器事实包是任务级当前 Derived Observation 底座：每个 `task_id` 只有一份当前 Bundle，SQL/Schema Hash 记录在 Manifest 中作为输入指纹。生成结果不修改现有案例图、Panorama Physical Facts 或业务候选；失败状态不会进入当前索引。
 
 ```bash
-cd sqllens
+cd sql-static-lineage
 npx tsx scripts/machine-facts/machine-facts.ts `
   --profile cases/indicator-journey-rgstcomp-mthend/processing-graph-profile.json `
   --output machine-facts `
@@ -145,7 +145,7 @@ npx tsx scripts/machine-facts/machine-facts.ts `
 
 # 独立于指标 Profile 的本地回放输入（包含已验证的 118141 Schema Evidence）
 npx tsx scripts/machine-facts/machine-facts.ts `
-  --profile sqllens/fixtures/machine-facts-independent-profile.json `
+  --profile sql-static-lineage/fixtures/machine-facts-independent-profile.json `
   --output machine-facts `
   --source-id gfhive-test
 ```
@@ -176,7 +176,7 @@ machine-facts/
 
 ### 5.5 下游 `SELECT *` 元数据批处理
 
-下游任务 SQL 中出现 `SELECT *` 时，先用 sqllens 生成
+下游任务 SQL 中出现 `SELECT *` 时，先用 sql-static-lineage 生成
 `star-metadata-targets.json`，再通过只读 SZData 查询缓存表元数据和 DDL。批处理脚本会：
 
 - 从任务数据库映射和既有血缘清单复用 GUID，减少重复的表查询；
@@ -204,4 +204,4 @@ machine-facts/
 - **单案例垂直切片**：以上全部结论基于任务 118141；方法有效性、业务真实性、读者可用性均未跨 Schema 验证。
 - **V1C 冻结**：全量深度推断、跨 Schema 扩展、Wiki/LLM 接入均需用户独立授权（见 `docs/current-status-baseline.md`）。
 - **语料扩展中**：2026-08-15 起 `.evidence-cache` 已批量拉取 20+ 个调度任务 SQL（如 144141/152881/62517 等），为 118141 之外的下一批案例做准备；szdata 侧同期在做 ODS 源映射对账（`output/szdata-inventory-20260815/`）。
-- **sqllens 已知边界**（阶段 2 v1.1 不覆盖）：read 节点 `columns` 恒为 null（需 qualify 展开 v2）；lateral 子查询别名列的物理解析为 null（followColumn 盲区，unknowns 显式记录）。
+- **sql-static-lineage 已知边界**（阶段 2 v1.1 不覆盖）：read 节点 `columns` 恒为 null（需 qualify 展开 v2）；lateral 子查询别名列的物理解析为 null（followColumn 盲区，unknowns 显式记录）。

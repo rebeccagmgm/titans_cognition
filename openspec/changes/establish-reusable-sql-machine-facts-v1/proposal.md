@@ -1,6 +1,6 @@
 ## Why
 
-当前 sqllens 产物已经证明字段溯源和逻辑计划事实可以被提取，但结果仍按具体案例组织。现在需要建立稳定、可重放的一任务一份当前事实包，让后续分析复用同一套可观察 SQL 事实，同时避免把跨任务绑定、业务解释或旧分析版本误当成当前事实。
+当前 sql-static-lineage 产物已经证明字段溯源和逻辑计划事实可以被提取，但结果仍按具体案例组织。现在需要建立稳定、可重放的一任务一份当前事实包，让后续分析复用同一套可观察 SQL 事实，同时避免把跨任务绑定、业务解释或旧分析版本误当成当前事实。
 
 ## What Changes
 
@@ -26,7 +26,7 @@
 
 ## Impact
 
-- 影响范围仅限本地 `sqllens/` 分析脚本、契约、验证 Fixture，以及生成到 `machine-facts/` 下的结果。
+- 影响范围仅限本地 `sql-static-lineage/` 分析脚本、契约、验证 Fixture，以及生成到 `machine-facts/` 下的结果。
 - `machine-facts` 是 SQL 静态分析产生的 Derived Observation 底座，不修改 Panorama Physical Facts、Cognitive Candidate、Review Decision 或现有案例 Projection；任何正式接入由后续 Consumer Change 负责。
 - 现有案例产物保持不变，只作为迁移输入和验证证据。
 - V1 不建设历史 Registry、Fact Diff、Edition、通用扩展框架或服务端能力；只有输入快照不可变，当前事实包属于可重建物化结果。

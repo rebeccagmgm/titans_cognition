@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Prepare a sqllens Machine Facts profile from source-layer SQL evidence."""
+"""Prepare a sql-static-lineage Machine Facts profile from source-layer SQL evidence."""
 
 from __future__ import annotations
 

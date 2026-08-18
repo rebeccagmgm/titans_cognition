@@ -19,7 +19,7 @@ inflections:
     location: T98 采集（86840）
     before: 期权合约要素 Notional（d_ref_otc_option_deal.Notional）
     after: 有效期内（start_date ≤ 业务日期 ≤ coalesce(Early_Term_Date,end_date)）Notional，否则 0
-    evidence: sqllens 逐跳血缘（journey-rgstcomp-mthend-lineage.txt）
+    evidence: sql-static-lineage 逐跳血缘（journey-rgstcomp-mthend-lineage.txt）
     confidence: HIGH
 
   - id: IF-02B
@@ -28,7 +28,7 @@ inflections:
     location: T98 采集（86841）
     before: 互换腿历史持仓（d_pos_trs_leg_his_pos：SUM(Init_Price × Quantity) → Nom_Prin）
     after: COALESCE(Nom_Prin,0)
-    evidence: sqllens 逐跳血缘；86841 SQL
+    evidence: sql-static-lineage 逐跳血缘；86841 SQL
     confidence: HIGH
 
   - id: IF-02C
@@ -48,7 +48,7 @@ inflections:
     after: 分组01：CASE 担保币=CNY→1，结算币=CNY→INIT_NOTL_EXCHANGE_RATE，否则 MIDRATE（外汇中间价）
           分组02：CASE CURRENCY=CNY→1，BASE_CURRENCY=CNY→BASE_INIT_EXCHANGE_RATE，SETTLEMENT_CURRENCY=CNY→SETTLE_INIT_EXCHANGE_RATE
           分组03/04：直接取值（金仕达/极速互换为境内柜台，字段本身应为人民币）
-    evidence: sqllens 逐跳血缘（86840/86841 完整表达式）；86842/220650 SQL
+    evidence: sql-static-lineage 逐跳血缘（86840/86841 完整表达式）；86842/220650 SQL
     confidence: MEDIUM
     action: 分组03/04 的 dynamic_notional 币种口径未显式折算，建议业务确认其为人民币；若含外币合约，指标值将混币种
 

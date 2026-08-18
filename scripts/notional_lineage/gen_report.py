@@ -134,7 +134,7 @@ for k, v in mode_counter.most_common():
 W.append("\n## 6. 证据等级\n")
 W.append("| 证据等级 | 列数 | 含义 |\n|---|---|---|\n")
 evi_desc = {
-    "原生": "sqllens 语法解析 + 血缘绑定",
+    "原生": "sql-static-lineage 语法解析 + 血缘绑定",
     "投影列名强匹配": "投影源列名命中贴源表字段清单(启发式)",
     "输出列名强匹配": "输出列名命中贴源表字段清单(启发式)",
     "唯一表同名": "任务仅引用一张贴源表, 按同名列绑定(启发式)",
@@ -148,7 +148,7 @@ W.append("\n> 启发式绑定全部为 LLM 无关的确定性规则: ①投影/�
 W.append("## 7. 关键发现与局限\n")
 W.append("1. **透传/改名是主流**: 76 列中绝大多数为贴源字段的透传或改名映射(如 `NOTIONAL AS Nom_Prin`), 计算型集中在 `Dyna_Nom_Prin`(CASE WHEN 多分支, 引用 Init_Nom_Prin、d_pos_trs_leg_his_pos.Init_Price×Quantity、d_ks_trade_comfirm_info.dynamic_notional、d_pos_fast_trs_leg_his_pos.dynamic_notional)与 `Larg_Nom_Prin_Appr_Stat_Cd`(NVL 校验状态)。\n")
 W.append("2. **清单外源表**: t03_otc_opt_comp_sub_trd_info 原生解析出 `D_REF_INS_OPTION_INFO`(NOTIONAL/NOTIONAL_CURRENCY/INIT_NOTL_EXCHANGE_RATE 等), t98_otc_deri_comp_sale_adtnl_det 计算表达式引用 `D_KS_TRADE_COMFIRM_INFO.dynamic_notional`——两张表均不在前序 34 表/8 贴源映射清单内, 提示 p1/p2 阶段按表名匹配存在覆盖缺口, 建议补充核查。\n")
-W.append("3. **sqllens(databricks 方言)解析边界**: ①内层 FROM 无别名+投影引用未定义前缀的子查询解析错乱; ②`WITH ... INSERT OVERWRITE` 前导 CTE 语句 lineage 只输出 CTE 列; ③两层以上无别名嵌套 lineage 截断。以上均通过文本投影提取+贴源列清单启发式回退覆盖, 并在本报告中如实标注证据等级。\n")
+W.append("3. **sql-static-lineage(databricks 方言)解析边界**: ①内层 FROM 无别名+投影引用未定义前缀的子查询解析错乱; ②`WITH ... INSERT OVERWRITE` 前导 CTE 语句 lineage 只输出 CTE 列; ③两层以上无别名嵌套 lineage 截断。以上均通过文本投影提取+贴源列清单启发式回退覆盖, 并在本报告中如实标注证据等级。\n")
 W.append("4. **唯一未定列**: t03_otc_comp_perf_marg_ref.Lcrrc_Dyna_Nom_Prin(`DYNAMIC_NOTIONAL`)在 d_ref_otc_option_deal 与 d_ref_trs 两表字段清单均有同名, 文本无法区分, 标注为候选。\n")
 
 W.append("## 8. 产物清单\n")

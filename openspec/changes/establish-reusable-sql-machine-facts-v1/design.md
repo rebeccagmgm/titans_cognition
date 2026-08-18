@@ -1,8 +1,8 @@
 ## Context
 
-当前 sqllens 纵向切片已经能够保留精确 SQL、Statement Span、Relation Node、Field Expression、物理输入解析、Parser Diagnostic 和显式 Plan Unknown。指标加工图又在同一个案例产物中组合了六个任务、Profile 声明写入、指标角色、跨任务边和最小因果路径。为什么必须把可复用层从案例 Projection 中分离，见 `proposal.md`。
+当前 sql-static-lineage 纵向切片已经能够保留精确 SQL、Statement Span、Relation Node、Field Expression、物理输入解析、Parser Diagnostic 和显式 Plan Unknown。指标加工图又在同一个案例产物中组合了六个任务、Profile 声明写入、指标角色、跨任务边和最小因果路径。为什么必须把可复用层从案例 Projection 中分离，见 `proposal.md`。
 
-实现位于现有嵌套 `sqllens/` 工作区中，只消费本地 SQL 和 Schema Evidence。现有产物及工作区已有修改必须保持不变。生成的原始 SQL、Schema Snapshot 和 Machine Facts 不进入 Git；只有契约、代码、脱敏 Fixture 和测试进入版本控制。
+实现位于现有嵌套 `sql-static-lineage/` 工作区中，只消费本地 SQL 和 Schema Evidence。现有产物及工作区已有修改必须保持不变。生成的原始 SQL、Schema Snapshot 和 Machine Facts 不进入 Git；只有契约、代码、脱敏 Fixture 和测试进入版本控制。
 
 ## Goals / Non-Goals
 
@@ -21,7 +21,7 @@
 - Canonical Cross-Task Edge、指标路径、影响分析答案或查询 UI。
 - 定义或生成通用 Derived Package、Projection、Capability Negotiation、阶段 3 Grain/Cardinality 或 Cross-Task Lineage。
 - 长期 Registry Service、Execution History Store、Catalog 或 Ontology。
-- 重构 sqllens 的 `src/` 库内部实现；第一版仍是 Analysis Layer Adapter。
+- 重构 sql-static-lineage 的 `src/` 库内部实现；第一版仍是 Analysis Layer Adapter。
 
 ## Decisions
 
@@ -114,7 +114,7 @@ ID 由 Task、Statement Ordinal、Relation Local ID、Expression Role 和 Ordina
 
 V1 的 Schema Binding 指使用当前 `schema_bundle_sha256` 将 SQL 中的表别名、未限定字段、子查询字段和 Star Projection 解析为物理 Dataset/Field。它属于阶段 1 的当前事实输出，直接保存在 Task Core Bundle，并通过 `schema-refs.jsonl` 和 Manifest 记录来源；Schema Bundle 变化时重建并通过可恢复发布替换当前 Bundle，不另建 Binding History。
 
-输入物理字段来自使用 Canonical Schema Bundle 的 sqllens Lineage/Name Resolution。只有 SQL Statement 与 Target 能形成无歧义的位置/名称绑定时，才输出 Field-Expression-to-Output-Field Edge。`focus_outputs` 和 Profile 声明的 Target Table 本身不足以构成该证据。
+输入物理字段来自使用 Canonical Schema Bundle 的 sql-static-lineage Lineage/Name Resolution。只有 SQL Statement 与 Target 能形成无歧义的位置/名称绑定时，才输出 Field-Expression-to-Output-Field Edge。`focus_outputs` 和 Profile 声明的 Target Table 本身不足以构成该证据。
 
 这样既允许后续通过共享 Physical Field Identity 组合跨任务关系，又不会把组合关系写成 Canonical Fact。缺少可靠 Output Binding 时，任务内溯源和 Relation Analysis 仍可复用，并且缺口保持显式。
 
@@ -148,7 +148,7 @@ JSON Schema 定义每类 Document/Record 的形状。Semantic Validator 还要�
 
 ### 10. Core Bundle 是隔离的 Derived Observation 底座
 
-本 Change 只定义 sqllens 阶段 1/2 的任务级当前 Core Bundle。它不修改 Panorama Physical Facts，不生成 Cognitive Candidate、Review Decision 或读者 Projection，也不自动替代现有 `derived/view_lineage` 契约。后续若有 Grain、跨任务血缘、指标或影响分析等真实 Consumer，必须通过独立 Change 明确其输入 Manifest 引用、类型化输出、认识论层级和验收条件；在此之前不预设通用 Package、Projection 或 Capability 协议。
+本 Change 只定义 sql-static-lineage 阶段 1/2 的任务级当前 Core Bundle。它不修改 Panorama Physical Facts，不生成 Cognitive Candidate、Review Decision 或读者 Projection，也不自动替代现有 `derived/view_lineage` 契约。后续若有 Grain、跨任务血缘、指标或影响分析等真实 Consumer，必须通过独立 Change 明确其输入 Manifest 引用、类型化输出、认识论层级和验收条件；在此之前不预设通用 Package、Projection 或 Capability 协议。
 
 ## Risks / Trade-offs
 
@@ -167,9 +167,9 @@ JSON Schema 定义每类 Document/Record 的形状。Semantic Validator 还要�
 
 1. 先增加版本化契约和脱敏 Fixture，再实现 Generic Writer。
 2. 实现 Canonical Serialization、Hash、Path Validation、任务状态和可恢复 Create/Reuse/Replace Primitive。
-3. 实现 Schema Snapshot Projection，以及从现有 sqllens 阶段 1/2 结果生成 Task Bundle。
+3. 实现 Schema Snapshot Projection，以及从现有 sql-static-lineage 阶段 1/2 结果生成 Task Bundle。
 4. 实现 Bundle/Status/Index Validator，再增加确定性、失败保留、恢复和损坏测试。
 5. 将六任务指标 Profile 及一个独立本地分析输入处理到已忽略的 `machine-facts/`，校验每个 Bundle，重建索引并重放验证复用。
-6. 重跑既有 sqllens Golden、Indicator Processing Graph 和 Minimal Causal Path 校验，证明没有回归。
+6. 重跑既有 sql-static-lineage Golden、Indicator Processing Graph 和 Minimal Causal Path 校验，证明没有回归。
 
 回滚只需移除本 Change 新增的实现、契约、测试和生成的 `machine-facts/` 目录。现有案例产物和分析脚本不做原地迁移，因此无需回滚。

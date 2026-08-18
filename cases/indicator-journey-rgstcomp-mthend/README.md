@@ -15,8 +15,8 @@ cases/indicator-journey-rgstcomp-mthend/
 ├── journey-hops.yaml          # 7 跳链路（每跳任务/SQL变换/口径变化/证据）
 └── caliber-inflections.yaml   # 口径拐点表 IF-01~IF-09 + openQuestions
 
-sqllens/scripts/analysis/journey-rgstcomp-mthend.ts          # 列级血缘解析脚本（可复跑）
-sqllens/output/118141/journey-rgstcomp-mthend-lineage.txt  # sqllens 解析输出
+sql-static-lineage/scripts/analysis/journey-rgstcomp-mthend.ts          # 列级血缘解析脚本（可复跑）
+sql-static-lineage/output/118141/journey-rgstcomp-mthend-lineage.txt  # sql-static-lineage 解析输出
 
 output/indicator-journey-rgstcomp-mthend/
 ├── indicator-table-lineage.json  # 指标表血缘（上游4表 + 下游1表）
@@ -28,8 +28,8 @@ scripts/extract-otc-family.py     # 指标族筛选脚本（快照 → 14 核心
 ## 复跑方式
 
 ```bash
-# 1. 血缘解析（需要 sqllens 依赖）
-npx tsx sqllens/scripts/analysis/journey-rgstcomp-mthend.ts
+# 1. 血缘解析（需要 sql-static-lineage 依赖）
+npx tsx sql-static-lineage/scripts/analysis/journey-rgstcomp-mthend.ts
 
 # 2. 指标族筛选（需要本地字典快照 20260812-refresh）
 python scripts/extract-otc-family.py

@@ -15,7 +15,7 @@
 ## 3. 任务事实包提取
 
 - [x] 3.1 实现通用分析输入加载器和现有指标 Profile 的窄适配器，只消费 `logical_source_id`、方言、Schema Evidence、Task ID、SQL Path、声明写入和会影响行为的选项。
-- [x] 3.2 复用 sqllens 阶段 1 与 Plan Adapter，输出任务内的 Statement、Relation Node、Relation Edge 和 Field Expression 数据集，并保留完整 Span 与表达式原文。
+- [x] 3.2 复用 sql-static-lineage 阶段 1 与 Plan Adapter，输出任务内的 Statement、Relation Node、Relation Edge 和 Field Expression 数据集，并保留完整 Span 与表达式原文。
 - [x] 3.3 输出 Dataset I/O，分别保留 `SQL_PLAN`、SQL 解析写入和 `PROFILE_DECLARED` 来源，不合并确定性不同的记录。
 - [x] 3.4 输出任务内“物理输入字段到表达式”血缘；只有可证实绑定时才输出“表达式到物理输出字段”血缘，不得以 `focus_outputs` 代替证据。
 - [x] 3.5 将 Parser Diagnostic、Plan Unknown、缺失 Schema、未解析物理字段、不适用输出和失败规范化为明确的 `UNKNOWN`、`NOT_EVALUABLE`、`NOT_APPLICABLE` 或 `FAILURE` 记录。
@@ -32,8 +32,8 @@
 - [x] 5.1 增加命令，将当前六任务指标 Profile 处理到已忽略的 `machine-facts/` 根目录，且不修改现有案例图产物。
 - [x] 5.2 执行六任务迁移并校验所有任务事实包；确认每个 `task_id` 只有一份当前 Bundle，没有 Analysis ID、指标角色/路径或跨任务边；随后重放，确认六个 Bundle 均被复用且重建索引字节一致。
 - [x] 5.3 从现有本地证据选择一个不属于六任务指标 Profile 的独立分析输入，通过同一 Generic Contract 生成、校验和重放 Bundle；不得为通过验证引入新的外部采集或案例专属 Writer 分支。
-- [x] 5.4 重跑现有 sqllens Golden、指标加工图和最小因果路径校验；若有回归，只修实现，不削弱原断言。
+- [x] 5.4 重跑现有 sql-static-lineage Golden、指标加工图和最小因果路径校验；若有回归，只修实现，不削弱原断言。
 - [x] 5.5 更新 `.gitignore` 和 SQL 分析文档，说明生成目录、一 Task 一份当前 Bundle、失败状态、可恢复替换、Schema Binding 和逻辑数据源身份，以及 V1 不定义阶段 3、跨任务、Derived Package、Projection、Capability Negotiation 或查询层的边界。
 - [x] 5.6 复核最终 Diff，检查是否误改既有脏文件、泄露原始 SQL/Schema、将案例事实写入 Canonical Output、出现未版本化行为变化或缺少测试；记录最终 OpenSpec 严格校验和测试结果。
 
-最终校验记录：`openspec validate establish-reusable-sql-machine-facts-v1 --strict --json` 通过；sqllens 全量回归 169 个测试文件通过（3976 passed、5 skipped）；机器事实新增测试 9 passed；Golden、指标加工图、最小因果路径分别为 22、28、61 通过且无失败。
+最终校验记录：`openspec validate establish-reusable-sql-machine-facts-v1 --strict --json` 通过；sql-static-lineage 全量回归 169 个测试文件通过（3976 passed、5 skipped）；机器事实新增测试 9 passed；Golden、指标加工图、最小因果路径分别为 22、28、61 通过且无失败。

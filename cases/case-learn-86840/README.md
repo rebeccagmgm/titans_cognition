@@ -7,8 +7,8 @@
 在仓库根目录执行：
 
 ```text
-npx tsx sqllens/scripts/analysis/case-learn-86840.ts
-npx tsx sqllens/scripts/verification/verify-case-learn-86840.ts
+npx tsx sql-static-lineage/scripts/analysis/case-learn-86840.ts
+npx tsx sql-static-lineage/scripts/verification/verify-case-learn-86840.ts
 ```
 
 默认 profile 依赖已有的本地证据快照：
@@ -22,7 +22,7 @@ npx tsx sqllens/scripts/verification/verify-case-learn-86840.ts
 可指定 profile 和输出目录：
 
 ```text
-npx tsx sqllens/scripts/analysis/case-learn-86840.ts `
+npx tsx sql-static-lineage/scripts/analysis/case-learn-86840.ts `
   cases/case-learn-86840/learning-profile.json `
   output/case-learn-86840
 ```
@@ -33,7 +33,7 @@ npx tsx sqllens/scripts/analysis/case-learn-86840.ts `
 
 1. `01-input.json`：SQL 快照、Schema 证据、hash 和边界。
 2. `02-parse.json`：语句数量、语法错误、诊断和 span。
-3. `03-ir.json`：原始 sqllens `QueryExpr` IR（去除 CST 回指和循环字段）以及 plan-adapter 关系操作轮廓。
+3. `03-ir.json`：原始 sql-static-lineage `QueryExpr` IR（去除 CST 回指和循环字段）以及 plan-adapter 关系操作轮廓。
 4. `04-scope.json`：当前查询块可见的表、别名、CTE 和输出。
 5. `05-binding.json`：`dyna_nom_prin` 表达式中的列引用如何绑定到物理字段。
 6. `06-lineage.json`：输出列向基表字段的来源追踪。

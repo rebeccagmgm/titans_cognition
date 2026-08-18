@@ -1,6 +1,6 @@
 r"""Batch-read SZData metadata required to expand SELECT * safely.
 
-The script is deliberately read-only.  It reads a sqllens target manifest,
+The script is deliberately read-only.  It reads a sql-static-lineage target manifest,
 resolves table names to databases, reuses GUIDs from existing lineage extracts,
 and caches table metadata plus DDL as append-only JSONL records.
 
@@ -478,7 +478,7 @@ def collect(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--targets", type=Path, required=True, help="sqllens star-metadata-targets.json")
+    parser.add_argument("--targets", type=Path, required=True, help="sql-static-lineage star-metadata-targets.json")
     parser.add_argument("--cache", type=Path, required=True, help="append-only metadata cache JSONL")
     parser.add_argument("--summary", type=Path, help="summary JSON; defaults beside --cache")
     parser.add_argument("--task-map", type=Path, help="downstream-tables-tasks.csv")

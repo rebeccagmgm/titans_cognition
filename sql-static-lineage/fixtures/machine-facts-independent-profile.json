@@ -1,0 +1,13 @@
+{
+  "schema_version": "machine-facts-independent-profile-v1",
+  "dialect": "databricks",
+  "logical_source_id": "gfhive-test",
+  "schema_evidence": "sql-static-lineage/fixtures/machine-facts-independent-schema.json",
+  "tasks": [
+    {
+      "task_id": "118141",
+      "sql_snapshot": ".evidence-cache/tasksql-118141-20260814.txt",
+      "writes": "pdata_n.otc_sale_daily_rpt"
+    }
+  ]
+}
