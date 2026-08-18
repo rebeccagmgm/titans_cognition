@@ -399,6 +399,61 @@ function unresolvedInputColumns(expression: JsonRecord): JsonRecord[] {
 		}));
 }
 
+function fieldInputsForRefs(logicalSourceId: string, refs: readonly JsonRecord[]): { inputFields: JsonRecord[]; candidateFields: JsonRecord[] } {
+	const physical: JsonRecord[] = [];
+	const candidates: JsonRecord[] = [];
+	for (const input of refs) {
+		for (const origin of input.physical ?? []) {
+			if (input.resolution !== "PHYSICAL") continue;
+			physical.push({
+				field_id: fieldId(logicalSourceId, origin.table, origin.column),
+				table: normalizeName(origin.table),
+				column: normalizeName(origin.column),
+			});
+		}
+		for (const candidate of input.sql_candidate ?? []) {
+			candidates.push({
+				field_id: fieldId(logicalSourceId, candidate.table, candidate.column),
+				table: normalizeName(candidate.table),
+				column: normalizeName(candidate.column),
+				binding_status: "UNVERIFIED_SCHEMA",
+			});
+		}
+	}
+	return {
+		inputFields: [...new Map(physical.map((item) => [item.field_id, item])).values()],
+		candidateFields: [...new Map(candidates.map((item) => [item.field_id, item])).values()],
+	};
+}
+
+function windowSpecRecord(logicalSourceId: string, expression: JsonRecord): JsonRecord | undefined {
+	const spec = expression.window_spec as JsonRecord | undefined;
+	if (!spec || !Array.isArray(spec.input_bindings)) return undefined;
+	return {
+		expression_text: spec.expression_text ?? "",
+		display_text: spec.display_text ?? "",
+		source_span: spec.source_span ?? null,
+		input_bindings: (spec.input_bindings as JsonRecord[]).map((binding) => {
+			const refs = Array.isArray(binding.input_columns) ? binding.input_columns : [];
+			const fields = fieldInputsForRefs(logicalSourceId, refs);
+			return {
+				role: binding.role,
+				ordinal: binding.ordinal,
+				expression_text: binding.expression_text ?? "",
+				display_text: binding.display_text ?? "",
+				source_span: binding.span ?? null,
+				input_fields: fields.inputFields,
+				candidate_input_fields: fields.candidateFields,
+				unresolved_input_columns: unresolvedInputColumns({ input_columns: refs }),
+				input_dependency_status: inputDependencyStatus({ input_columns: refs }),
+				...(binding.role === "WINDOW_ORDER"
+					? { direction: binding.direction ?? "ASC", nulls: binding.nulls ?? "UNSPECIFIED" }
+					: {}),
+			};
+		}),
+	};
+}
+
 export function relationNeedsMissingSchema(
 	nodeId: string,
 	relations: readonly JsonRecord[],
@@ -699,28 +754,9 @@ function planRecords(
 			for (const [ordinal, expression] of expressions.entries()) {
 				const expressionId = `${relationId}:expression:${role.toLowerCase()}:${ordinal}`;
 				const expressionSpan = expression.span as SourceSpan;
-				const physicalInputs: JsonRecord[] = [];
-				const candidateInputs: JsonRecord[] = [];
-				for (const input of expression.input_columns ?? []) {
-					for (const physical of input.physical ?? []) {
-						if (input.resolution !== "PHYSICAL") continue;
-						physicalInputs.push({
-							field_id: fieldId(logicalSourceId, physical.table, physical.column),
-							table: normalizeName(physical.table),
-							column: normalizeName(physical.column),
-						});
-					}
-					for (const candidate of input.sql_candidate ?? []) {
-						candidateInputs.push({
-							field_id: fieldId(logicalSourceId, candidate.table, candidate.column),
-							table: normalizeName(candidate.table),
-							column: normalizeName(candidate.column),
-							binding_status: "UNVERIFIED_SCHEMA",
-						});
-					}
-				}
-				const uniqueInputs = [...new Map(physicalInputs.map((item) => [item.field_id, item])).values()];
-				const uniqueCandidates = [...new Map(candidateInputs.map((item) => [item.field_id, item])).values()];
+				const fieldsForExpression = fieldInputsForRefs(logicalSourceId, expression.input_columns ?? []);
+				const uniqueInputs = fieldsForExpression.inputFields;
+				const uniqueCandidates = fieldsForExpression.candidateFields;
 				fields.push({
 					expression_id: expressionId,
 					task_id: task.task_id,
@@ -730,13 +766,14 @@ function planRecords(
 					ordinal,
 					output_name: expression.output,
 					output_name_status: expression.output_name_status ?? "UNKNOWN",
-						expression_text: expression.expr_text,
-						source_span: expressionSpan,
-						input_fields: uniqueInputs,
-						candidate_input_fields: uniqueCandidates,
-						unresolved_input_columns: unresolvedInputColumns(expression),
-						input_dependency_status: inputDependencyStatus(expression),
-						artifact_id: artifactId,
+					expression_text: expression.expr_text,
+					source_span: expressionSpan,
+					input_fields: uniqueInputs,
+					candidate_input_fields: uniqueCandidates,
+					unresolved_input_columns: unresolvedInputColumns(expression),
+					input_dependency_status: inputDependencyStatus(expression),
+					window_spec: windowSpecRecord(logicalSourceId, expression),
+					artifact_id: artifactId,
 				});
 				for (const input of uniqueInputs) {
 					lineage.push({
@@ -1107,7 +1144,7 @@ function buildTaskBundle(
 		["dataset-io.jsonl", stableRecords(datasetIo, (record) => JSON.stringify(record)), "machine-facts-dataset-io-v1"],
 		["relation-nodes.jsonl", relations, "machine-facts-relation-nodes-v1"],
 		["relation-edges.jsonl", relationEdges, "machine-facts-relation-edges-v1"],
-		["field-expression-nodes.jsonl", expressions, "machine-facts-field-expressions-v1"],
+		["field-expression-nodes.jsonl", expressions, "machine-facts-field-expressions-v2"],
 		["column-lineage-edges.jsonl", lineage, "machine-facts-column-lineage-v1"],
 		["output-field-bindings.jsonl", outputBindings, "machine-facts-output-field-bindings-v1"],
 		["unknowns.jsonl", unknowns, "machine-facts-unknowns-v1"],

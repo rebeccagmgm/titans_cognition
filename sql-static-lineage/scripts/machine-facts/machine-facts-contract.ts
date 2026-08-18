@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
-export const MACHINE_FACTS_CONTRACT_VERSION = "1.1.0";
+export const MACHINE_FACTS_CONTRACT_VERSION = "1.2.0";
 export const MACHINE_FACTS_STATUS_VERSION = "1.0.0";
-export const MACHINE_FACTS_ADAPTER_VERSION = "1.1.0";
+export const MACHINE_FACTS_ADAPTER_VERSION = "1.2.0";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type OutcomeClass = "UNKNOWN" | "NOT_EVALUABLE" | "NOT_APPLICABLE" | "FAILURE";
@@ -99,7 +99,27 @@ export interface SchemaReferenceRecord {
 export interface DatasetIoRecord { readonly task_id: string; readonly direction: string; readonly dataset_id: string; readonly physical_dataset: string; readonly provenance: string; readonly resolution_status: string; readonly [key: string]: unknown; }
 export interface RelationNodeRecord { readonly relation_id: string; readonly task_id: string; readonly statement_id: string; readonly relation_type: string; readonly source_span: unknown; readonly provenance: string; readonly relation: unknown; readonly [key: string]: unknown; }
 export interface RelationEdgeRecord { readonly edge_id: string; readonly task_id: string; readonly statement_id: string; readonly from_relation_id: string; readonly to_relation_id: string; readonly edge_type: string; readonly provenance: string; readonly source_span: unknown; readonly [key: string]: unknown; }
-export interface FieldExpressionRecord { readonly expression_id: string; readonly task_id: string; readonly statement_id: string; readonly relation_id: string; readonly role: string; readonly ordinal: number; readonly expression_text: string; readonly source_span: unknown; readonly input_fields: readonly unknown[]; readonly candidate_input_fields?: readonly unknown[]; readonly unresolved_input_columns: readonly unknown[]; readonly input_dependency_status: InputDependencyStatus; readonly artifact_id?: string; readonly [key: string]: unknown; }
+export type WindowInputRole = "VALUE" | "WINDOW_PARTITION" | "WINDOW_ORDER";
+export interface WindowInputBindingRecord {
+	readonly role: WindowInputRole;
+	readonly ordinal: number;
+	readonly expression_text: string;
+	readonly display_text: string;
+	readonly source_span: unknown;
+	readonly input_fields: readonly unknown[];
+	readonly candidate_input_fields?: readonly unknown[];
+	readonly unresolved_input_columns: readonly unknown[];
+	readonly input_dependency_status: InputDependencyStatus;
+	readonly direction?: "ASC" | "DESC";
+	readonly nulls?: "FIRST" | "LAST" | "UNSPECIFIED";
+}
+export interface WindowSpecRecord {
+	readonly expression_text: string;
+	readonly display_text: string;
+	readonly source_span: unknown;
+	readonly input_bindings: readonly WindowInputBindingRecord[];
+}
+export interface FieldExpressionRecord { readonly expression_id: string; readonly task_id: string; readonly statement_id: string; readonly relation_id: string; readonly role: string; readonly ordinal: number; readonly expression_text: string; readonly source_span: unknown; readonly input_fields: readonly unknown[]; readonly candidate_input_fields?: readonly unknown[]; readonly unresolved_input_columns: readonly unknown[]; readonly input_dependency_status: InputDependencyStatus; readonly window_spec?: WindowSpecRecord; readonly artifact_id?: string; readonly [key: string]: unknown; }
 export interface ColumnLineageRecord { readonly edge_id: string; readonly task_id: string; readonly statement_id: string; readonly from_field_id: string; readonly to_expression_id: string; readonly method: string; readonly resolution_provenance: string; readonly [key: string]: unknown; }
 export interface OutputFieldBindingRecord {
 	readonly binding_id: string;

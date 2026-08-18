@@ -24,6 +24,7 @@ import type { SchemaProvider } from "../../src/qualify/schema-provider.js";
 import type {
 	AggregateRelation,
 	ColumnRef,
+	ExprSpec,
 	ExpandRelation,
 	ExpressionFacts,
 	FilterRelation,
@@ -35,6 +36,8 @@ import type {
 	ReadRelation,
 	SetopRelation,
 	SourceSpan,
+	WindowInputBinding,
+	WindowSpecFacts,
 } from "./plan-contract.js";
 import type { SelectExpr, Expr } from "../../src/ir/ir.js";
 import { lineageAt } from "../../src/lineage/hops.js";
@@ -158,6 +161,114 @@ function inputColumnsFor(
 		onNativeLineageError?.(error);
 	}
 	return out;
+}
+
+type CstLike = {
+	parentCtx?: CstLike | null;
+	parent?: CstLike | null;
+	constructor?: { name?: string };
+	getChildCount?: () => number;
+	getChild?: (index: number) => unknown;
+	symbol?: { text?: string };
+};
+
+/** Find the sort item that owns a lowered window ORDER expression. */
+function sortItemOf(expr: Expr): CstLike | null {
+	let node: CstLike | null = ((expr as Expr & { cst?: CstLike }).cst as CstLike | undefined) ?? null;
+	while (node) {
+		if (node.constructor?.name === "SortItemContext") return node;
+		node = node.parentCtx ?? node.parent ?? null;
+	}
+	return null;
+}
+
+/** Read only direction/NULLS tokens from the owning sort item; never infer NULLS defaults. */
+function orderSemanticsOf(expr: Expr): { direction: "ASC" | "DESC"; nulls: "FIRST" | "LAST" | "UNSPECIFIED" } {
+	const sortItem = sortItemOf(expr);
+	const terminalTexts: string[] = [];
+	for (let i = 0; sortItem && i < (sortItem.getChildCount?.() ?? 0); i++) {
+		const child = sortItem.getChild?.(i) as CstLike | undefined;
+		const text = child?.symbol?.text ?? (child?.constructor?.name === "TerminalNode" ? (child as any).getText?.() : undefined);
+		if (text) terminalTexts.push(text.toLowerCase());
+	}
+	const direction = terminalTexts.includes("desc") ? "DESC" : "ASC";
+	const nullsIndex = terminalTexts.indexOf("nulls");
+	const nullsToken = nullsIndex >= 0 ? terminalTexts[nullsIndex + 1] : undefined;
+	const nulls = nullsToken === "first" || nullsToken === "last" ? (nullsToken.toUpperCase() as "FIRST" | "LAST") : "UNSPECIFIED";
+	return { direction, nulls };
+}
+
+/** Reuse the expression-level syntactic refs for Window occurrences so physical resolution and
+ * Unknown reporting happen once per source occurrence, while native lineage-only refs remain local
+ * to the occurrence that produced them. */
+function shareWindowInputRefs(expression: ExprSpec): void {
+	const all = expression.input_columns ?? [];
+	const byOffset = new Map<number, ColumnRef>();
+	for (const ref of all) {
+		const offset = (ref as RefWithOffset)._cellOffset;
+		if (offset != null && !byOffset.has(offset)) byOffset.set(offset, ref);
+	}
+	for (const binding of expression.window_spec?.input_bindings ?? []) {
+		binding.input_columns = binding.input_columns.map((ref) => {
+			const offset = (ref as RefWithOffset)._cellOffset;
+			return offset == null ? ref : byOffset.get(offset) ?? ref;
+		});
+	}
+}
+
+function windowInputBinding(
+	role: WindowInputBinding["role"],
+	ordinal: number,
+	input: Expr,
+	sql: string,
+	cellBase: number,
+	scope: Scope,
+	schema: unknown,
+	dialect: string,
+	includeDependencies: boolean,
+	onNativeLineageError: (error: unknown) => void,
+): WindowInputBinding {
+	const clause = role === "WINDOW_PARTITION" ? "windowPartition" : role === "WINDOW_ORDER" ? "windowOrder" : "projection";
+	const inputColumns = includeDependencies
+		? inputColumnsFor(input, scope, clause, schema, dialect, true, onNativeLineageError)
+		: [];
+	const binding: WindowInputBinding = {
+		role,
+		ordinal,
+		expression_text: fullTextOf(sql, cellBase, input.cst as any),
+		display_text: displayTextOf(sql, cellBase, input.cst as any),
+		span: spanOf(cellBase, input.cst as any),
+		input_columns: inputColumns,
+	};
+	if (role === "WINDOW_ORDER") Object.assign(binding, orderSemanticsOf(input));
+	return binding;
+}
+
+function windowSpecOf(
+	expression: Expr & { window?: { partitionBy: Expr[]; orderBy: Expr[]; cst: unknown }; args: Expr[] },
+	sql: string,
+	cellBase: number,
+	scope: Scope,
+	schema: unknown,
+	dialect: string,
+	includeDependencies: boolean,
+	onNativeLineageError: (error: unknown) => void,
+): WindowSpecFacts | undefined {
+	const window = expression.window;
+	if (!window) return undefined;
+	const input_bindings: WindowInputBinding[] = [];
+	for (const [ordinal, input] of expression.args.entries())
+		input_bindings.push(windowInputBinding("VALUE", ordinal, input, sql, cellBase, scope, schema, dialect, includeDependencies, onNativeLineageError));
+	for (const [ordinal, input] of window.partitionBy.entries())
+		input_bindings.push(windowInputBinding("WINDOW_PARTITION", ordinal, input, sql, cellBase, scope, schema, dialect, includeDependencies, onNativeLineageError));
+	for (const [ordinal, input] of window.orderBy.entries())
+		input_bindings.push(windowInputBinding("WINDOW_ORDER", ordinal, input, sql, cellBase, scope, schema, dialect, includeDependencies, onNativeLineageError));
+	return {
+		source_span: spanOf(cellBase, window.cst as any),
+		expression_text: fullTextOf(sql, cellBase, window.cst as any),
+		display_text: displayTextOf(sql, cellBase, window.cst as any),
+		input_bindings,
+	};
 }
 
 function nativeLineageErrorMessage(error: unknown): string {
@@ -604,8 +715,8 @@ export interface PlanAdapterOptions {
 
 const CONTRACT_VERSION = "1.1.2";
 const ADAPTER_VERSION = "0.2.2";
-const EXPRESSION_DEPENDENCY_CONTRACT_VERSION = "1.1.3";
-export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.11";
+const EXPRESSION_DEPENDENCY_CONTRACT_VERSION = "1.1.4";
+export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.12";
 
 export function buildPlanFacts(
 	cell: { scopes: ScopeTree; span: { start: number } },
@@ -1023,18 +1134,33 @@ export function buildPlanFacts(
 								(error) => recordNativeLineageFailure(pid, "projection", spanOf(cellBase, p.cst), error),
 						  )
 					: [];
-				exprs.push({
+				const exprSpec: ExprSpec = {
 					output,
 					output_name_status: anonymous ? "ANONYMOUS_EXPRESSION" : "EXPLICIT",
 					expr_kind: expr.kind,
 					window: expr.kind === "function" && expr.window ? true : undefined,
+					window_spec:
+						opts?.include_expression_dependencies && expr.kind === "function"
+							? windowSpecOf(
+									expr,
+									sql,
+									cellBase,
+									scope,
+									schema,
+									dialect,
+									true,
+									(error) => recordNativeLineageFailure(pid, "projection", spanOf(cellBase, p.cst), error),
+							  )
+							: undefined,
 					aggregate: expr.kind === "function" && expr.aggregate ? true : undefined,
 					expr_text: fullTextOf(sql, cellBase, p.cst),
 					display_text: displayTextOf(sql, cellBase, p.cst),
 					span: spanOf(cellBase, p.cst),
 					input_columns: inputColumns.length > 0 ? inputColumns : undefined,
 					expression_facts: opts?.include_expression_dependencies ? expressionFacts(expr) : undefined,
-				});
+				};
+				shareWindowInputRefs(exprSpec);
+				exprs.push(exprSpec);
 				outNames.push(output);
 			}
 		}
@@ -1207,6 +1333,18 @@ export function buildPlanFacts(
 							dialect,
 							resolveDerivedOutput,
 						);
+					for (const binding of expression.window_spec?.input_bindings ?? []) {
+						resolvePhysical(
+							cell,
+							schema,
+							scope,
+							r.id,
+							binding.input_columns,
+							unknowns,
+							dialect,
+							resolveDerivedOutput,
+						);
+					}
 				}
 			}
 		}
@@ -1230,6 +1368,8 @@ export function buildPlanFacts(
 			for (const expression of relation.expressions) {
 				if (expression.input_columns)
 					expression.input_columns = dedupePhysicalInputColumns(expression.input_columns);
+				for (const binding of expression.window_spec?.input_bindings ?? [])
+					binding.input_columns = dedupePhysicalInputColumns(binding.input_columns);
 			}
 		}
 	}
