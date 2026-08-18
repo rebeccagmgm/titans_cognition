@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
-export const MACHINE_FACTS_CONTRACT_VERSION = "1.2.0";
+export const MACHINE_FACTS_CONTRACT_VERSION = "1.3.0";
 export const MACHINE_FACTS_STATUS_VERSION = "1.0.0";
-export const MACHINE_FACTS_ADAPTER_VERSION = "1.2.0";
+export const MACHINE_FACTS_ADAPTER_VERSION = "1.3.0";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export type OutcomeClass = "UNKNOWN" | "NOT_EVALUABLE" | "NOT_APPLICABLE" | "FAILURE";
@@ -66,6 +66,12 @@ export interface MachineFactsManifest {
 		readonly relation_edges: number;
 		readonly field_expression_nodes: number;
 		readonly column_lineage_edges: number;
+		readonly lineage_hop_roots: number;
+		readonly lineage_hop_nodes: number;
+		readonly lineage_hop_edges: number;
+		readonly lineage_hop_projected_roots: number;
+		readonly lineage_hop_partial_roots: number;
+		readonly lineage_hop_not_evaluable_roots: number;
 		readonly output_field_bindings: number;
 		readonly unknowns: number;
 		readonly unknowns_by_outcome: Readonly<Record<OutcomeClass, number>>;
@@ -121,6 +127,53 @@ export interface WindowSpecRecord {
 }
 export interface FieldExpressionRecord { readonly expression_id: string; readonly task_id: string; readonly statement_id: string; readonly relation_id: string; readonly role: string; readonly ordinal: number; readonly expression_text: string; readonly source_span: unknown; readonly input_fields: readonly unknown[]; readonly candidate_input_fields?: readonly unknown[]; readonly unresolved_input_columns: readonly unknown[]; readonly input_dependency_status: InputDependencyStatus; readonly window_spec?: WindowSpecRecord; readonly artifact_id?: string; readonly [key: string]: unknown; }
 export interface ColumnLineageRecord { readonly edge_id: string; readonly task_id: string; readonly statement_id: string; readonly from_field_id: string; readonly to_expression_id: string; readonly method: string; readonly resolution_provenance: string; readonly [key: string]: unknown; }
+export type HopCoverageState = "FULL_HOP" | "FLAT_ORIGIN_ONLY" | "UNKNOWN_COVERAGE" | "NOT_EVALUABLE";
+export type HopProjectionStatus = "PROJECTED" | "PARTIAL_NATIVE" | "NOT_EVALUABLE";
+export type HopEdgeType = "PHYSICAL_FIELD_TO_HOP" | "HOP_TO_HOP";
+export interface LineageHopRootRecord {
+	readonly root_id: string;
+	readonly task_id: string;
+	readonly statement_id: string;
+	readonly root_expression_id: string;
+	readonly head_hop_id: string | null;
+	readonly coverage_state: HopCoverageState;
+	readonly projection_status: HopProjectionStatus;
+	readonly reason_code?: string;
+	readonly reason?: string;
+	readonly flow_kind: "VALUE_LINEAGE";
+	readonly physical_input_field_ids: readonly string[];
+	readonly candidate_input_field_ids: readonly string[];
+	readonly [key: string]: unknown;
+}
+export interface LineageHopNodeRecord {
+	readonly hop_id: string;
+	readonly task_id: string;
+	readonly statement_id: string;
+	readonly scope_relation_id: string;
+	readonly expression_id: string | null;
+	readonly expr_kind: string;
+	readonly expression_text: string;
+	readonly source_span: unknown;
+	readonly terminal_field_ids: readonly string[];
+	readonly terminal: "PRESENT" | "NONE" | "UNRESOLVED";
+	readonly has_downstream: boolean;
+	readonly via_relation_ids: readonly { relation_id: string; kind: "rename" | "expand" }[];
+	readonly flow_kind: "VALUE_LINEAGE";
+	readonly [key: string]: unknown;
+}
+export interface LineageHopEdgeRecord {
+	readonly edge_id: string;
+	readonly task_id: string;
+	readonly statement_id: string;
+	readonly edge_type: HopEdgeType;
+	readonly from_field_id: string | null;
+	readonly from_hop_id: string | null;
+	readonly to_hop_id: string;
+	readonly branch_relation_id: string | null;
+	readonly branch_ordinal: number | null;
+	readonly flow_kind: "VALUE_LINEAGE";
+	readonly [key: string]: unknown;
+}
 export interface OutputFieldBindingRecord {
 	readonly binding_id: string;
 	readonly task_id: string;
@@ -142,7 +195,7 @@ export interface OutputFieldBindingRecord {
 export interface UnknownOutcomeRecord { readonly outcome_class: OutcomeClass; readonly reason_code: string; readonly message: string; readonly [key: string]: unknown; }
 export interface SourceArtifactRecord { readonly schema_version: string; readonly task_id: string; readonly logical_source_id: string; readonly sql_snapshot: string; readonly sql_sha256: string; readonly byte_length: number; readonly encoding: string; readonly [key: string]: unknown; }
 export interface TaskFactIndexRecord { readonly task_id: string; readonly logical_source_id: string; readonly sql_sha256: string; readonly manifest_sha256: string; readonly bundle_path: string; readonly status: "SUCCESS"; readonly [key: string]: unknown; }
-export type MachineFactRecord = StatementRecord | SchemaReferenceRecord | DatasetIoRecord | RelationNodeRecord | RelationEdgeRecord | FieldExpressionRecord | ColumnLineageRecord | OutputFieldBindingRecord | UnknownOutcomeRecord | SourceArtifactRecord | TaskFactIndexRecord;
+export type MachineFactRecord = StatementRecord | SchemaReferenceRecord | DatasetIoRecord | RelationNodeRecord | RelationEdgeRecord | FieldExpressionRecord | ColumnLineageRecord | LineageHopRootRecord | LineageHopNodeRecord | LineageHopEdgeRecord | OutputFieldBindingRecord | UnknownOutcomeRecord | SourceArtifactRecord | TaskFactIndexRecord;
 
 export interface GenericTaskProfile {
 	readonly task_id: string;

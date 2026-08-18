@@ -32,6 +32,9 @@ import {
 	type FieldExpressionRecord,
 	type InputDependencyStatus,
 	type ColumnLineageRecord,
+	type LineageHopRootRecord,
+	type LineageHopNodeRecord,
+	type LineageHopEdgeRecord,
 	type OutputFieldBindingRecord,
 	type UnknownOutcomeRecord,
 	type SourceArtifactRecord,
@@ -73,6 +76,9 @@ const REQUIRED_DATASETS = [
 	"relation-edges.jsonl",
 	"field-expression-nodes.jsonl",
 	"column-lineage-edges.jsonl",
+	"lineage-hop-roots.jsonl",
+	"lineage-hop-nodes.jsonl",
+	"lineage-hop-edges.jsonl",
 	"output-field-bindings.jsonl",
 	"unknowns.jsonl",
 ] as const;
@@ -281,6 +287,21 @@ function globalizeRelation(taskId: string, statementIndex: number, relation: Jso
 	if (relation.right) converted.right = mapId(relation.right);
 	if (relation.branches) converted.branches = relation.branches.map(mapId);
 	return converted;
+}
+
+function globalExpressionId(taskId: string, statementIndex: number, localId: string): string {
+	const marker = ":expression:";
+	const markerIndex = localId.indexOf(marker);
+	if (markerIndex < 0) return `task:${taskId}:statement:${statementIndex}:expression:${localId}`;
+	return `${globalRelationId(taskId, statementIndex, localId.slice(0, markerIndex))}${marker}${localId.slice(markerIndex + marker.length)}`;
+}
+
+function globalHopId(taskId: string, statementIndex: number, localId: string): string {
+	return `task:${taskId}:statement:${statementIndex}:${localId}`;
+}
+
+function globalFieldIdFromLocal(logicalSourceId: string, field: JsonRecord): string {
+	return fieldId(logicalSourceId, String(field.table), String(field.column));
 }
 
 
@@ -654,6 +675,9 @@ function planRecords(
 	relationEdges: RelationEdgeRecord[];
 	fields: FieldExpressionRecord[];
 	lineage: ColumnLineageRecord[];
+	hopRoots: LineageHopRootRecord[];
+	hopNodes: LineageHopNodeRecord[];
+	hopEdges: LineageHopEdgeRecord[];
 	unknowns: UnknownOutcomeRecord[];
 	reads: DatasetIoRecord[];
 } {
@@ -661,6 +685,9 @@ function planRecords(
 	const relationEdges: JsonRecord[] = [];
 	const fields: JsonRecord[] = [];
 	const lineage: JsonRecord[] = [];
+	const hopRoots: JsonRecord[] = [];
+	const hopNodes: JsonRecord[] = [];
+	const hopEdges: JsonRecord[] = [];
 	const unknowns: JsonRecord[] = [];
 	const reads: JsonRecord[] = [];
 	const planRelations = plan.relations as JsonRecord[];
@@ -801,21 +828,91 @@ function planRecords(
 			}
 		}
 	}
+
+	const localHopRoots = plan.lineage_hops?.roots ?? [];
+	const localHopNodes = plan.lineage_hops?.nodes ?? [];
+	const localHopEdges = plan.lineage_hops?.edges ?? [];
+	for (const root of localHopRoots as unknown as JsonRecord[]) {
+		const rootExpressionId = globalExpressionId(task.task_id, statementIndex, String(root.root_expression_id));
+		const headHopId = root.head_hop_id ? globalHopId(task.task_id, statementIndex, String(root.head_hop_id)) : null;
+		hopRoots.push({
+			root_id: `task:${task.task_id}:statement:${statementIndex}:lineage-hop-root:${rootExpressionId}`,
+			task_id: task.task_id,
+			statement_id: statementId,
+			root_expression_id: rootExpressionId,
+			head_hop_id: headHopId,
+			coverage_state: root.coverage_state,
+			projection_status: root.projection_status,
+			...(root.reason_code ? { reason_code: root.reason_code } : {}),
+			...(root.reason ? { reason: root.reason } : {}),
+			flow_kind: "VALUE_LINEAGE",
+			physical_input_field_ids: (root.physical_input_fields as JsonRecord[]).map((field) => globalFieldIdFromLocal(logicalSourceId, field)).sort(),
+			candidate_input_field_ids: (root.candidate_input_fields as JsonRecord[]).map((field) => globalFieldIdFromLocal(logicalSourceId, field)).sort(),
+		});
+		if (root.projection_status !== "PROJECTED") {
+			unknowns.push({
+				unknown_id: `unknown:${task.task_id}:${statementIndex}:${unknowns.length}`,
+				task_id: task.task_id,
+				statement_id: statementId,
+				subject: rootExpressionId,
+				outcome_class: root.projection_status === "NOT_EVALUABLE" ? "NOT_EVALUABLE" : "UNKNOWN",
+				reason_code: root.reason_code ?? "NATIVE_HOP_PARTIAL",
+				message: root.reason ?? "Native Hop projection is partial or not evaluable",
+				artifact_id: artifactId,
+			});
+		}
+	}
+	for (const node of localHopNodes as unknown as JsonRecord[]) {
+		hopNodes.push({
+			hop_id: globalHopId(task.task_id, statementIndex, String(node.hop_id)),
+			task_id: task.task_id,
+			statement_id: statementId,
+			scope_relation_id: globalRelationId(task.task_id, statementIndex, String(node.scope_relation_id)),
+			expression_id: node.expression_id ? globalExpressionId(task.task_id, statementIndex, String(node.expression_id)) : null,
+			expr_kind: node.expr_kind,
+			expression_text: node.expression_text,
+			source_span: node.source_span,
+			terminal_field_ids: (node.terminal_fields as JsonRecord[]).map((field) => globalFieldIdFromLocal(logicalSourceId, field)).sort(),
+			terminal: node.terminal,
+			has_downstream: node.has_downstream,
+			via_relation_ids: (node.via as JsonRecord[]).map((via) => ({ relation_id: globalRelationId(task.task_id, statementIndex, String(via.relation_id)), kind: via.kind })),
+			flow_kind: "VALUE_LINEAGE",
+		});
+	}
+	for (const edge of localHopEdges as unknown as JsonRecord[]) {
+		const fromFieldId = edge.from_field ? globalFieldIdFromLocal(logicalSourceId, edge.from_field) : null;
+		hopEdges.push({
+			edge_id: `task:${task.task_id}:statement:${statementIndex}:${edge.edge_id}`,
+			task_id: task.task_id,
+			statement_id: statementId,
+			edge_type: edge.edge_type,
+			from_field_id: fromFieldId,
+			from_hop_id: edge.from_hop_id ? globalHopId(task.task_id, statementIndex, String(edge.from_hop_id)) : null,
+			to_hop_id: globalHopId(task.task_id, statementIndex, String(edge.to_hop_id)),
+			branch_relation_id: edge.branch_relation_id ? globalRelationId(task.task_id, statementIndex, String(edge.branch_relation_id)) : null,
+			branch_ordinal: Number.isInteger(edge.branch_ordinal) ? edge.branch_ordinal : null,
+			flow_kind: "VALUE_LINEAGE",
+		});
+	}
 	return {
 		relations: relations as RelationNodeRecord[],
 		relationEdges: relationEdges as RelationEdgeRecord[],
 		fields: fields as FieldExpressionRecord[],
 		lineage: lineage as ColumnLineageRecord[],
+		hopRoots: hopRoots as LineageHopRootRecord[],
+		hopNodes: hopNodes as LineageHopNodeRecord[],
+		hopEdges: hopEdges as LineageHopEdgeRecord[],
 		unknowns: unknowns as UnknownOutcomeRecord[],
 		reads: reads as DatasetIoRecord[],
 	};
 }
 
 function validateJsonSchema(value: unknown, schema: JsonRecord, path = "$", errors: string[] = []): string[] {
-	const type = schema.type as string | undefined;
+	const type = schema.type as string | string[] | undefined;
 	const actual = Array.isArray(value) ? "array" : value === null ? "null" : typeof value;
-	if (type && actual !== type) {
-		errors.push(`${path}: expected ${type}, got ${actual}`);
+	const matchesType = (expected: string): boolean => expected === "integer" ? actual === "number" && Number.isInteger(value) : actual === expected;
+	if (type && (Array.isArray(type) ? !type.some(matchesType) : !matchesType(type))) {
+		errors.push(`${path}: expected ${Array.isArray(type) ? type.join("|") : type}, got ${actual}`);
 		return errors;
 	}
 	if (schema.const !== undefined && value !== schema.const) errors.push(`${path}: expected const ${String(schema.const)}`);
@@ -926,6 +1023,10 @@ export function validateBundle(bundleDir: string): string[] {
 	}
 	const sql = sqlPath && existsSync(sqlPath) ? readFileSync(sqlPath, "utf8") : "";
 	const statements = readJsonlForValidation(join(bundleDir, "statements.jsonl"), errors);
+	const statementIds = new Set(statements.map((statement) => statement.statement_id));
+	for (const statement of statements) {
+		if (statement.task_id !== manifest.task_id) errors.push(`statement task isolation failed ${statement.statement_id}`);
+	}
 	for (const statement of statements) {
 		if (!spanValid(statement.span, sql) || sql.slice(statement.span.start, statement.span.end) !== statement.raw_sql) {
 			errors.push(`statement span roundtrip failed ${statement.statement_id}`);
@@ -938,14 +1039,150 @@ export function validateBundle(bundleDir: string): string[] {
 	}
 	const expressions = readJsonlForValidation(join(bundleDir, "field-expression-nodes.jsonl"), errors);
 	const expressionIds = new Set(expressions.map((node) => node.expression_id));
+	const fieldIds = new Set<string>();
+	for (const expression of expressions) {
+		for (const field of [...(expression.input_fields ?? []), ...(expression.candidate_input_fields ?? [])]) {
+			if (field && typeof field.field_id === "string") fieldIds.add(field.field_id);
+		}
+	}
 	for (const expression of expressions) if (!relationIds.has(expression.relation_id)) errors.push(`expression owner missing ${expression.expression_id}`);
-	for (const edge of readJsonlForValidation(join(bundleDir, "column-lineage-edges.jsonl"), errors)) {
+	const columnLineage = readJsonlForValidation(join(bundleDir, "column-lineage-edges.jsonl"), errors);
+	for (const edge of columnLineage) {
 		if (!expressionIds.has(edge.to_expression_id)) errors.push(`lineage expression endpoint missing ${edge.edge_id}`);
 	}
 	for (const binding of readJsonlForValidation(join(bundleDir, "output-field-bindings.jsonl"), errors)) {
 		if (!expressionIds.has(binding.expression_id)) errors.push(`output binding expression endpoint missing ${binding.binding_id}`);
 		if (binding.binding_status !== "RESOLVED") errors.push(`output binding must be resolved ${binding.binding_id}`);
 		if (!Number.isInteger(binding.source_ordinal) || !Number.isInteger(binding.target_ordinal)) errors.push(`output binding ordinal is invalid ${binding.binding_id}`);
+	}
+	const hopRoots = readJsonlForValidation(join(bundleDir, "lineage-hop-roots.jsonl"), errors);
+	const hopNodes = readJsonlForValidation(join(bundleDir, "lineage-hop-nodes.jsonl"), errors);
+	const hopEdges = readJsonlForValidation(join(bundleDir, "lineage-hop-edges.jsonl"), errors);
+	const assertHopContext = (record: JsonRecord, identity: string): void => {
+		if (record.task_id !== manifest.task_id) errors.push(`Hop task isolation failed ${identity}`);
+		if (typeof record.statement_id !== "string" || !statementIds.has(record.statement_id)) errors.push(`Hop statement endpoint missing ${identity}`);
+	};
+	for (const root of hopRoots) assertHopContext(root, String(root.root_id));
+	for (const node of hopNodes) assertHopContext(node, String(node.hop_id));
+	for (const edge of hopEdges) assertHopContext(edge, String(edge.edge_id));
+	const hopSortCheck = (records: JsonRecord[], field: string, label: string): void => {
+		const ids = records.map((record) => String(record[field]));
+		for (let index = 1; index < ids.length; index++) if (ids[index - 1].localeCompare(ids[index]) > 0) errors.push(`${label} are not deterministically sorted`);
+	};
+	hopSortCheck(hopRoots, "root_id", "Hop roots");
+	hopSortCheck(hopNodes, "hop_id", "Hop nodes");
+	hopSortCheck(hopEdges, "edge_id", "Hop edges");
+	const expectedHopCounts: Record<string, number> = {
+		lineage_hop_roots: hopRoots.length,
+		lineage_hop_nodes: hopNodes.length,
+		lineage_hop_edges: hopEdges.length,
+		lineage_hop_projected_roots: hopRoots.filter((root) => root.projection_status === "PROJECTED").length,
+		lineage_hop_partial_roots: hopRoots.filter((root) => root.projection_status === "PARTIAL_NATIVE").length,
+		lineage_hop_not_evaluable_roots: hopRoots.filter((root) => root.projection_status === "NOT_EVALUABLE").length,
+	};
+	for (const [key, actual] of Object.entries(expectedHopCounts)) if ((manifest.counts as JsonRecord)[key] !== actual) errors.push(`manifest Hop count mismatch ${key}`);
+	const hopNodeIds = new Set<string>();
+	for (const node of hopNodes) {
+		if (hopNodeIds.has(node.hop_id)) errors.push(`duplicate Hop node identity ${node.hop_id}`);
+		hopNodeIds.add(node.hop_id);
+		if (!relationIds.has(node.scope_relation_id)) errors.push(`Hop scope relation endpoint missing ${node.hop_id}`);
+		if (node.expression_id !== null && !expressionIds.has(node.expression_id)) errors.push(`Hop expression endpoint missing ${node.hop_id}`);
+		for (const via of node.via_relation_ids ?? []) if (!relationIds.has(via.relation_id)) errors.push(`Hop via relation endpoint missing ${node.hop_id}`);
+		for (const fieldId of node.terminal_field_ids ?? []) if (!fieldIds.has(fieldId)) errors.push(`Hop terminal field endpoint missing ${node.hop_id}`);
+		if (node.terminal === "PRESENT" && (!Array.isArray(node.terminal_field_ids) || node.terminal_field_ids.length === 0)) errors.push(`Hop terminal is PRESENT without fields ${node.hop_id}`);
+		if (node.terminal !== "PRESENT" && Array.isArray(node.terminal_field_ids) && node.terminal_field_ids.length > 0) errors.push(`Hop non-present terminal carries fields ${node.hop_id}`);
+		if (Array.isArray(node.terminal_field_ids) && new Set(node.terminal_field_ids).size !== node.terminal_field_ids.length) errors.push(`duplicate Hop terminal field ${node.hop_id}`);
+	}
+	const hopRootIds = new Set<string>();
+	for (const root of hopRoots) {
+		if (hopRootIds.has(root.root_id)) errors.push(`duplicate Hop root identity ${root.root_id}`);
+		hopRootIds.add(root.root_id);
+		if (!expressionIds.has(root.root_expression_id)) errors.push(`Hop root expression endpoint missing ${root.root_id}`);
+		if (root.head_hop_id !== null && !hopNodeIds.has(root.head_hop_id)) errors.push(`Hop root head endpoint missing ${root.root_id}`);
+		for (const fieldId of [...(root.physical_input_field_ids ?? []), ...(root.candidate_input_field_ids ?? [])]) if (!fieldIds.has(fieldId)) errors.push(`Hop root field endpoint missing ${root.root_id}`);
+		if (root.projection_status === "PROJECTED" && (root.coverage_state !== "FULL_HOP" || root.head_hop_id === null)) errors.push(`invalid PROJECTED Hop root status ${root.root_id}`);
+		if (root.projection_status === "NOT_EVALUABLE" && root.head_hop_id !== null) errors.push(`NOT_EVALUABLE Hop root must not have a head ${root.root_id}`);
+		if (root.coverage_state === "NOT_EVALUABLE" && root.projection_status !== "NOT_EVALUABLE") errors.push(`NOT_EVALUABLE coverage has incompatible projection status ${root.root_id}`);
+		if (root.coverage_state === "FLAT_ORIGIN_ONLY" && root.projection_status !== "PARTIAL_NATIVE") errors.push(`FLAT_ORIGIN_ONLY coverage has incompatible projection status ${root.root_id}`);
+		if (root.coverage_state === "UNKNOWN_COVERAGE" && root.projection_status !== "PARTIAL_NATIVE") errors.push(`UNKNOWN_COVERAGE has incompatible projection status ${root.root_id}`);
+		if (root.coverage_state === "FULL_HOP" && root.projection_status === "NOT_EVALUABLE") errors.push(`FULL_HOP coverage cannot be NOT_EVALUABLE ${root.root_id}`);
+	}
+	const hopEdgeIds = new Set<string>();
+	const semanticEdgeIds = new Set<string>();
+	const adjacency = new Map<string, string[]>();
+	const downstreamByConsumer = new Map<string, number>();
+	const relationById = new Map(relationNodes.map((node) => [String(node.relation_id), node]));
+	for (const edge of hopEdges) {
+		if (hopEdgeIds.has(edge.edge_id)) errors.push(`duplicate Hop edge identity ${edge.edge_id}`);
+		hopEdgeIds.add(edge.edge_id);
+		if (!hopNodeIds.has(edge.to_hop_id)) errors.push(`Hop edge consumer endpoint missing ${edge.edge_id}`);
+		if (edge.edge_type === "PHYSICAL_FIELD_TO_HOP") {
+			if (!edge.from_field_id || edge.from_hop_id !== null) errors.push(`invalid physical Hop edge endpoint ${edge.edge_id}`);
+			else if (!fieldIds.has(edge.from_field_id)) errors.push(`physical Hop field endpoint missing ${edge.edge_id}`);
+			if (edge.branch_relation_id !== null || edge.branch_ordinal !== null) errors.push(`physical Hop edge has invalid branch metadata ${edge.edge_id}`);
+			const semanticId = `physical:${edge.from_field_id}:${edge.to_hop_id}`;
+			if (semanticEdgeIds.has(semanticId)) errors.push(`duplicate Hop edge semantics ${edge.edge_id}`);
+			semanticEdgeIds.add(semanticId);
+		} else if (edge.edge_type === "HOP_TO_HOP") {
+			if (!edge.from_hop_id || edge.from_field_id !== null || !hopNodeIds.has(edge.from_hop_id)) errors.push(`invalid downstream Hop edge endpoint ${edge.edge_id}`);
+			else {
+				adjacency.set(edge.from_hop_id, [...(adjacency.get(edge.from_hop_id) ?? []), edge.to_hop_id]);
+				downstreamByConsumer.set(edge.to_hop_id, (downstreamByConsumer.get(edge.to_hop_id) ?? 0) + 1);
+			}
+			if (edge.branch_relation_id === null && edge.branch_ordinal !== null) errors.push(`Hop branch ordinal without relation ${edge.edge_id}`);
+			if (edge.branch_relation_id !== null) {
+				const branchRelation = relationById.get(String(edge.branch_relation_id));
+				const branches = branchRelation?.relation?.branches;
+				if (!branchRelation || branchRelation.relation_type !== "setop" || !Array.isArray(branches)) errors.push(`Hop branch relation is not a Setop ${edge.edge_id}`);
+				if (!Number.isInteger(edge.branch_ordinal) || Number(edge.branch_ordinal) < 0 || (Array.isArray(branches) && Number(edge.branch_ordinal) >= branches.length)) errors.push(`Hop branch ordinal is invalid ${edge.edge_id}`);
+			}
+			const semanticId = `hop:${edge.from_hop_id}:${edge.to_hop_id}:${edge.branch_relation_id ?? ""}:${edge.branch_ordinal ?? ""}`;
+			if (semanticEdgeIds.has(semanticId)) errors.push(`duplicate Hop edge semantics ${edge.edge_id}`);
+			semanticEdgeIds.add(semanticId);
+		} else errors.push(`invalid Hop edge type ${edge.edge_id}`);
+	}
+	for (const node of hopNodes) if (Boolean(node.has_downstream) !== ((downstreamByConsumer.get(String(node.hop_id)) ?? 0) > 0)) errors.push(`Hop has_downstream mismatch ${node.hop_id}`);
+	const visitingHops = new Set<string>();
+	const visitedHops = new Set<string>();
+	const visitHop = (id: string): void => {
+		if (visitingHops.has(id)) { errors.push(`Hop DAG cycle detected at ${id}`); return; }
+		if (visitedHops.has(id)) return;
+		visitingHops.add(id);
+		for (const next of adjacency.get(id) ?? []) visitHop(next);
+		visitingHops.delete(id);
+		visitedHops.add(id);
+	};
+	for (const id of hopNodeIds) visitHop(id);
+	const reachableFromRoots = new Set<string>();
+	const collectAllRootReachable = (id: string): void => {
+		if (reachableFromRoots.has(id)) return;
+		reachableFromRoots.add(id);
+		for (const edge of hopEdges) if (edge.edge_type === "HOP_TO_HOP" && edge.to_hop_id === id && edge.from_hop_id) collectAllRootReachable(edge.from_hop_id);
+	};
+	for (const root of hopRoots) if (root.head_hop_id) collectAllRootReachable(root.head_hop_id);
+	for (const id of hopNodeIds) if (!reachableFromRoots.has(id)) errors.push(`orphan Hop node ${id}`);
+	const physicalOriginsByExpression = new Map<string, Set<string>>();
+	for (const edge of columnLineage) {
+		if (edge.resolution_provenance !== "SCHEMA_BOUND") continue;
+		const expressionId = String(edge.to_expression_id);
+		const origins = physicalOriginsByExpression.get(expressionId) ?? new Set<string>();
+		origins.add(String(edge.from_field_id));
+		physicalOriginsByExpression.set(expressionId, origins);
+	}
+	for (const root of hopRoots.filter((candidate) => candidate.projection_status === "PROJECTED")) {
+		const reachable = new Set<string>();
+		const collect = (id: string): void => {
+			if (reachable.has(id)) return;
+			reachable.add(id);
+			for (const edge of hopEdges) if (edge.edge_type === "HOP_TO_HOP" && edge.to_hop_id === id && edge.from_hop_id) collect(edge.from_hop_id);
+		};
+		if (root.head_hop_id) collect(root.head_hop_id);
+		const terminals = new Set<string>();
+		for (const node of hopNodes) if (reachable.has(node.hop_id)) for (const field of node.terminal_field_ids) terminals.add(field);
+		const expected = physicalOriginsByExpression.get(String(root.root_expression_id)) ?? new Set<string>();
+		const declared = new Set<string>(((root.physical_input_field_ids as unknown[]) ?? []).map((field: unknown) => String(field)));
+		if (declared.size !== expected.size || [...declared].some((field) => !expected.has(field))) errors.push(`FULL_HOP physical input mismatch ${root.root_id}`);
+		if (terminals.size !== expected.size || [...terminals].some((field) => !expected.has(field))) errors.push(`FULL_HOP origin-conservation mismatch ${root.root_id}`);
 	}
 	return [...new Set(errors)];
 }
@@ -1035,6 +1272,9 @@ function buildTaskBundle(
 	const relationEdges: RelationEdgeRecord[] = [];
 	const expressions: FieldExpressionRecord[] = [];
 	const lineage: ColumnLineageRecord[] = [];
+	const hopRoots: LineageHopRootRecord[] = [];
+	const hopNodes: LineageHopNodeRecord[] = [];
+	const hopEdges: LineageHopEdgeRecord[] = [];
 	const outputBindings: OutputFieldBindingRecord[] = [];
 	const unknowns: UnknownOutcomeRecord[] = [];
 	const writeContexts: WriteOutputContext[] = [];
@@ -1094,6 +1334,9 @@ function buildTaskBundle(
 		relationEdges.push(...records.relationEdges);
 		expressions.push(...records.fields);
 		lineage.push(...records.lineage);
+		hopRoots.push(...records.hopRoots);
+		hopNodes.push(...records.hopNodes);
+		hopEdges.push(...records.hopEdges);
 		unknowns.push(...records.unknowns);
 		datasetIo.push(...records.reads);
 		const rootRelationIds = new Set(plan.roots.map((rootId) => globalRelationId(task.task_id, statementIndex, rootId)));
@@ -1146,6 +1389,9 @@ function buildTaskBundle(
 		["relation-edges.jsonl", relationEdges, "machine-facts-relation-edges-v1"],
 		["field-expression-nodes.jsonl", expressions, "machine-facts-field-expressions-v2"],
 		["column-lineage-edges.jsonl", lineage, "machine-facts-column-lineage-v1"],
+		["lineage-hop-roots.jsonl", stableRecords(hopRoots as unknown as JsonRecord[], (record) => String(record.root_id)), "machine-facts-lineage-hop-roots-v1"],
+		["lineage-hop-nodes.jsonl", stableRecords(hopNodes as unknown as JsonRecord[], (record) => String(record.hop_id)), "machine-facts-lineage-hop-nodes-v1"],
+		["lineage-hop-edges.jsonl", stableRecords(hopEdges as unknown as JsonRecord[], (record) => String(record.edge_id)), "machine-facts-lineage-hop-edges-v1"],
 		["output-field-bindings.jsonl", outputBindings, "machine-facts-output-field-bindings-v1"],
 		["unknowns.jsonl", unknowns, "machine-facts-unknowns-v1"],
 	] as const) {
@@ -1179,11 +1425,17 @@ function buildTaskBundle(
 			relation_edges: relationEdges.length,
 			field_expression_nodes: expressions.length,
 			column_lineage_edges: lineage.length,
+			lineage_hop_roots: hopRoots.length,
+			lineage_hop_nodes: hopNodes.length,
+			lineage_hop_edges: hopEdges.length,
+			lineage_hop_projected_roots: hopRoots.filter((root) => root.projection_status === "PROJECTED").length,
+			lineage_hop_partial_roots: hopRoots.filter((root) => root.projection_status === "PARTIAL_NATIVE").length,
+			lineage_hop_not_evaluable_roots: hopRoots.filter((root) => root.projection_status === "NOT_EVALUABLE").length,
 			output_field_bindings: outputBindings.length,
 			unknowns: unknowns.length,
 			unknowns_by_outcome: unknownsByOutcome,
 		},
-		gates: { required_files: true, hash_integrity: true, span_roundtrip: true, relation_endpoints: true, lineage_endpoints: true, output_binding_endpoints: true },
+		gates: { required_files: true, hash_integrity: true, span_roundtrip: true, relation_endpoints: true, lineage_endpoints: true, output_binding_endpoints: true, lineage_hop_endpoints: true, lineage_hop_acyclic: true, lineage_hop_status_truth_table: true, lineage_hop_origin_conservation: true },
 		boundaries: { business_logic_correctness: "NOT_EVALUATED", runtime_execution: "NOT_EVALUATED", business_rows_read: false, external_model_calls: 0, cross_task_field_stitching: "NOT_GENERATED" },
 	};
 	writeCanonical(join(staging, "manifest.json"), manifest);
