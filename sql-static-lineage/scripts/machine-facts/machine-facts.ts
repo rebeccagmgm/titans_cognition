@@ -5,6 +5,15 @@ import { Schema, SqlSession, type SchemaMapping } from "../../src/index.ts";
 import { buildPlanFacts, EXPRESSION_DEPENDENCY_ADAPTER_VERSION } from "../plans/plan-adapter.ts";
 import type { PlanFacts } from "../plans/plan-contract.ts";
 import { deriveOutputFieldBindings, type WriteOutputContext } from "./output-field-bindings.ts";
+import { refreshSchemaEvidence } from "./schema-evidence-refresh.ts";
+import {
+	fileHash as runtimeFileHash,
+	publishArtifactBundle,
+	recoverArtifactState,
+	writeCanonical as runtimeWriteCanonical,
+	writeCanonicalJsonl,
+	writeStatusFile,
+} from "./machine-facts-runtime.ts";
 import {
 	MACHINE_FACTS_ADAPTER_VERSION,
 	MACHINE_FACTS_CONTRACT_VERSION,
@@ -183,10 +192,11 @@ function sanitizeSqlForParser(sql: string): ParserSqlInput {
 	sanitized = output;
 
 	const replacements = [...tokenToRaw.entries()].sort(([left], [right]) => right.length - left.length);
-	const restoreString = (value: string): string => replacements.reduce((current, [token, raw]) => {
-		const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-		return current.replace(new RegExp(escaped, "gi"), () => raw);
-	}, value);
+	const restoreString = (value: string): string =>
+		replacements.reduce((current, [token, raw]) => {
+			const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			return current.replace(new RegExp(escaped, "gi"), () => raw);
+		}, value);
 	const restore = <T>(value: T): T => {
 		const visit = (item: unknown): unknown => {
 			if (typeof item === "string") return restoreString(item);
@@ -206,18 +216,15 @@ function json<T>(path: string): T {
 }
 
 function writeCanonical(path: string, value: unknown): void {
-	mkdirSync(dirname(path), { recursive: true });
-	writeFileSync(path, canonicalJson(value), "utf8");
+	runtimeWriteCanonical(path, value);
 }
 
 function writeJsonl(path: string, records: readonly unknown[]): { row_count: number; content_sha256: string } {
-	const bytes = canonicalJsonl(records);
-	writeFileSync(path, bytes, "utf8");
-	return { row_count: records.length, content_sha256: sha256(bytes) };
+	return writeCanonicalJsonl(path, records);
 }
 
 function fileHash(path: string): string {
-	return sha256(readFileSync(path));
+	return runtimeFileHash(path);
 }
 
 function rootForBundle(bundleDir: string): string {
@@ -230,7 +237,8 @@ function relativeRoot(root: string, path: string): string {
 
 function safeTask(task: GenericTaskProfile): void {
 	safeSegment(task.task_id, "task_id");
-	if (!task.sql_snapshot || typeof task.sql_snapshot !== "string") throw new Error(`task ${task.task_id} has no SQL snapshot`);
+	if (!task.sql_snapshot || typeof task.sql_snapshot !== "string")
+		throw new Error(`task ${task.task_id} has no SQL snapshot`);
 }
 
 function normalizeWrites(task: GenericTaskProfile): string[] {
@@ -251,16 +259,19 @@ function classifyStatement(text: string): string {
 
 function parseSqlWrite(text: string): string | null {
 	const match = text.match(
-	/^\s*(?:CREATE\s+(?:OR\s+REPLACE\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?|INSERT\s+(?:OVERWRITE|INTO)\s+(?:TABLE\s+)?|MERGE\s+INTO\s+)([A-Za-z0-9_`".\-]+)/i,
+		/^\s*(?:CREATE\s+(?:OR\s+REPLACE\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?|INSERT\s+(?:OVERWRITE|INTO)\s+(?:TABLE\s+)?|MERGE\s+INTO\s+)([A-Za-z0-9_`".\-]+)/i,
 	);
 	return match?.[1] ? normalizeName(match[1]) : null;
 }
 
 function spanValid(span: unknown, text: string): span is SourceSpan {
 	return (
-		typeof span === "object" && span !== null &&
-		Number.isInteger((span as SourceSpan).start) && Number.isInteger((span as SourceSpan).end) &&
-		(span as SourceSpan).start >= 0 && (span as SourceSpan).end >= (span as SourceSpan).start &&
+		typeof span === "object" &&
+		span !== null &&
+		Number.isInteger((span as SourceSpan).start) &&
+		Number.isInteger((span as SourceSpan).end) &&
+		(span as SourceSpan).start >= 0 &&
+		(span as SourceSpan).end >= (span as SourceSpan).start &&
 		(span as SourceSpan).end <= text.length
 	);
 }
@@ -268,7 +279,10 @@ function spanValid(span: unknown, text: string): span is SourceSpan {
 function globalRelationId(taskId: string, statementIndex: number, localId: string): string {
 	const relationMarker = ":relation:";
 	const markerIndex = localId.indexOf(relationMarker);
-	const normalizedLocalId = markerIndex >= 0 && (localId.startsWith("sql:") || localId.includes(":statement:sql:")) ? localId.slice(markerIndex + relationMarker.length) : localId;
+	const normalizedLocalId =
+		markerIndex >= 0 && (localId.startsWith("sql:") || localId.includes(":statement:sql:"))
+			? localId.slice(markerIndex + relationMarker.length)
+			: localId;
 	return `task:${taskId}:statement:${statementIndex}:relation:${normalizedLocalId}`;
 }
 
@@ -282,7 +296,6 @@ function globalizeRelation(taskId: string, statementIndex: number, relation: Jso
 	if (relation.branches) converted.branches = relation.branches.map(mapId);
 	return converted;
 }
-
 
 function schemaRecordQuality(record: JsonRecord): [number, number, number, string] {
 	return [
@@ -310,7 +323,9 @@ export function mergeSchemaEvidence(raws: readonly JsonRecord[], logicalSourceId
 		for (const record of records) {
 			if (!record || typeof record !== "object") continue;
 			const candidate = stripVolatile(record) as JsonRecord;
-			const qualifiedName = String(candidate.qualified_name ?? `${candidate.db ?? ""}.${candidate.table ?? ""}`).trim();
+			const qualifiedName = String(
+				candidate.qualified_name ?? `${candidate.db ?? ""}.${candidate.table ?? ""}`,
+			).trim();
 			if (!qualifiedName || qualifiedName === ".") continue;
 			const key = normalizeName(qualifiedName);
 			if (isBetterSchemaRecord(candidate, byQualifiedName.get(key))) byQualifiedName.set(key, candidate);
@@ -319,7 +334,9 @@ export function mergeSchemaEvidence(raws: readonly JsonRecord[], logicalSourceId
 	return {
 		schema_version: "machine-facts-schema-bundle-v1",
 		logical_source_id: logicalSourceId,
-		records: stableRecords([...byQualifiedName.values()], (record) => normalizeName(String(record.qualified_name ?? `${record.db ?? ""}.${record.table ?? ""}`))),
+		records: stableRecords([...byQualifiedName.values()], (record) =>
+			normalizeName(String(record.qualified_name ?? `${record.db ?? ""}.${record.table ?? ""}`)),
+		),
 	};
 }
 
@@ -356,11 +373,23 @@ function outputColumns(relation: JsonRecord): JsonRecord[] {
 }
 
 export function inputDependencyStatus(expression: JsonRecord): InputDependencyStatus {
-	const inputs = Array.isArray(expression.input_columns) ? expression.input_columns as JsonRecord[] : [];
-	const hasPhysical = inputs.some((input) => input.resolution === "PHYSICAL" && Array.isArray(input.physical) && input.physical.length > 0);
+	const inputs = Array.isArray(expression.input_columns) ? (expression.input_columns as JsonRecord[]) : [];
+	const hasPhysical = inputs.some(
+		(input) => input.resolution === "PHYSICAL" && Array.isArray(input.physical) && input.physical.length > 0,
+	);
 	const hasDerived = inputs.some((input) => input.resolution === "DERIVED_OUTPUT");
-	const hasSqlCandidate = inputs.some((input) => input.resolution === "SQL_CANDIDATE" && Array.isArray(input.sql_candidate) && input.sql_candidate.length > 0);
-	const hasUnresolved = inputs.some((input) => input.resolution !== "PHYSICAL" && input.resolution !== "DERIVED_OUTPUT" && input.resolution !== "SQL_CANDIDATE");
+	const hasSqlCandidate = inputs.some(
+		(input) =>
+			input.resolution === "SQL_CANDIDATE" &&
+			Array.isArray(input.sql_candidate) &&
+			input.sql_candidate.length > 0,
+	);
+	const hasUnresolved = inputs.some(
+		(input) =>
+			input.resolution !== "PHYSICAL" &&
+			input.resolution !== "DERIVED_OUTPUT" &&
+			input.resolution !== "SQL_CANDIDATE",
+	);
 	if (hasPhysical && (hasUnresolved || hasDerived || hasSqlCandidate)) return "PARTIAL";
 	if (hasPhysical) return "PHYSICAL";
 	if (hasSqlCandidate && !hasUnresolved && !hasDerived) return "SQL_CANDIDATE";
@@ -389,9 +418,14 @@ function physicalTablesIn(value: unknown, result = new Set<string>()): Set<strin
 }
 
 function unresolvedInputColumns(expression: JsonRecord): JsonRecord[] {
-	const inputs = Array.isArray(expression.input_columns) ? expression.input_columns as JsonRecord[] : [];
+	const inputs = Array.isArray(expression.input_columns) ? (expression.input_columns as JsonRecord[]) : [];
 	return inputs
-		.filter((input) => input.resolution !== "PHYSICAL" && input.resolution !== "DERIVED_OUTPUT" && input.resolution !== "SQL_CANDIDATE")
+		.filter(
+			(input) =>
+				input.resolution !== "PHYSICAL" &&
+				input.resolution !== "DERIVED_OUTPUT" &&
+				input.resolution !== "SQL_CANDIDATE",
+		)
 		.map((input) => ({
 			name: input.name ?? null,
 			qualifier: input.qualifier ?? null,
@@ -399,7 +433,10 @@ function unresolvedInputColumns(expression: JsonRecord): JsonRecord[] {
 		}));
 }
 
-function fieldInputsForRefs(logicalSourceId: string, refs: readonly JsonRecord[]): { inputFields: JsonRecord[]; candidateFields: JsonRecord[] } {
+function fieldInputsForRefs(
+	logicalSourceId: string,
+	refs: readonly JsonRecord[],
+): { inputFields: JsonRecord[]; candidateFields: JsonRecord[] } {
 	const physical: JsonRecord[] = [];
 	const candidates: JsonRecord[] = [];
 	for (const input of refs) {
@@ -469,8 +506,15 @@ export function relationNeedsMissingSchema(
 		return !hasSchemaTable(String(relation.table ?? ""), availableSchemaNames, dialect);
 	}
 	const nextVisiting = new Set(visiting).add(nodeId);
-	const inputs = [relation.source, relation.left, relation.right, ...(Array.isArray(relation.branches) ? relation.branches : [])].filter(Boolean) as string[];
-	return inputs.some((input) => relationNeedsMissingSchema(input, relations, availableSchemaNames, nextVisiting, dialect));
+	const inputs = [
+		relation.source,
+		relation.left,
+		relation.right,
+		...(Array.isArray(relation.branches) ? relation.branches : []),
+	].filter(Boolean) as string[];
+	return inputs.some((input) =>
+		relationNeedsMissingSchema(input, relations, availableSchemaNames, nextVisiting, dialect),
+	);
 }
 
 function classifyPlanUnknown(
@@ -482,7 +526,9 @@ function classifyPlanUnknown(
 	dialect: string,
 ): { outcome_class: OutcomeClass; reason_code: string } {
 	const expressions = outputColumns(relation ?? {});
-	const schemaAvailable = relation ? !relationNeedsMissingSchema(String(relation.id), relations, availableSchemaNames, new Set<string>(), dialect) : false;
+	const schemaAvailable = relation
+		? !relationNeedsMissingSchema(String(relation.id), relations, availableSchemaNames, new Set<string>(), dialect)
+		: false;
 	if (item.field === "physical") {
 		if (String(item.reason ?? "").includes("schema 快照缺少字段证据")) {
 			return { outcome_class: "NOT_EVALUABLE", reason_code: "SCHEMA_BINDING_NOT_EVALUABLE" };
@@ -501,10 +547,18 @@ function classifyPlanUnknown(
 		if (!schemaAvailable) {
 			return { outcome_class: "NOT_EVALUABLE", reason_code: "SCHEMA_BINDING_NOT_EVALUABLE" };
 		}
-		if (expressions.some((expression) => expression.output === "*" || expression.output_name_status === "STAR_EXPANSION")) {
+		if (
+			expressions.some(
+				(expression) => expression.output === "*" || expression.output_name_status === "STAR_EXPANSION",
+			)
+		) {
 			return { outcome_class: "UNKNOWN", reason_code: "STAR_EXPANSION_UNRESOLVED" };
 		}
-		if (expressions.some((expression) => expression.output === "?" || expression.output_name_status === "ANONYMOUS_EXPRESSION")) {
+		if (
+			expressions.some(
+				(expression) => expression.output === "?" || expression.output_name_status === "ANONYMOUS_EXPRESSION",
+			)
+		) {
 			return { outcome_class: "UNKNOWN", reason_code: "ANONYMOUS_OUTPUT_NAME_UNRESOLVED" };
 		}
 	}
@@ -552,37 +606,31 @@ function canRepresentMissingSchemaAsSqlCandidate(
 	return safe && missing.size > 0 && [...missing].every((table) => candidateTables.has(table));
 }
 
-function makeFailure(outcome_class: OutcomeClass, reason_code: string, message: string, subject?: string): FailureOutcome {
+function makeFailure(
+	outcome_class: OutcomeClass,
+	reason_code: string,
+	message: string,
+	subject?: string,
+): FailureOutcome {
 	return { outcome_class, reason_code, message, ...(subject ? { subject } : {}) };
 }
 
 function contextHash(task: GenericTaskProfile, profile: GenericAnalysisProfile, logicalSourceId: string): string {
-	return sha256(canonicalJson({
-		contract_version: MACHINE_FACTS_CONTRACT_VERSION,
-		adapter_version: MACHINE_FACTS_ADAPTER_VERSION,
-		plan_adapter_version: EXPRESSION_DEPENDENCY_ADAPTER_VERSION,
-		logical_source_id: logicalSourceId,
-		dialect: profile.dialect,
-		declared_outputs: normalizeWrites(task),
-		include_expression_dependencies: true,
-	}));
+	return sha256(
+		canonicalJson({
+			contract_version: MACHINE_FACTS_CONTRACT_VERSION,
+			adapter_version: MACHINE_FACTS_ADAPTER_VERSION,
+			plan_adapter_version: EXPRESSION_DEPENDENCY_ADAPTER_VERSION,
+			logical_source_id: logicalSourceId,
+			dialect: profile.dialect,
+			declared_outputs: normalizeWrites(task),
+			include_expression_dependencies: true,
+		}),
+	);
 }
 
 function writeStatus(taskRoot: string, status: AnalysisStatus): void {
-	const path = join(taskRoot, "analysis-status.json");
-	const temp = `${path}.tmp`;
-	const backup = `${path}.bak`;
-	if (existsSync(backup)) throw new Error("RECOVERY_REQUIRED: stale analysis-status backup exists");
-	writeCanonical(temp, status);
-	try {
-		if (existsSync(path)) renameSync(path, backup);
-		renameSync(temp, path);
-		if (existsSync(backup)) rmSync(backup, { force: true });
-	} catch (error) {
-		if (!existsSync(path) && existsSync(backup)) renameSync(backup, path);
-		if (existsSync(temp)) rmSync(temp, { force: true });
-		throw error;
-	}
+	writeStatusFile(join(taskRoot, "analysis-status.json"), status);
 }
 
 function readStatus(taskRoot: string): AnalysisStatus | null {
@@ -599,32 +647,11 @@ function readCurrentManifestHash(taskRoot: string): string | null {
 }
 
 function recoverTaskState(taskRoot: string): void {
-	const statusBackup = join(taskRoot, "analysis-status.json.bak");
-	if (existsSync(statusBackup)) {
-		if (existsSync(join(taskRoot, "analysis-status.json"))) throw new Error("RECOVERY_REQUIRED: status and status backup both exist");
-		renameSync(statusBackup, join(taskRoot, "analysis-status.json"));
-	}
-	const recovery = join(taskRoot, ".recovery");
-	const staging = readdirSync(taskRoot, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory() && entry.name.startsWith(".staging-"))
-		.map((entry) => join(taskRoot, entry.name));
-	for (const stagingPath of staging) {
-		if (validateBundle(stagingPath).length === 0) throw new Error("RECOVERY_REQUIRED: valid staging directory requires inspection");
-		rmSync(stagingPath, { recursive: true, force: true });
-	}
-	if (existsSync(recovery)) {
-		const recoveryErrors = validateBundle(recovery);
-		const bundle = join(taskRoot, "bundle");
-		if (existsSync(bundle) || recoveryErrors.length > 0) throw new Error(`RECOVERY_REQUIRED: recovery directory requires inspection (${recoveryErrors.join("; ")})`);
-		renameSync(recovery, bundle);
-	}
-	let status: AnalysisStatus | null;
 	try {
-		status = readStatus(taskRoot);
+		recoverArtifactState(taskRoot, validateBundle);
 	} catch (error) {
-		throw new Error(`RECOVERY_REQUIRED: analysis-status.json is invalid (${error instanceof Error ? error.message : String(error)})`);
+		throw new Error(`RECOVERY_REQUIRED: ${error instanceof Error ? error.message : String(error)}`);
 	}
-	if (status?.state === "ANALYZING") throw new Error("RECOVERY_REQUIRED: previous analysis was interrupted");
 }
 
 function snapshot(root: string, kind: "sql" | "schema", hash: string, bytes: Buffer): string {
@@ -664,7 +691,9 @@ function planRecords(
 	const unknowns: JsonRecord[] = [];
 	const reads: JsonRecord[] = [];
 	const planRelations = plan.relations as JsonRecord[];
-	const relationIds = new Set(plan.relations.map((relation) => globalRelationId(task.task_id, statementIndex, relation.id)));
+	const relationIds = new Set(
+		plan.relations.map((relation) => globalRelationId(task.task_id, statementIndex, relation.id)),
+	);
 
 	for (const table of plan.physical_inputs) {
 		reads.push({
@@ -680,7 +709,14 @@ function planRecords(
 
 	for (const item of plan.unknowns) {
 		const relation = planRelations.find((candidate) => candidate.id === item.node_id);
-		const classification = classifyPlanUnknown(item as JsonRecord, relation, statementType, availableSchemaNames, planRelations, dialect);
+		const classification = classifyPlanUnknown(
+			item as JsonRecord,
+			relation,
+			statementType,
+			availableSchemaNames,
+			planRelations,
+			dialect,
+		);
 		unknowns.push({
 			unknown_id: `unknown:${task.task_id}:${statementIndex}:${unknowns.length}`,
 			task_id: task.task_id,
@@ -695,14 +731,17 @@ function planRecords(
 	}
 
 	const explicitPhysicalUnknowns = new Set(
-		(plan.unknowns as JsonRecord[])
-			.filter((item) => item.field === "physical")
-			.map((item) => String(item.node_id)),
+		(plan.unknowns as JsonRecord[]).filter((item) => item.field === "physical").map((item) => String(item.node_id)),
 	);
 	for (const relation of planRelations) {
-		const missingTables = [...physicalTablesIn(relation)].filter((table) => !hasSchemaTable(table, availableSchemaNames, dialect));
+		const missingTables = [...physicalTablesIn(relation)].filter(
+			(table) => !hasSchemaTable(table, availableSchemaNames, dialect),
+		);
 		const explicitPhysicalUnknown = explicitPhysicalUnknowns.has(String(relation.id));
-		const candidateBinding = missingTables.length > 0 && !explicitPhysicalUnknown && canRepresentMissingSchemaAsSqlCandidate(missingTables, planRelations);
+		const candidateBinding =
+			missingTables.length > 0 &&
+			!explicitPhysicalUnknown &&
+			canRepresentMissingSchemaAsSqlCandidate(missingTables, planRelations);
 		if (missingTables.length > 0 && !candidateBinding && !explicitPhysicalUnknown) {
 			unknowns.push({
 				unknown_id: `unknown:${task.task_id}:${statementIndex}:${unknowns.length}`,
@@ -733,7 +772,9 @@ function planRecords(
 			relation,
 		};
 		relations.push(node);
-		const refs = [relation.source, relation.left, relation.right, ...(relation.branches ?? [])].filter(Boolean) as string[];
+		const refs = [relation.source, relation.left, relation.right, ...(relation.branches ?? [])].filter(
+			Boolean,
+		) as string[];
 		for (const ref of refs) {
 			relationEdges.push({
 				edge_id: `relation-edge:${ref}:${relationId}`,
@@ -746,11 +787,21 @@ function planRecords(
 				source_span: relation.span,
 			});
 			if (!relationIds.has(ref)) {
-				unknowns.push(makeFailure("FAILURE", "RELATION_ENDPOINT_MISSING", `relation endpoint ${ref} is missing`, relationId));
+				unknowns.push(
+					makeFailure(
+						"FAILURE",
+						"RELATION_ENDPOINT_MISSING",
+						`relation endpoint ${ref} is missing`,
+						relationId,
+					),
+				);
 			}
 		}
 
-		for (const [role, expressions] of [["PROJECT_EXPRESSION", relation.type === "project" ? outputColumns(relation) : []], ["AGGREGATE_MEASURE", relation.type === "aggregate" ? outputColumns(relation) : []]] as const) {
+		for (const [role, expressions] of [
+			["PROJECT_EXPRESSION", relation.type === "project" ? outputColumns(relation) : []],
+			["AGGREGATE_MEASURE", relation.type === "aggregate" ? outputColumns(relation) : []],
+		] as const) {
 			for (const [ordinal, expression] of expressions.entries()) {
 				const expressionId = `${relationId}:expression:${role.toLowerCase()}:${ordinal}`;
 				const expressionSpan = expression.span as SourceSpan;
@@ -818,22 +869,35 @@ function validateJsonSchema(value: unknown, schema: JsonRecord, path = "$", erro
 		errors.push(`${path}: expected ${type}, got ${actual}`);
 		return errors;
 	}
-	if (schema.const !== undefined && value !== schema.const) errors.push(`${path}: expected const ${String(schema.const)}`);
-	if (schema.pattern && typeof value === "string" && !(new RegExp(String(schema.pattern))).test(value)) errors.push(`${path}: pattern mismatch`);
+	if (schema.const !== undefined && value !== schema.const)
+		errors.push(`${path}: expected const ${String(schema.const)}`);
+	if (schema.pattern && typeof value === "string" && !new RegExp(String(schema.pattern)).test(value))
+		errors.push(`${path}: pattern mismatch`);
 	if (Array.isArray(value)) {
-		if (schema.items) value.forEach((item, index) => validateJsonSchema(item, schema.items as JsonRecord, `${path}[${index}]`, errors));
+		if (schema.items)
+			value.forEach((item, index) =>
+				validateJsonSchema(item, schema.items as JsonRecord, `${path}[${index}]`, errors),
+			);
 		return errors;
 	}
 	if (actual !== "object" || value === null) return errors;
 	const object = value as JsonRecord;
-	for (const required of (schema.required ?? []) as string[]) if (!(required in object)) errors.push(`${path}: missing required property ${required}`);
+	for (const required of (schema.required ?? []) as string[])
+		if (!(required in object)) errors.push(`${path}: missing required property ${required}`);
 	const properties = (schema.properties ?? {}) as JsonRecord;
-	for (const [key, childSchema] of Object.entries(properties)) if (key in object) validateJsonSchema(object[key], childSchema as JsonRecord, `${path}.${key}`, errors);
+	for (const [key, childSchema] of Object.entries(properties))
+		if (key in object) validateJsonSchema(object[key], childSchema as JsonRecord, `${path}.${key}`, errors);
 	return errors;
 }
 
 function manifestContext(manifest: MachineFactsManifest): JsonRecord {
-	return { schema_version: manifest.schema_version, task_id: manifest.task_id, logical_source_id: manifest.logical_source_id, inputs: manifest.inputs, method: manifest.method };
+	return {
+		schema_version: manifest.schema_version,
+		task_id: manifest.task_id,
+		logical_source_id: manifest.logical_source_id,
+		inputs: manifest.inputs,
+		method: manifest.method,
+	};
 }
 
 function outputPath(bundleDir: string, path: string): string | null {
@@ -860,7 +924,13 @@ export function validateBundle(bundleDir: string): string[] {
 	} catch (error) {
 		return [`manifest.json is invalid: ${error instanceof Error ? error.message : String(error)}`];
 	}
-	if (!manifest.inputs || typeof manifest.inputs !== "object" || !manifest.method || typeof manifest.method !== "object" || !Array.isArray(manifest.outputs)) {
+	if (
+		!manifest.inputs ||
+		typeof manifest.inputs !== "object" ||
+		!manifest.method ||
+		typeof manifest.method !== "object" ||
+		!Array.isArray(manifest.outputs)
+	) {
 		errors.push("manifest structural fields are invalid");
 		return [...new Set(errors)];
 	}
@@ -873,14 +943,22 @@ export function validateBundle(bundleDir: string): string[] {
 	}
 	let recordSchemas: JsonRecord = {};
 	try {
-		recordSchemas = (json<JsonRecord>(join(workspace, "sql-static-lineage", "schemas", "machine-facts-records.schema.json")).properties ?? {}) as JsonRecord;
+		recordSchemas = (json<JsonRecord>(
+			join(workspace, "sql-static-lineage", "schemas", "machine-facts-records.schema.json"),
+		).properties ?? {}) as JsonRecord;
 	} catch (error) {
 		errors.push(`record schema validation failed: ${error instanceof Error ? error.message : String(error)}`);
 	}
 	if (manifest.schema_version !== MACHINE_FACTS_CONTRACT_VERSION) errors.push("unsupported manifest schema_version");
 	if (manifest.status !== "SUCCESS") errors.push("manifest status is not SUCCESS");
 	for (const output of manifest.outputs ?? []) {
-		if (!output || typeof output !== "object" || typeof output.path !== "string" || typeof output.content_sha256 !== "string" || !Number.isInteger(output.row_count)) {
+		if (
+			!output ||
+			typeof output !== "object" ||
+			typeof output.path !== "string" ||
+			typeof output.content_sha256 !== "string" ||
+			!Number.isInteger(output.row_count)
+		) {
 			errors.push("manifest output record is structurally invalid");
 			continue;
 		}
@@ -899,27 +977,46 @@ export function validateBundle(bundleDir: string): string[] {
 			if (rows.length !== output.row_count) errors.push(`row count mismatch ${output.path}`);
 			const recordSchema = recordSchemas[output.path] as JsonRecord | undefined;
 			if (!recordSchema) errors.push(`record schema missing ${output.path}`);
-			else rows.forEach((row, index) => validateJsonSchema(row, recordSchema, `${output.path}[${index}]`, errors));
+			else
+				rows.forEach((row, index) => validateJsonSchema(row, recordSchema, `${output.path}[${index}]`, errors));
 		} catch (error) {
 			errors.push(`invalid JSONL ${output.path}: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 	for (const required of REQUIRED_DATASETS) {
-		if (!(manifest.outputs ?? []).some((output) => output && typeof output === "object" && output.path === required)) errors.push(`required output not declared ${required}`);
+		if (
+			!(manifest.outputs ?? []).some((output) => output && typeof output === "object" && output.path === required)
+		)
+			errors.push(`required output not declared ${required}`);
 	}
 	const root = rootForBundle(bundleDir);
 	const sqlPath = snapshotReference(root, manifest.inputs.sql_snapshot, "sql", manifest.inputs.sql_sha256);
-	if (!sqlPath || !existsSync(sqlPath) || fileHash(sqlPath) !== manifest.inputs.sql_sha256) errors.push("SQL snapshot is missing, unsafe, or hash-mismatched");
-	const schemaPath = snapshotReference(root, manifest.inputs.schema_snapshot, "schema", manifest.inputs.schema_bundle_sha256);
-	if (!schemaPath || !existsSync(schemaPath) || fileHash(schemaPath) !== manifest.inputs.schema_bundle_sha256) errors.push("Schema snapshot is missing, unsafe, or hash-mismatched");
+	if (!sqlPath || !existsSync(sqlPath) || fileHash(sqlPath) !== manifest.inputs.sql_sha256)
+		errors.push("SQL snapshot is missing, unsafe, or hash-mismatched");
+	const schemaPath = snapshotReference(
+		root,
+		manifest.inputs.schema_snapshot,
+		"schema",
+		manifest.inputs.schema_bundle_sha256,
+	);
+	if (!schemaPath || !existsSync(schemaPath) || fileHash(schemaPath) !== manifest.inputs.schema_bundle_sha256)
+		errors.push("Schema snapshot is missing, unsafe, or hash-mismatched");
 	const sourceArtifactPath = join(bundleDir, "source-artifact.json");
 	if (!existsSync(sourceArtifactPath)) errors.push("source-artifact.json is missing");
 	else {
 		try {
 			const sourceArtifact = json<JsonRecord>(sourceArtifactPath);
 			const sourceSchema = recordSchemas["source-artifact.json"] as JsonRecord | undefined;
-			if (sourceSchema) for (const error of validateJsonSchema(sourceArtifact, sourceSchema, "source-artifact.json")) errors.push(error);
-			if (sourceArtifact.task_id !== manifest.task_id || sourceArtifact.logical_source_id !== manifest.logical_source_id || sourceArtifact.sql_sha256 !== manifest.inputs.sql_sha256 || sourceArtifact.sql_snapshot !== manifest.inputs.sql_snapshot) errors.push("source-artifact does not match manifest");
+			if (sourceSchema)
+				for (const error of validateJsonSchema(sourceArtifact, sourceSchema, "source-artifact.json"))
+					errors.push(error);
+			if (
+				sourceArtifact.task_id !== manifest.task_id ||
+				sourceArtifact.logical_source_id !== manifest.logical_source_id ||
+				sourceArtifact.sql_sha256 !== manifest.inputs.sql_sha256 ||
+				sourceArtifact.sql_snapshot !== manifest.inputs.sql_snapshot
+			)
+				errors.push("source-artifact does not match manifest");
 		} catch (error) {
 			errors.push(`source-artifact.json is invalid: ${error instanceof Error ? error.message : String(error)}`);
 		}
@@ -927,25 +1024,34 @@ export function validateBundle(bundleDir: string): string[] {
 	const sql = sqlPath && existsSync(sqlPath) ? readFileSync(sqlPath, "utf8") : "";
 	const statements = readJsonlForValidation(join(bundleDir, "statements.jsonl"), errors);
 	for (const statement of statements) {
-		if (!spanValid(statement.span, sql) || sql.slice(statement.span.start, statement.span.end) !== statement.raw_sql) {
+		if (
+			!spanValid(statement.span, sql) ||
+			sql.slice(statement.span.start, statement.span.end) !== statement.raw_sql
+		) {
 			errors.push(`statement span roundtrip failed ${statement.statement_id}`);
 		}
 	}
 	const relationNodes = readJsonlForValidation(join(bundleDir, "relation-nodes.jsonl"), errors);
 	const relationIds = new Set(relationNodes.map((node) => node.relation_id));
 	for (const edge of readJsonlForValidation(join(bundleDir, "relation-edges.jsonl"), errors)) {
-		if (!relationIds.has(edge.from_relation_id) || !relationIds.has(edge.to_relation_id)) errors.push(`relation endpoint missing ${edge.edge_id}`);
+		if (!relationIds.has(edge.from_relation_id) || !relationIds.has(edge.to_relation_id))
+			errors.push(`relation endpoint missing ${edge.edge_id}`);
 	}
 	const expressions = readJsonlForValidation(join(bundleDir, "field-expression-nodes.jsonl"), errors);
 	const expressionIds = new Set(expressions.map((node) => node.expression_id));
-	for (const expression of expressions) if (!relationIds.has(expression.relation_id)) errors.push(`expression owner missing ${expression.expression_id}`);
+	for (const expression of expressions)
+		if (!relationIds.has(expression.relation_id))
+			errors.push(`expression owner missing ${expression.expression_id}`);
 	for (const edge of readJsonlForValidation(join(bundleDir, "column-lineage-edges.jsonl"), errors)) {
-		if (!expressionIds.has(edge.to_expression_id)) errors.push(`lineage expression endpoint missing ${edge.edge_id}`);
+		if (!expressionIds.has(edge.to_expression_id))
+			errors.push(`lineage expression endpoint missing ${edge.edge_id}`);
 	}
 	for (const binding of readJsonlForValidation(join(bundleDir, "output-field-bindings.jsonl"), errors)) {
-		if (!expressionIds.has(binding.expression_id)) errors.push(`output binding expression endpoint missing ${binding.binding_id}`);
+		if (!expressionIds.has(binding.expression_id))
+			errors.push(`output binding expression endpoint missing ${binding.binding_id}`);
 		if (binding.binding_status !== "RESOLVED") errors.push(`output binding must be resolved ${binding.binding_id}`);
-		if (!Number.isInteger(binding.source_ordinal) || !Number.isInteger(binding.target_ordinal)) errors.push(`output binding ordinal is invalid ${binding.binding_id}`);
+		if (!Number.isInteger(binding.source_ordinal) || !Number.isInteger(binding.target_ordinal))
+			errors.push(`output binding ordinal is invalid ${binding.binding_id}`);
 	}
 	return [...new Set(errors)];
 }
@@ -965,38 +1071,20 @@ function readJsonlForValidation(path: string, errors: string[]): JsonRecord[] {
 	}
 }
 
-function publishBundle(taskRoot: string, staging: string, manifest: MachineFactsManifest): { status: "CREATED" | "REUSED" | "REPLACED"; manifest_sha256: string } {
+function publishBundle(
+	taskRoot: string,
+	staging: string,
+	manifest: MachineFactsManifest,
+): { status: "CREATED" | "REUSED" | "REPLACED"; manifest_sha256: string } {
 	const bundle = join(taskRoot, "bundle");
-	const manifestBytes = canonicalJson(manifest);
-	const manifestHash = sha256(manifestBytes);
-	const hadExisting = existsSync(bundle);
-	if (existsSync(bundle)) {
-		const existing = json<MachineFactsManifest>(join(bundle, "manifest.json"));
-		const existingErrors = validateBundle(bundle);
-		const sameCanonicalManifest = sha256(canonicalJson(existing)) === sha256(manifestBytes);
-		if (sameCanonicalManifest && existingErrors.length === 0) {
-			rmSync(staging, { recursive: true, force: true });
-			return { status: "REUSED", manifest_sha256: sha256(canonicalJson(existing)) };
-		}
-		if (existingErrors.length === 0 && sha256(canonicalJson(manifestContext(existing))) === sha256(canonicalJson(manifestContext(manifest)))) {
-			rmSync(staging, { recursive: true, force: true });
-			throw new Error("NON_DETERMINISTIC_OUTPUT: same analysis context produced different Bundle content");
-		}
-	}
-	const recovery = join(taskRoot, ".recovery");
-	if (existsSync(recovery)) throw new Error("RECOVERY_REQUIRED: recovery directory exists");
-	try {
-		if (existsSync(bundle)) renameSync(bundle, recovery);
-		renameSync(staging, bundle);
-		const errors = validateBundle(bundle);
-		if (errors.length) throw new Error(`published Bundle failed validation: ${errors.join("; ")}`);
-		if (existsSync(recovery)) rmSync(recovery, { recursive: true, force: true });
-		return { status: hadExisting ? "REPLACED" : "CREATED", manifest_sha256: manifestHash };
-	} catch (error) {
-		if (existsSync(bundle)) rmSync(bundle, { recursive: true, force: true });
-		if (existsSync(recovery)) renameSync(recovery, bundle);
-		throw error;
-	}
+	return publishArtifactBundle({
+		root: taskRoot,
+		staging,
+		bundle,
+		manifest,
+		validateBundle,
+		manifestContext: (value) => manifestContext(value as MachineFactsManifest),
+	});
 }
 
 function buildTaskBundle(
@@ -1049,9 +1137,14 @@ function buildTaskBundle(
 		ddl_sha256: record.ddl_sha256 ?? null,
 		table_status: record.table_status ?? null,
 		required_for_star: record.required_for_star === true,
-		physical_columns: Array.isArray(record.columns) ? record.columns.map((column: JsonRecord) => column.name).filter(Boolean) : [],
+		physical_columns: Array.isArray(record.columns)
+			? record.columns.map((column: JsonRecord) => column.name).filter(Boolean)
+			: [],
 		partition_columns: Array.isArray(record.columns)
-			? record.columns.filter((column: JsonRecord) => column.partition === true).map((column: JsonRecord) => String(column.name)).filter(Boolean)
+			? record.columns
+					.filter((column: JsonRecord) => column.partition === true)
+					.map((column: JsonRecord) => String(column.name))
+					.filter(Boolean)
 			: [],
 	}));
 	let parserVersion = "unknown";
@@ -1065,17 +1158,36 @@ function buildTaskBundle(
 		const parsedWrite = parseSqlWrite(rawSql);
 		const statementType = classifyStatement(rawSql);
 		if (parsedWrite) {
-			datasetIo.push({ task_id: task.task_id, statement_id: statementId, direction: "WRITE", dataset_id: datasetId(logicalSourceId, parsedWrite), physical_dataset: parsedWrite, provenance: "SQL_PARSE", resolution_status: "RESOLVED" });
+			datasetIo.push({
+				task_id: task.task_id,
+				statement_id: statementId,
+				direction: "WRITE",
+				dataset_id: datasetId(logicalSourceId, parsedWrite),
+				physical_dataset: parsedWrite,
+				provenance: "SQL_PARSE",
+				resolution_status: "RESOLVED",
+			});
 		}
-		const plan: PlanFacts = parserSql.restore(buildPlanFacts(cell, sql, {
-			statement_index: statementIndex,
-			dialect: profile.dialect,
-			schema,
-			include_expression_dependencies: true,
-		}));
+		const plan: PlanFacts = parserSql.restore(
+			buildPlanFacts(cell, sql, {
+				statement_index: statementIndex,
+				dialect: profile.dialect,
+				schema,
+				include_expression_dependencies: true,
+			}),
+		);
 		const hasActionableUnknown = plan.unknowns.some((item) => {
 			const relation = (plan.relations as JsonRecord[]).find((candidate) => candidate.id === item.node_id);
-			return classifyPlanUnknown(item as JsonRecord, relation, statementType, schema, plan.relations as JsonRecord[], profile.dialect).outcome_class !== "NOT_APPLICABLE";
+			return (
+				classifyPlanUnknown(
+					item as JsonRecord,
+					relation,
+					statementType,
+					schema,
+					plan.relations as JsonRecord[],
+					profile.dialect,
+				).outcome_class !== "NOT_APPLICABLE"
+			);
 		});
 		parserVersion = plan.meta.parser.version;
 		planAdapterVersion = plan.meta.adapter_version;
@@ -1089,14 +1201,27 @@ function buildTaskBundle(
 			parse_status: cell.errors > 0 || hasActionableUnknown ? "PARTIAL" : "SUCCESS",
 			diagnostic: cell.diagnostics,
 		});
-		const records = planRecords(task, logicalSourceId, sql, plan, statementId, statementIndex, statementType, schema, profile.dialect, `sql:${task.task_id}:${sqlHash}`);
+		const records = planRecords(
+			task,
+			logicalSourceId,
+			sql,
+			plan,
+			statementId,
+			statementIndex,
+			statementType,
+			schema,
+			profile.dialect,
+			`sql:${task.task_id}:${sqlHash}`,
+		);
 		relations.push(...records.relations);
 		relationEdges.push(...records.relationEdges);
 		expressions.push(...records.fields);
 		lineage.push(...records.lineage);
 		unknowns.push(...records.unknowns);
 		datasetIo.push(...records.reads);
-		const rootRelationIds = new Set(plan.roots.map((rootId) => globalRelationId(task.task_id, statementIndex, rootId)));
+		const rootRelationIds = new Set(
+			plan.roots.map((rootId) => globalRelationId(task.task_id, statementIndex, rootId)),
+		);
 		writeContexts.push({
 			statementId,
 			statementType,
@@ -1105,7 +1230,17 @@ function buildTaskBundle(
 		});
 		if (cell.errors > 0) {
 			for (const diagnostic of cell.diagnostics) {
-				unknowns.push({ task_id: task.task_id, statement_id: statementId, outcome_class: "UNKNOWN", reason_code: "SYNTAX_DIAGNOSTIC", message: diagnostic.message, source_locator: { start: diagnostic.offset ?? span.start, end: (diagnostic.offset ?? span.start) + diagnostic.length } });
+				unknowns.push({
+					task_id: task.task_id,
+					statement_id: statementId,
+					outcome_class: "UNKNOWN",
+					reason_code: "SYNTAX_DIAGNOSTIC",
+					message: diagnostic.message,
+					source_locator: {
+						start: diagnostic.offset ?? span.start,
+						end: (diagnostic.offset ?? span.start) + diagnostic.length,
+					},
+				});
 			}
 		}
 	}
@@ -1121,7 +1256,11 @@ function buildTaskBundle(
 	unknowns.push(...outputBindingResult.unknowns);
 	const dedupedUnknowns = new Set<string>();
 	const retainedUnknowns = unknowns.filter((item) => {
-		if (item.reason_code !== "SCHEMA_BINDING_NOT_EVALUABLE" || !item.message.startsWith("physical references lack schema evidence:")) return true;
+		if (
+			item.reason_code !== "SCHEMA_BINDING_NOT_EVALUABLE" ||
+			!item.message.startsWith("physical references lack schema evidence:")
+		)
+			return true;
 		const key = `${item.task_id}|${item.statement_id ?? ""}|${item.message}`;
 		if (dedupedUnknowns.has(key)) return false;
 		dedupedUnknowns.add(key);
@@ -1129,19 +1268,41 @@ function buildTaskBundle(
 	});
 	unknowns.splice(0, unknowns.length, ...retainedUnknowns);
 	for (const write of normalizeWrites(task)) {
-		datasetIo.push({ task_id: task.task_id, direction: "WRITE", dataset_id: datasetId(logicalSourceId, write), physical_dataset: write, provenance: "PROFILE_DECLARED", resolution_status: "DECLARED" });
+		datasetIo.push({
+			task_id: task.task_id,
+			direction: "WRITE",
+			dataset_id: datasetId(logicalSourceId, write),
+			physical_dataset: write,
+			provenance: "PROFILE_DECLARED",
+			resolution_status: "DECLARED",
+		});
 	}
-	if (normalizeWrites(task).length > 0 && !datasetIo.some((item) => item.provenance === "SQL_PARSE" && item.direction === "WRITE")) {
-		unknowns.push({ task_id: task.task_id, outcome_class: "NOT_EVALUABLE", reason_code: "OUTPUT_BINDING_NOT_PROVABLE", message: "Profile declared output has no unambiguous SQL output field binding" });
+	if (
+		normalizeWrites(task).length > 0 &&
+		!datasetIo.some((item) => item.provenance === "SQL_PARSE" && item.direction === "WRITE")
+	) {
+		unknowns.push({
+			task_id: task.task_id,
+			outcome_class: "NOT_EVALUABLE",
+			reason_code: "OUTPUT_BINDING_NOT_PROVABLE",
+			message: "Profile declared output has no unambiguous SQL output field binding",
+		});
 	}
 	const unknownsByOutcome = Object.fromEntries(
-		(["UNKNOWN", "NOT_EVALUABLE", "NOT_APPLICABLE", "FAILURE"] as const).map((outcome) => [outcome, unknowns.filter((item) => item.outcome_class === outcome).length]),
+		(["UNKNOWN", "NOT_EVALUABLE", "NOT_APPLICABLE", "FAILURE"] as const).map((outcome) => [
+			outcome,
+			unknowns.filter((item) => item.outcome_class === outcome).length,
+		]),
 	) as Record<OutcomeClass, number>;
 	const files: Array<{ path: string; schema_version: string; row_count: number; content_sha256: string }> = [];
 	for (const [name, records, schemaVersion] of [
 		["statements.jsonl", statements, "machine-facts-statements-v1"],
 		["schema-refs.jsonl", schemaRefs, "machine-facts-schema-refs-v1"],
-		["dataset-io.jsonl", stableRecords(datasetIo, (record) => JSON.stringify(record)), "machine-facts-dataset-io-v1"],
+		[
+			"dataset-io.jsonl",
+			stableRecords(datasetIo, (record) => JSON.stringify(record)),
+			"machine-facts-dataset-io-v1",
+		],
 		["relation-nodes.jsonl", relations, "machine-facts-relation-nodes-v1"],
 		["relation-edges.jsonl", relationEdges, "machine-facts-relation-edges-v1"],
 		["field-expression-nodes.jsonl", expressions, "machine-facts-field-expressions-v2"],
@@ -1183,8 +1344,21 @@ function buildTaskBundle(
 			unknowns: unknowns.length,
 			unknowns_by_outcome: unknownsByOutcome,
 		},
-		gates: { required_files: true, hash_integrity: true, span_roundtrip: true, relation_endpoints: true, lineage_endpoints: true, output_binding_endpoints: true },
-		boundaries: { business_logic_correctness: "NOT_EVALUATED", runtime_execution: "NOT_EVALUATED", business_rows_read: false, external_model_calls: 0, cross_task_field_stitching: "NOT_GENERATED" },
+		gates: {
+			required_files: true,
+			hash_integrity: true,
+			span_roundtrip: true,
+			relation_endpoints: true,
+			lineage_endpoints: true,
+			output_binding_endpoints: true,
+		},
+		boundaries: {
+			business_logic_correctness: "NOT_EVALUATED",
+			runtime_execution: "NOT_EVALUATED",
+			business_rows_read: false,
+			external_model_calls: 0,
+			cross_task_field_stitching: "NOT_GENERATED",
+		},
 	};
 	writeCanonical(join(staging, "manifest.json"), manifest);
 	return { staging, manifest };
@@ -1210,12 +1384,41 @@ export function runTask(
 	try {
 		recoverTaskState(taskRoot);
 	} catch (error) {
-		const failure = makeFailure("FAILURE", "RECOVERY_REQUIRED", error instanceof Error ? error.message : String(error));
-		writeStatus(taskRoot, { schema_version: MACHINE_FACTS_STATUS_VERSION, task_id: task.task_id, logical_source_id: logicalSourceId, state: "FAILED", requested: { sql_sha256: sqlHash, schema_bundle_sha256: schemaBundleHash, analysis_config_sha256: contextHash(task, profile, logicalSourceId), dialect: profile.dialect }, current_manifest_sha256: readCurrentManifestHash(taskRoot), failure });
+		const failure = makeFailure(
+			"FAILURE",
+			"RECOVERY_REQUIRED",
+			error instanceof Error ? error.message : String(error),
+		);
+		writeStatus(taskRoot, {
+			schema_version: MACHINE_FACTS_STATUS_VERSION,
+			task_id: task.task_id,
+			logical_source_id: logicalSourceId,
+			state: "FAILED",
+			requested: {
+				sql_sha256: sqlHash,
+				schema_bundle_sha256: schemaBundleHash,
+				analysis_config_sha256: contextHash(task, profile, logicalSourceId),
+				dialect: profile.dialect,
+			},
+			current_manifest_sha256: readCurrentManifestHash(taskRoot),
+			failure,
+		});
 		return { task_id: task.task_id, state: "FAILED", status: "FAILED", failures: [failure] };
 	}
-	const requested = { sql_sha256: sqlHash, schema_bundle_sha256: schemaBundleHash, analysis_config_sha256: contextHash(task, profile, logicalSourceId), dialect: profile.dialect };
-	writeStatus(taskRoot, { schema_version: MACHINE_FACTS_STATUS_VERSION, task_id: task.task_id, logical_source_id: logicalSourceId, state: "ANALYZING", requested, current_manifest_sha256: readStatus(taskRoot)?.current_manifest_sha256 ?? null });
+	const requested = {
+		sql_sha256: sqlHash,
+		schema_bundle_sha256: schemaBundleHash,
+		analysis_config_sha256: contextHash(task, profile, logicalSourceId),
+		dialect: profile.dialect,
+	};
+	writeStatus(taskRoot, {
+		schema_version: MACHINE_FACTS_STATUS_VERSION,
+		task_id: task.task_id,
+		logical_source_id: logicalSourceId,
+		state: "ANALYZING",
+		requested,
+		current_manifest_sha256: readStatus(taskRoot)?.current_manifest_sha256 ?? null,
+	});
 	let staging: string | null = null;
 	try {
 		const built = buildTaskBundle(task, profile, logicalSourceId, root, schemaBundle, schemaBundleHash);
@@ -1224,14 +1427,39 @@ export function runTask(
 		if (errors.length) throw new Error(errors.join("; "));
 		const published = publishBundle(taskRoot, staging, built.manifest);
 		staging = null;
-		writeStatus(taskRoot, { schema_version: MACHINE_FACTS_STATUS_VERSION, task_id: task.task_id, logical_source_id: logicalSourceId, state: "SUCCESS", requested, current_manifest_sha256: published.manifest_sha256 });
-		return { task_id: task.task_id, state: "SUCCESS", status: published.status, manifest_sha256: published.manifest_sha256, failures: [] };
+		writeStatus(taskRoot, {
+			schema_version: MACHINE_FACTS_STATUS_VERSION,
+			task_id: task.task_id,
+			logical_source_id: logicalSourceId,
+			state: "SUCCESS",
+			requested,
+			current_manifest_sha256: published.manifest_sha256,
+		});
+		return {
+			task_id: task.task_id,
+			state: "SUCCESS",
+			status: published.status,
+			manifest_sha256: published.manifest_sha256,
+			failures: [],
+		};
 	} catch (error) {
 		if (staging && existsSync(staging)) rmSync(staging, { recursive: true, force: true });
 		const message = error instanceof Error ? error.message : String(error);
-		const reasonCode = message.includes("NON_DETERMINISTIC_OUTPUT") ? "NON_DETERMINISTIC_OUTPUT" : message.includes("RECOVERY") ? "RECOVERY_REQUIRED" : "TASK_ANALYSIS_FAILED";
+		const reasonCode = message.includes("NON_DETERMINISTIC_OUTPUT")
+			? "NON_DETERMINISTIC_OUTPUT"
+			: message.includes("RECOVERY")
+				? "RECOVERY_REQUIRED"
+				: "TASK_ANALYSIS_FAILED";
 		const failure = makeFailure("FAILURE", reasonCode, message);
-		writeStatus(taskRoot, { schema_version: MACHINE_FACTS_STATUS_VERSION, task_id: task.task_id, logical_source_id: logicalSourceId, state: "FAILED", requested, current_manifest_sha256: readCurrentManifestHash(taskRoot), failure });
+		writeStatus(taskRoot, {
+			schema_version: MACHINE_FACTS_STATUS_VERSION,
+			task_id: task.task_id,
+			logical_source_id: logicalSourceId,
+			state: "FAILED",
+			requested,
+			current_manifest_sha256: readCurrentManifestHash(taskRoot),
+			failure,
+		});
 		return { task_id: task.task_id, state: "FAILED", status: "FAILED", failures: [failure] };
 	}
 }
@@ -1243,7 +1471,10 @@ export function rebuildIndex(root: string): ProfileRunResult["index"] {
 	const failures: string[] = [];
 	let indexSchema: JsonRecord | null = null;
 	try {
-		indexSchema = (json<JsonRecord>(join(workspace, "sql-static-lineage", "schemas", "machine-facts-records.schema.json")).properties as JsonRecord)["task-fact-index.jsonl"] as JsonRecord;
+		indexSchema = (
+			json<JsonRecord>(join(workspace, "sql-static-lineage", "schemas", "machine-facts-records.schema.json"))
+				.properties as JsonRecord
+		)["task-fact-index.jsonl"] as JsonRecord;
 	} catch (error) {
 		failures.push(`task-fact-index schema unavailable: ${error instanceof Error ? error.message : String(error)}`);
 	}
@@ -1256,7 +1487,9 @@ export function rebuildIndex(root: string): ProfileRunResult["index"] {
 			try {
 				status = readStatus(taskRoot);
 			} catch (error) {
-				failures.push(`${taskId}: invalid analysis-status.json (${error instanceof Error ? error.message : String(error)})`);
+				failures.push(
+					`${taskId}: invalid analysis-status.json (${error instanceof Error ? error.message : String(error)})`,
+				);
 				continue;
 			}
 			if (!status || status.state !== "SUCCESS") {
@@ -1272,16 +1505,32 @@ export function rebuildIndex(root: string): ProfileRunResult["index"] {
 			}
 			const manifest = json<MachineFactsManifest>(manifestPath);
 			const requestedStatus = status.requested as AnalysisStatus["requested"] | undefined;
-			const statusMatchesManifest = typeof status.task_id === "string" && typeof status.logical_source_id === "string" && requestedStatus !== undefined &&
-				status.task_id === taskId && status.task_id === manifest.task_id && status.logical_source_id === manifest.logical_source_id &&
-				requestedStatus.sql_sha256 === manifest.inputs.sql_sha256 && requestedStatus.schema_bundle_sha256 === manifest.inputs.schema_bundle_sha256 &&
-				requestedStatus.analysis_config_sha256 === manifest.inputs.analysis_config_sha256 && requestedStatus.dialect === manifest.method.dialect;
+			const statusMatchesManifest =
+				typeof status.task_id === "string" &&
+				typeof status.logical_source_id === "string" &&
+				requestedStatus !== undefined &&
+				status.task_id === taskId &&
+				status.task_id === manifest.task_id &&
+				status.logical_source_id === manifest.logical_source_id &&
+				requestedStatus.sql_sha256 === manifest.inputs.sql_sha256 &&
+				requestedStatus.schema_bundle_sha256 === manifest.inputs.schema_bundle_sha256 &&
+				requestedStatus.analysis_config_sha256 === manifest.inputs.analysis_config_sha256 &&
+				requestedStatus.dialect === manifest.method.dialect;
 			if (!statusMatchesManifest || sha256(canonicalJson(manifest)) !== status.current_manifest_sha256) {
 				failures.push(`${taskId}: status/manifest identity or hash mismatch`);
 				continue;
 			}
-			const candidate: TaskFactIndexRecord = { task_id: taskId, logical_source_id: manifest.logical_source_id, sql_sha256: manifest.inputs.sql_sha256, manifest_sha256: status.current_manifest_sha256, bundle_path: relativeRoot(root, bundle), status: "SUCCESS" };
-			const indexErrors = indexSchema ? validateJsonSchema(candidate, indexSchema, `task-fact-index.jsonl[${records.length}]`) : ["task-fact-index schema unavailable"];
+			const candidate: TaskFactIndexRecord = {
+				task_id: taskId,
+				logical_source_id: manifest.logical_source_id,
+				sql_sha256: manifest.inputs.sql_sha256,
+				manifest_sha256: status.current_manifest_sha256,
+				bundle_path: relativeRoot(root, bundle),
+				status: "SUCCESS",
+			};
+			const indexErrors = indexSchema
+				? validateJsonSchema(candidate, indexSchema, `task-fact-index.jsonl[${records.length}]`)
+				: ["task-fact-index schema unavailable"];
 			if (indexErrors.length) {
 				failures.push(`${taskId}: ${indexErrors.join("; ")}`);
 				continue;
@@ -1296,7 +1545,8 @@ export function rebuildIndex(root: string): ProfileRunResult["index"] {
 
 export function processProfile(profilePath: string, outputRoot: string, sourceIdOverride?: string): ProfileRunResult {
 	const profile = json<GenericAnalysisProfile>(resolve(workspace, profilePath));
-	if (!profile.dialect || !Array.isArray(profile.tasks) || profile.tasks.length === 0) throw new Error("profile must contain dialect and tasks");
+	if (!profile.dialect || !Array.isArray(profile.tasks) || profile.tasks.length === 0)
+		throw new Error("profile must contain dialect and tasks");
 	if (!sourceIdOverride && !profile.logical_source_id) throw new Error("logical_source_id is required");
 	const logicalSourceId = safeSegment(sourceIdOverride ?? profile.logical_source_id!, "logical_source_id");
 	const taskIds = profile.tasks.map((task) => task.task_id);
@@ -1305,27 +1555,44 @@ export function processProfile(profilePath: string, outputRoot: string, sourceId
 	mkdirSync(root, { recursive: true });
 	const configuredEvidence = Array.isArray(profile.schema_evidence)
 		? [...profile.schema_evidence]
-		: profile.schema_evidence ? [profile.schema_evidence] : [];
+		: profile.schema_evidence
+			? [profile.schema_evidence]
+			: [];
 	const evidencePaths = configuredEvidence.map((path) => resolve(workspace, path));
-	if (evidencePaths.length === 0 || evidencePaths.some((path) => !existsSync(path))) throw new Error("schema_evidence is required and must exist");
-	const schemaBundle = mergeSchemaEvidence(evidencePaths.map((path) => json<JsonRecord>(path)), logicalSourceId);
+	if (evidencePaths.length === 0 || evidencePaths.some((path) => !existsSync(path)))
+		throw new Error("schema_evidence is required and must exist");
+	const schemaBundle = mergeSchemaEvidence(
+		evidencePaths.map((path) => json<JsonRecord>(path)),
+		logicalSourceId,
+	);
 	const schemaBytes = Buffer.from(canonicalJson(schemaBundle), "utf8");
 	const schemaBundleHash = sha256(schemaBytes);
 	snapshot(root, "schema", schemaBundleHash, schemaBytes);
-	const tasks = profile.tasks.map((task) => runTask(task, profile, logicalSourceId, root, schemaBundle, schemaBundleHash));
+	const tasks = profile.tasks.map((task) =>
+		runTask(task, profile, logicalSourceId, root, schemaBundle, schemaBundleHash),
+	);
 	return { output_root: root, tasks, index: rebuildIndex(root) };
 }
 
-function parseArgs(args: string[]): { profile: string; output: string; sourceId?: string } {
+function parseArgs(args: string[]): { profile: string; output: string; sourceId?: string; refreshSchema: boolean } {
 	const value = (name: string, fallback: string): string => {
 		const index = args.indexOf(name);
 		return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
 	};
-	return { profile: value("--profile", "cases/indicator-journey-rgstcomp-mthend/processing-graph-profile.json"), output: value("--output", "machine-facts"), sourceId: args.includes("--source-id") ? value("--source-id", "") : undefined };
+	return {
+		profile: value("--profile", "cases/indicator-journey-rgstcomp-mthend/processing-graph-profile.json"),
+		output: value("--output", "machine-facts"),
+		sourceId: args.includes("--source-id") ? value("--source-id", "") : undefined,
+		refreshSchema: args.includes("--refresh-schema"),
+	};
 }
 
 if (process.argv[1] && basename(process.argv[1]).startsWith("machine-facts")) {
 	const args = parseArgs(process.argv.slice(2));
-	const result = processProfile(args.profile, args.output, args.sourceId);
-	console.log(JSON.stringify({ output: result.output_root, tasks: result.tasks, index: result.index }, null, 2));
+	const run = async (): Promise<void> => {
+		const schemaRefresh = args.refreshSchema ? await refreshSchemaEvidence(args.profile) : null;
+		const result = processProfile(args.profile, args.output, args.sourceId);
+		console.log(JSON.stringify({ schema_refresh: schemaRefresh, output: result.output_root, tasks: result.tasks, index: result.index }, null, 2));
+	};
+	await run();
 }

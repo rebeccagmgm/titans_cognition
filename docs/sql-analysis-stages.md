@@ -147,11 +147,13 @@ npx tsx scripts/machine-facts/machine-facts.ts `
 npx tsx scripts/machine-facts/machine-facts.ts `
   --profile sql-static-lineage/fixtures/machine-facts-independent-profile.json `
   --output machine-facts `
-  --source-id gfhive-test
+  --source-id gfhive-test `
+  --refresh-schema
 ```
 
-该回放的 Schema Evidence 由 `scripts/machine-facts/materialize-schema-evidence.ts` 从已验证的
-118141 Schema Fixture 物化。字段输入依赖按证据强度分层：
+`--refresh-schema` 会先从 SQL/Plan 的 `physical_inputs` 自动发现表，与现有
+`schema_evidence.records` 做差集，只通过只读 `szdata table`/`table-ddl` 补缺失表，成功后原子更新
+Schema Evidence；不传该参数时仍可完全离线重放。字段输入依赖按证据强度分层：
 
 - 表和字段都能被 Schema Evidence 验证时，写入 `PHYSICAL` 及 `SCHEMA_BOUND` 血缘边；
 - Schema 缺失但 SQL 结构明确指向单一物理来源时，写入 `SQL_CANDIDATE`，并将候选字段和边标为 `UNVERIFIED_SCHEMA`，不能冒充 `PHYSICAL`；此时不再额外生成重复的 `SCHEMA_BINDING_NOT_EVALUABLE`；

@@ -10,8 +10,10 @@
 
 - `sql.txt` —— SQL 原文副本 (独立于 evidence-cache, 防缓存被清后丢失)
 - `plan-facts.json` —— adapter 基准输出 (`{ plan, grain_inference }`)
-- schema 来源: szdata table-ddl 实测 (pdata_n 库: info 92列 / det 23列(21普通+2分区) /
-  m 60列(59普通+1分区)), 其余 6 表为显式列子查询无需 schema —— `scripts/plans/schema-118141.ts`
+- 计划回归的最小 schema 来源: `scripts/plans/schema-118141.ts`
+- Machine Facts 的完整 schema evidence 由 `machine-facts.ts --refresh-schema` 根据 SQL/Plan
+  自动发现物理输入，再通过只读 `szdata table`/`table-ddl` 补齐并写入
+  `fixtures/machine-facts-independent-schema.json`
 
 ## 重跑命令
 

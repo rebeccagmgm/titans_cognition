@@ -1,12 +1,367 @@
 {
   "schema_version": "machine-facts-schema-evidence-v1",
-  "source": "SCHEMA_118141_TS",
-  "evidence_boundary": "Materialized from the validated 118141 Schema fixture; no business rows were read.",
-  "required_table_count": 3,
+  "captured_at": "2026-08-18T07:42:16.179Z",
+  "source": "SZDATA_TABLE_DDL",
+  "collection_mode": "SQL_PLAN_MISSING_TABLES_ONLY",
+  "required_table_count": 9,
   "required_star_table_count": 2,
-  "success_count": 3,
+  "success_count": 9,
   "unresolved_count": 0,
   "records": [
+    {
+      "db": "PDATA_N",
+      "table": "T98_OTC_COMP_MNG_RELA_INFO",
+      "qualified_name": "PDATA_N.T98_OTC_COMP_MNG_RELA_INFO",
+      "status": "SUCCESS",
+      "source": "SCHEMA_118141_TS",
+      "metadata_qualified_name": "PDATA_N.T98_OTC_COMP_MNG_RELA_INFO",
+      "required_for_star": true,
+      "columns": [
+        {
+          "name": "agt_id",
+          "partition": false
+        },
+        {
+          "name": "pty_id",
+          "partition": false
+        },
+        {
+          "name": "inr_org_id_1",
+          "partition": false
+        },
+        {
+          "name": "inr_org_name_1",
+          "partition": false
+        },
+        {
+          "name": "div_org_id_1",
+          "partition": false
+        },
+        {
+          "name": "div_org_name_1",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_user_id_1",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_name_1",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_id_1",
+          "partition": false
+        },
+        {
+          "name": "allo_prop_1",
+          "partition": false
+        },
+        {
+          "name": "inr_org_id_2",
+          "partition": false
+        },
+        {
+          "name": "inr_org_name_2",
+          "partition": false
+        },
+        {
+          "name": "div_org_id_2",
+          "partition": false
+        },
+        {
+          "name": "div_org_name_2",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_user_id_2",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_name_2",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_id_2",
+          "partition": false
+        },
+        {
+          "name": "allo_prop_2",
+          "partition": false
+        },
+        {
+          "name": "inr_org_id_3",
+          "partition": false
+        },
+        {
+          "name": "inr_org_name_3",
+          "partition": false
+        },
+        {
+          "name": "div_org_id_3",
+          "partition": false
+        },
+        {
+          "name": "div_org_name_3",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_user_id_3",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_name_3",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_id_3",
+          "partition": false
+        },
+        {
+          "name": "allo_prop_3",
+          "partition": false
+        },
+        {
+          "name": "main_oper_user_id",
+          "partition": false
+        },
+        {
+          "name": "main_oper_name",
+          "partition": false
+        },
+        {
+          "name": "main_oper_emp_id",
+          "partition": false
+        },
+        {
+          "name": "intro_oper_user_id",
+          "partition": false
+        },
+        {
+          "name": "intro_oper_name",
+          "partition": false
+        },
+        {
+          "name": "intro_oper_emp_id",
+          "partition": false
+        },
+        {
+          "name": "data_src_cd",
+          "partition": false
+        },
+        {
+          "name": "task_name",
+          "partition": false
+        },
+        {
+          "name": "data_etl_date",
+          "partition": false
+        },
+        {
+          "name": "data_upt_date",
+          "partition": false
+        },
+        {
+          "name": "data_time",
+          "partition": false
+        },
+        {
+          "name": "inr_main_oper_user_id",
+          "partition": false
+        },
+        {
+          "name": "inr_main_oper_name",
+          "partition": false
+        },
+        {
+          "name": "inr_main_oper_emp_id",
+          "partition": false
+        },
+        {
+          "name": "inr_intro_oper_user_id",
+          "partition": false
+        },
+        {
+          "name": "inr_intro_oper_name",
+          "partition": false
+        },
+        {
+          "name": "inr_intro_oper_emp_id",
+          "partition": false
+        },
+        {
+          "name": "tit_oper_user_id",
+          "partition": false
+        },
+        {
+          "name": "tit_oper_name",
+          "partition": false
+        },
+        {
+          "name": "tit_oper_emp_id",
+          "partition": false
+        },
+        {
+          "name": "tit_oper_inr_org_id",
+          "partition": false
+        },
+        {
+          "name": "tit_oper_inr_org_name",
+          "partition": false
+        },
+        {
+          "name": "tit_cust_mngr_user_id",
+          "partition": false
+        },
+        {
+          "name": "tit_cust_mngr_name",
+          "partition": false
+        },
+        {
+          "name": "tit_cust_mngr_emp_id",
+          "partition": false
+        },
+        {
+          "name": "tit_cust_mngr_inr_org_id",
+          "partition": false
+        },
+        {
+          "name": "tit_cust_mngr_inr_org_name",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_stat_cd_1",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_stat_desc_1",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_stat_cd_2",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_stat_desc_2",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_stat_cd_3",
+          "partition": false
+        },
+        {
+          "name": "cust_mngr_emp_stat_desc_3",
+          "partition": false
+        },
+        {
+          "name": "busi_date",
+          "partition": true
+        }
+      ]
+    },
+    {
+      "db": "PDATA_N",
+      "table": "T98_OTC_DERI_COMP_SALE_ADTNL_DET",
+      "qualified_name": "PDATA_N.T98_OTC_DERI_COMP_SALE_ADTNL_DET",
+      "status": "SUCCESS",
+      "source": "SCHEMA_118141_TS",
+      "metadata_qualified_name": "PDATA_N.T98_OTC_DERI_COMP_SALE_ADTNL_DET",
+      "required_for_star": false,
+      "columns": [
+        {
+          "name": "agt_id",
+          "partition": false
+        },
+        {
+          "name": "busi_type",
+          "partition": false
+        },
+        {
+          "name": "cutp_pty_id",
+          "partition": false
+        },
+        {
+          "name": "undrl_ins_id",
+          "partition": false
+        },
+        {
+          "name": "undrl_wd_cd",
+          "partition": false
+        },
+        {
+          "name": "undrl_name",
+          "partition": false
+        },
+        {
+          "name": "strt_pric_date",
+          "partition": false
+        },
+        {
+          "name": "end_pric_date",
+          "partition": false
+        },
+        {
+          "name": "init_nom_prin",
+          "partition": false
+        },
+        {
+          "name": "dyna_nom_prin",
+          "partition": false
+        },
+        {
+          "name": "fee_rate",
+          "partition": false
+        },
+        {
+          "name": "inta",
+          "partition": false
+        },
+        {
+          "name": "fnd_cost",
+          "partition": false
+        },
+        {
+          "name": "trd_cms",
+          "partition": false
+        },
+        {
+          "name": "trd_cms_cost",
+          "partition": false
+        },
+        {
+          "name": "marg_prop",
+          "partition": false
+        },
+        {
+          "name": "data_src_cd",
+          "partition": false
+        },
+        {
+          "name": "task_name",
+          "partition": false
+        },
+        {
+          "name": "data_etl_date",
+          "partition": false
+        },
+        {
+          "name": "data_upt_date",
+          "partition": false
+        },
+        {
+          "name": "data_time",
+          "partition": false
+        },
+        {
+          "name": "busi_date",
+          "partition": true
+        },
+        {
+          "name": "grp_id",
+          "partition": true
+        }
+      ]
+    },
     {
       "db": "PDATA_N",
       "table": "T98_OTC_DERI_COMP_SALE_INFO",
@@ -387,358 +742,940 @@
       ]
     },
     {
-      "db": "PDATA_N",
-      "table": "T98_OTC_DERI_COMP_SALE_ADTNL_DET",
-      "qualified_name": "PDATA_N.T98_OTC_DERI_COMP_SALE_ADTNL_DET",
-      "status": "SUCCESS",
-      "source": "SCHEMA_118141_TS",
-      "metadata_qualified_name": "PDATA_N.T98_OTC_DERI_COMP_SALE_ADTNL_DET",
+      "db": "pdata_n",
+      "table": "t98_otc_deri_undrl_income_rwd_sum",
+      "qualified_name": "pdata_n.t98_otc_deri_undrl_income_rwd_sum",
       "required_for_star": false,
+      "status": "SUCCESS",
+      "guid": "1d80cd5b-e342-4bce-9350-7b25ec1516a3",
+      "metadata_qualified_name": "pdata_n.t98_otc_deri_undrl_income_rwd_sum@gfhive",
+      "table_status": "ACTIVE",
+      "description": "每天一份快照，场外衍生品业务收入与部门 / 人员奖励核算汇总表",
+      "ddl_sha256": "405f19cc451dc1762617c342a74048efd430de657a5298d9af6dd7d7080d9ecf",
+      "ddl": "create table t98_otc_deri_undrl_income_rwd_sum(src_id string comment '源ID',sett_time string comment '核算时间',inpt_time string comment '数据导入时间',bel_div_org_name string comment '所属分公司名称',bel_inr_org_id string comment '所属内部机构编号',bel_inr_org_name string comment '所属内部机构名称',mngr_emp_name string comment '客户经理员工名称',cupt_name string comment '交易对手简称',otc_deri_type string comment '衍生品类型',annu_pric_diff string comment '年化价差',absl_pric_diff string comment '绝对价差',sale_coef string comment '销售费系数',absl_nom_prin string comment '绝对名义本金',dev_dept_rwd string comment '拓展方部门所得收入',bgng_prcg_date string comment '期初定价日期',accr_begn_date string comment '计提起始日',accr_end_date string comment '计提终止日',end_date string comment '到期日(含提前终止日)',accr_days string comment '实际天数/计提天数',erly_trmt_flag string comment '提前终止标志',erly_trmt_date string comment '提前终止日期',nom_prin string comment '名义本金',contr_id string comment '合同编号',pty_cutp_name string comment '当事人交易对手名称',sign_prd_name string comment '代签产品名称',undrl_cd string comment '标的代码',undrl_name string comment '标的名称',undrl_type string comment '标的名称',remark string comment '备注',dev_cust_flag string comment '研发客户标志',curr_payb_rwd string comment '本期应发奖励',curr_defr_rwd string comment '本期递延奖励',mtch_defr_rwd string comment '历史累计递延奖励',curr_actl_rwd string comment '本期实发奖励',cust_type_desc string comment '客户类型描述',matn_emp_id string comment '维护员工编号',data_src_cd string comment '数据来源代码',task_name string comment '任务名',data_etl_date string comment '数据加载日期',data_upt_date string comment '数据更新日期',data_time string comment '数据时间',real_src_tbl string comment '真实源表',cros_bord_flag string comment '跨境标志',sett_strt_date string comment '核算开始日期',sett_end_date string comment '核算结束日期') partitioned by (src_tbl string comment '源表',busi_date string comment '业务日期') row format delimited fields terminated by ',' stored as orc;",
       "columns": [
         {
-          "name": "agt_id",
-          "partition": false
+          "name": "src_id",
+          "partition": false,
+          "raw_definition": "src_id string comment '源ID'"
         },
         {
-          "name": "busi_type",
-          "partition": false
+          "name": "sett_time",
+          "partition": false,
+          "raw_definition": "sett_time string comment '核算时间'"
         },
         {
-          "name": "cutp_pty_id",
-          "partition": false
+          "name": "inpt_time",
+          "partition": false,
+          "raw_definition": "inpt_time string comment '数据导入时间'"
         },
         {
-          "name": "undrl_ins_id",
-          "partition": false
+          "name": "bel_div_org_name",
+          "partition": false,
+          "raw_definition": "bel_div_org_name string comment '所属分公司名称'"
         },
         {
-          "name": "undrl_wd_cd",
-          "partition": false
+          "name": "bel_inr_org_id",
+          "partition": false,
+          "raw_definition": "bel_inr_org_id string comment '所属内部机构编号'"
+        },
+        {
+          "name": "bel_inr_org_name",
+          "partition": false,
+          "raw_definition": "bel_inr_org_name string comment '所属内部机构名称'"
+        },
+        {
+          "name": "mngr_emp_name",
+          "partition": false,
+          "raw_definition": "mngr_emp_name string comment '客户经理员工名称'"
+        },
+        {
+          "name": "cupt_name",
+          "partition": false,
+          "raw_definition": "cupt_name string comment '交易对手简称'"
+        },
+        {
+          "name": "otc_deri_type",
+          "partition": false,
+          "raw_definition": "otc_deri_type string comment '衍生品类型'"
+        },
+        {
+          "name": "annu_pric_diff",
+          "partition": false,
+          "raw_definition": "annu_pric_diff string comment '年化价差'"
+        },
+        {
+          "name": "absl_pric_diff",
+          "partition": false,
+          "raw_definition": "absl_pric_diff string comment '绝对价差'"
+        },
+        {
+          "name": "sale_coef",
+          "partition": false,
+          "raw_definition": "sale_coef string comment '销售费系数'"
+        },
+        {
+          "name": "absl_nom_prin",
+          "partition": false,
+          "raw_definition": "absl_nom_prin string comment '绝对名义本金'"
+        },
+        {
+          "name": "dev_dept_rwd",
+          "partition": false,
+          "raw_definition": "dev_dept_rwd string comment '拓展方部门所得收入'"
+        },
+        {
+          "name": "bgng_prcg_date",
+          "partition": false,
+          "raw_definition": "bgng_prcg_date string comment '期初定价日期'"
+        },
+        {
+          "name": "accr_begn_date",
+          "partition": false,
+          "raw_definition": "accr_begn_date string comment '计提起始日'"
+        },
+        {
+          "name": "accr_end_date",
+          "partition": false,
+          "raw_definition": "accr_end_date string comment '计提终止日'"
+        },
+        {
+          "name": "end_date",
+          "partition": false,
+          "raw_definition": "end_date string comment '到期日(含提前终止日)'"
+        },
+        {
+          "name": "accr_days",
+          "partition": false,
+          "raw_definition": "accr_days string comment '实际天数/计提天数'"
+        },
+        {
+          "name": "erly_trmt_flag",
+          "partition": false,
+          "raw_definition": "erly_trmt_flag string comment '提前终止标志'"
+        },
+        {
+          "name": "erly_trmt_date",
+          "partition": false,
+          "raw_definition": "erly_trmt_date string comment '提前终止日期'"
+        },
+        {
+          "name": "nom_prin",
+          "partition": false,
+          "raw_definition": "nom_prin string comment '名义本金'"
+        },
+        {
+          "name": "contr_id",
+          "partition": false,
+          "raw_definition": "contr_id string comment '合同编号'"
+        },
+        {
+          "name": "pty_cutp_name",
+          "partition": false,
+          "raw_definition": "pty_cutp_name string comment '当事人交易对手名称'"
+        },
+        {
+          "name": "sign_prd_name",
+          "partition": false,
+          "raw_definition": "sign_prd_name string comment '代签产品名称'"
+        },
+        {
+          "name": "undrl_cd",
+          "partition": false,
+          "raw_definition": "undrl_cd string comment '标的代码'"
         },
         {
           "name": "undrl_name",
-          "partition": false
+          "partition": false,
+          "raw_definition": "undrl_name string comment '标的名称'"
         },
         {
-          "name": "strt_pric_date",
-          "partition": false
+          "name": "undrl_type",
+          "partition": false,
+          "raw_definition": "undrl_type string comment '标的名称'"
         },
         {
-          "name": "end_pric_date",
-          "partition": false
+          "name": "remark",
+          "partition": false,
+          "raw_definition": "remark string comment '备注'"
         },
         {
-          "name": "init_nom_prin",
-          "partition": false
+          "name": "dev_cust_flag",
+          "partition": false,
+          "raw_definition": "dev_cust_flag string comment '研发客户标志'"
         },
         {
-          "name": "dyna_nom_prin",
-          "partition": false
+          "name": "curr_payb_rwd",
+          "partition": false,
+          "raw_definition": "curr_payb_rwd string comment '本期应发奖励'"
         },
         {
-          "name": "fee_rate",
-          "partition": false
+          "name": "curr_defr_rwd",
+          "partition": false,
+          "raw_definition": "curr_defr_rwd string comment '本期递延奖励'"
         },
         {
-          "name": "inta",
-          "partition": false
+          "name": "mtch_defr_rwd",
+          "partition": false,
+          "raw_definition": "mtch_defr_rwd string comment '历史累计递延奖励'"
         },
         {
-          "name": "fnd_cost",
-          "partition": false
+          "name": "curr_actl_rwd",
+          "partition": false,
+          "raw_definition": "curr_actl_rwd string comment '本期实发奖励'"
         },
         {
-          "name": "trd_cms",
-          "partition": false
+          "name": "cust_type_desc",
+          "partition": false,
+          "raw_definition": "cust_type_desc string comment '客户类型描述'"
         },
         {
-          "name": "trd_cms_cost",
-          "partition": false
-        },
-        {
-          "name": "marg_prop",
-          "partition": false
+          "name": "matn_emp_id",
+          "partition": false,
+          "raw_definition": "matn_emp_id string comment '维护员工编号'"
         },
         {
           "name": "data_src_cd",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_src_cd string comment '数据来源代码'"
         },
         {
           "name": "task_name",
-          "partition": false
+          "partition": false,
+          "raw_definition": "task_name string comment '任务名'"
         },
         {
           "name": "data_etl_date",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_etl_date string comment '数据加载日期'"
         },
         {
           "name": "data_upt_date",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_upt_date string comment '数据更新日期'"
         },
         {
           "name": "data_time",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_time string comment '数据时间'"
+        },
+        {
+          "name": "real_src_tbl",
+          "partition": false,
+          "raw_definition": "real_src_tbl string comment '真实源表'"
+        },
+        {
+          "name": "cros_bord_flag",
+          "partition": false,
+          "raw_definition": "cros_bord_flag string comment '跨境标志'"
+        },
+        {
+          "name": "sett_strt_date",
+          "partition": false,
+          "raw_definition": "sett_strt_date string comment '核算开始日期'"
+        },
+        {
+          "name": "sett_end_date",
+          "partition": false,
+          "raw_definition": "sett_end_date string comment '核算结束日期'"
+        },
+        {
+          "name": "src_tbl",
+          "partition": true,
+          "raw_definition": "src_tbl string comment '源表'"
         },
         {
           "name": "busi_date",
-          "partition": true
-        },
-        {
-          "name": "grp_id",
-          "partition": true
+          "partition": true,
+          "raw_definition": "busi_date string comment '业务日期'"
         }
-      ]
+      ],
+      "source": "SZDATA_TABLE_DDL"
     },
     {
-      "db": "PDATA_N",
-      "table": "T98_OTC_COMP_MNG_RELA_INFO",
-      "qualified_name": "PDATA_N.T98_OTC_COMP_MNG_RELA_INFO",
+      "db": "pdata_n",
+      "table": "t99_deri_comp_base_coef_ref",
+      "qualified_name": "pdata_n.t99_deri_comp_base_coef_ref",
+      "required_for_star": false,
       "status": "SUCCESS",
-      "source": "SCHEMA_118141_TS",
-      "metadata_qualified_name": "PDATA_N.T98_OTC_COMP_MNG_RELA_INFO",
-      "required_for_star": true,
+      "guid": "b35ef050-c2a3-4594-a7d4-0c116daa8124",
+      "metadata_qualified_name": "pdata_n.t99_deri_comp_base_coef_ref@gfhive",
+      "table_status": "ACTIVE",
+      "description": "衍生品合约基础系数参考信息",
+      "ddl_sha256": "5eb7f76fa0253371c821b83aad8d0843956fa76a17830d40ec7a25d5b5077a22",
+      "ddl": "create table t99_deri_comp_base_coef_ref(agt_id string comment '协议编号',agt_modifr string comment '协议修饰符',inr_comp_no string comment '内部合约编号',calc_type string comment '计算类型',coef_type string comment '系数类型',base_yield string comment '基础收益率',dft_base_coef string comment '拟定基础系数',desc string comment '描述',main_oper_prsn string comment '主经办人',intro_oper_prsn string comment '引入经办人',adtnl_rwd_flag string comment '额外奖励标志',adtnl_rwd string comment '额外奖励',estb_time string comment '创建时间',upd_time string comment '更新时间',creator string comment '创建人',upd_prsn string comment '更新人',del_flag string comment '删除标志',data_src_cd string comment '数据来源代码',task_name string comment '任务名',data_etl_date string comment '数据加载日期',data_upt_date string comment '数据更新日期',data_time string comment '数据时间') partitioned by (src_tbl string comment '源表') row format delimited fields terminated by ',' stored as orc;",
       "columns": [
         {
           "name": "agt_id",
-          "partition": false
+          "partition": false,
+          "raw_definition": "agt_id string comment '协议编号'"
         },
         {
-          "name": "pty_id",
-          "partition": false
+          "name": "agt_modifr",
+          "partition": false,
+          "raw_definition": "agt_modifr string comment '协议修饰符'"
         },
         {
-          "name": "inr_org_id_1",
-          "partition": false
+          "name": "inr_comp_no",
+          "partition": false,
+          "raw_definition": "inr_comp_no string comment '内部合约编号'"
         },
         {
-          "name": "inr_org_name_1",
-          "partition": false
+          "name": "calc_type",
+          "partition": false,
+          "raw_definition": "calc_type string comment '计算类型'"
         },
         {
-          "name": "div_org_id_1",
-          "partition": false
+          "name": "coef_type",
+          "partition": false,
+          "raw_definition": "coef_type string comment '系数类型'"
         },
         {
-          "name": "div_org_name_1",
-          "partition": false
+          "name": "base_yield",
+          "partition": false,
+          "raw_definition": "base_yield string comment '基础收益率'"
         },
         {
-          "name": "cust_mngr_user_id_1",
-          "partition": false
+          "name": "dft_base_coef",
+          "partition": false,
+          "raw_definition": "dft_base_coef string comment '拟定基础系数'"
         },
         {
-          "name": "cust_mngr_name_1",
-          "partition": false
+          "name": "desc",
+          "partition": false,
+          "raw_definition": "desc string comment '描述'"
         },
         {
-          "name": "cust_mngr_emp_id_1",
-          "partition": false
+          "name": "main_oper_prsn",
+          "partition": false,
+          "raw_definition": "main_oper_prsn string comment '主经办人'"
         },
         {
-          "name": "allo_prop_1",
-          "partition": false
+          "name": "intro_oper_prsn",
+          "partition": false,
+          "raw_definition": "intro_oper_prsn string comment '引入经办人'"
         },
         {
-          "name": "inr_org_id_2",
-          "partition": false
+          "name": "adtnl_rwd_flag",
+          "partition": false,
+          "raw_definition": "adtnl_rwd_flag string comment '额外奖励标志'"
         },
         {
-          "name": "inr_org_name_2",
-          "partition": false
+          "name": "adtnl_rwd",
+          "partition": false,
+          "raw_definition": "adtnl_rwd string comment '额外奖励'"
         },
         {
-          "name": "div_org_id_2",
-          "partition": false
+          "name": "estb_time",
+          "partition": false,
+          "raw_definition": "estb_time string comment '创建时间'"
         },
         {
-          "name": "div_org_name_2",
-          "partition": false
+          "name": "upd_time",
+          "partition": false,
+          "raw_definition": "upd_time string comment '更新时间'"
         },
         {
-          "name": "cust_mngr_user_id_2",
-          "partition": false
+          "name": "creator",
+          "partition": false,
+          "raw_definition": "creator string comment '创建人'"
         },
         {
-          "name": "cust_mngr_name_2",
-          "partition": false
+          "name": "upd_prsn",
+          "partition": false,
+          "raw_definition": "upd_prsn string comment '更新人'"
         },
         {
-          "name": "cust_mngr_emp_id_2",
-          "partition": false
-        },
-        {
-          "name": "allo_prop_2",
-          "partition": false
-        },
-        {
-          "name": "inr_org_id_3",
-          "partition": false
-        },
-        {
-          "name": "inr_org_name_3",
-          "partition": false
-        },
-        {
-          "name": "div_org_id_3",
-          "partition": false
-        },
-        {
-          "name": "div_org_name_3",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_user_id_3",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_name_3",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_id_3",
-          "partition": false
-        },
-        {
-          "name": "allo_prop_3",
-          "partition": false
-        },
-        {
-          "name": "main_oper_user_id",
-          "partition": false
-        },
-        {
-          "name": "main_oper_name",
-          "partition": false
-        },
-        {
-          "name": "main_oper_emp_id",
-          "partition": false
-        },
-        {
-          "name": "intro_oper_user_id",
-          "partition": false
-        },
-        {
-          "name": "intro_oper_name",
-          "partition": false
-        },
-        {
-          "name": "intro_oper_emp_id",
-          "partition": false
+          "name": "del_flag",
+          "partition": false,
+          "raw_definition": "del_flag string comment '删除标志'"
         },
         {
           "name": "data_src_cd",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_src_cd string comment '数据来源代码'"
         },
         {
           "name": "task_name",
-          "partition": false
+          "partition": false,
+          "raw_definition": "task_name string comment '任务名'"
         },
         {
           "name": "data_etl_date",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_etl_date string comment '数据加载日期'"
         },
         {
           "name": "data_upt_date",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_upt_date string comment '数据更新日期'"
         },
         {
           "name": "data_time",
-          "partition": false
+          "partition": false,
+          "raw_definition": "data_time string comment '数据时间'"
         },
         {
-          "name": "inr_main_oper_user_id",
-          "partition": false
-        },
-        {
-          "name": "inr_main_oper_name",
-          "partition": false
-        },
-        {
-          "name": "inr_main_oper_emp_id",
-          "partition": false
-        },
-        {
-          "name": "inr_intro_oper_user_id",
-          "partition": false
-        },
-        {
-          "name": "inr_intro_oper_name",
-          "partition": false
-        },
-        {
-          "name": "inr_intro_oper_emp_id",
-          "partition": false
-        },
-        {
-          "name": "tit_oper_user_id",
-          "partition": false
-        },
-        {
-          "name": "tit_oper_name",
-          "partition": false
-        },
-        {
-          "name": "tit_oper_emp_id",
-          "partition": false
-        },
-        {
-          "name": "tit_oper_inr_org_id",
-          "partition": false
-        },
-        {
-          "name": "tit_oper_inr_org_name",
-          "partition": false
-        },
-        {
-          "name": "tit_cust_mngr_user_id",
-          "partition": false
-        },
-        {
-          "name": "tit_cust_mngr_name",
-          "partition": false
-        },
-        {
-          "name": "tit_cust_mngr_emp_id",
-          "partition": false
-        },
-        {
-          "name": "tit_cust_mngr_inr_org_id",
-          "partition": false
-        },
-        {
-          "name": "tit_cust_mngr_inr_org_name",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_stat_cd_1",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_stat_desc_1",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_stat_cd_2",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_stat_desc_2",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_stat_cd_3",
-          "partition": false
-        },
-        {
-          "name": "cust_mngr_emp_stat_desc_3",
-          "partition": false
-        },
-        {
-          "name": "busi_date",
-          "partition": true
+          "name": "src_tbl",
+          "partition": true,
+          "raw_definition": "src_tbl string comment '源表'"
         }
-      ]
+      ],
+      "source": "SZDATA_TABLE_DDL"
+    },
+    {
+      "db": "pdata_n",
+      "table": "t99_deri_comp_sprd_coef_ref",
+      "qualified_name": "pdata_n.t99_deri_comp_sprd_coef_ref",
+      "required_for_star": false,
+      "status": "SUCCESS",
+      "guid": "98c3d939-7164-4340-9859-88d0509a864b",
+      "metadata_qualified_name": "pdata_n.t99_deri_comp_sprd_coef_ref@gfhive",
+      "table_status": "ACTIVE",
+      "description": "衍生品合约价差系数参考信息",
+      "ddl_sha256": "11717493de5eab973e51e2717a19b993bd6878b4ef3c46e83746c4f846cc6ea7",
+      "ddl": "create table t99_deri_comp_sprd_coef_ref(agt_id string comment '协议编号',agt_modifr string comment '协议修饰符',inr_comp_no string comment '内部合约编号',busi_type string comment '业务类型',coef_type string comment '系数类型',src_comp_type_cd string comment '源合约类型代码',src_comp_type_name string comment '源合约类型名称',src_undrl_type_cd string comment '源标的类型代码',sprd_calc_type string comment '价差计算类型',annu_sprd_coef string comment '年化价差系数',absl_sprd_coef string comment '绝对价差系数',vld_date string comment '生效日期',desc string comment '描述',estb_time string comment '创建时间',upd_time string comment '更新时间',creator string comment '创建人',upd_prsn string comment '更新人',del_flag string comment '删除标志',data_src_cd string comment '数据来源代码',task_name string comment '任务名',data_etl_date string comment '数据加载日期',data_upt_date string comment '数据更新日期',data_time string comment '数据时间',real_src_tbl string comment '真实源表',bel_busi_dept string comment '所属业务部门',cms_fee_rate string comment '佣金费率') partitioned by (src_tbl string comment '源表') row format delimited fields terminated by ',' stored as orc;",
+      "columns": [
+        {
+          "name": "agt_id",
+          "partition": false,
+          "raw_definition": "agt_id string comment '协议编号'"
+        },
+        {
+          "name": "agt_modifr",
+          "partition": false,
+          "raw_definition": "agt_modifr string comment '协议修饰符'"
+        },
+        {
+          "name": "inr_comp_no",
+          "partition": false,
+          "raw_definition": "inr_comp_no string comment '内部合约编号'"
+        },
+        {
+          "name": "busi_type",
+          "partition": false,
+          "raw_definition": "busi_type string comment '业务类型'"
+        },
+        {
+          "name": "coef_type",
+          "partition": false,
+          "raw_definition": "coef_type string comment '系数类型'"
+        },
+        {
+          "name": "src_comp_type_cd",
+          "partition": false,
+          "raw_definition": "src_comp_type_cd string comment '源合约类型代码'"
+        },
+        {
+          "name": "src_comp_type_name",
+          "partition": false,
+          "raw_definition": "src_comp_type_name string comment '源合约类型名称'"
+        },
+        {
+          "name": "src_undrl_type_cd",
+          "partition": false,
+          "raw_definition": "src_undrl_type_cd string comment '源标的类型代码'"
+        },
+        {
+          "name": "sprd_calc_type",
+          "partition": false,
+          "raw_definition": "sprd_calc_type string comment '价差计算类型'"
+        },
+        {
+          "name": "annu_sprd_coef",
+          "partition": false,
+          "raw_definition": "annu_sprd_coef string comment '年化价差系数'"
+        },
+        {
+          "name": "absl_sprd_coef",
+          "partition": false,
+          "raw_definition": "absl_sprd_coef string comment '绝对价差系数'"
+        },
+        {
+          "name": "vld_date",
+          "partition": false,
+          "raw_definition": "vld_date string comment '生效日期'"
+        },
+        {
+          "name": "desc",
+          "partition": false,
+          "raw_definition": "desc string comment '描述'"
+        },
+        {
+          "name": "estb_time",
+          "partition": false,
+          "raw_definition": "estb_time string comment '创建时间'"
+        },
+        {
+          "name": "upd_time",
+          "partition": false,
+          "raw_definition": "upd_time string comment '更新时间'"
+        },
+        {
+          "name": "creator",
+          "partition": false,
+          "raw_definition": "creator string comment '创建人'"
+        },
+        {
+          "name": "upd_prsn",
+          "partition": false,
+          "raw_definition": "upd_prsn string comment '更新人'"
+        },
+        {
+          "name": "del_flag",
+          "partition": false,
+          "raw_definition": "del_flag string comment '删除标志'"
+        },
+        {
+          "name": "data_src_cd",
+          "partition": false,
+          "raw_definition": "data_src_cd string comment '数据来源代码'"
+        },
+        {
+          "name": "task_name",
+          "partition": false,
+          "raw_definition": "task_name string comment '任务名'"
+        },
+        {
+          "name": "data_etl_date",
+          "partition": false,
+          "raw_definition": "data_etl_date string comment '数据加载日期'"
+        },
+        {
+          "name": "data_upt_date",
+          "partition": false,
+          "raw_definition": "data_upt_date string comment '数据更新日期'"
+        },
+        {
+          "name": "data_time",
+          "partition": false,
+          "raw_definition": "data_time string comment '数据时间'"
+        },
+        {
+          "name": "real_src_tbl",
+          "partition": false,
+          "raw_definition": "real_src_tbl string comment '真实源表'"
+        },
+        {
+          "name": "bel_busi_dept",
+          "partition": false,
+          "raw_definition": "bel_busi_dept string comment '所属业务部门'"
+        },
+        {
+          "name": "cms_fee_rate",
+          "partition": false,
+          "raw_definition": "cms_fee_rate string comment '佣金费率'"
+        },
+        {
+          "name": "src_tbl",
+          "partition": true,
+          "raw_definition": "src_tbl string comment '源表'"
+        }
+      ],
+      "source": "SZDATA_TABLE_DDL"
+    },
+    {
+      "db": "pdata_n",
+      "table": "t99_deri_comp_type_base_coef_ref",
+      "qualified_name": "pdata_n.t99_deri_comp_type_base_coef_ref",
+      "required_for_star": false,
+      "status": "SUCCESS",
+      "guid": "fe1f4dec-96a5-4fac-9a9a-f589301915ce",
+      "metadata_qualified_name": "pdata_n.t99_deri_comp_type_base_coef_ref@gfhive",
+      "table_status": "ACTIVE",
+      "description": "衍生品合约类型基础系数参考信息",
+      "ddl_sha256": "ba82a0ea4da84d8e090b39ab93f6c152109f7b9e1fadbcf273ed3142cd6739f7",
+      "ddl": "create table t99_deri_comp_type_base_coef_ref(busi_type string comment '业务类型',calc_type string comment '计算类型',coef_type string comment '系数类型',src_comp_type_cd string comment '源合约类型代码',src_comp_type_desc string comment '源合约类型名称',src_undrl_type_cd string comment '源标的类型代码',vld_date string comment '生效日期',base_yield string comment '基础收益率',estb_time string comment '创建时间',upd_time string comment '更新时间',creator string comment '创建人',upd_prsn string comment '更新人',desc string comment '描述',del_flag string comment '删除标志',data_src_cd string comment '数据来源代码',task_name string comment '任务名',data_etl_date string comment '数据加载日期',data_upt_date string comment '数据更新日期',data_time string comment '数据时间',real_src_tbl string comment '真实源表',src_dept_no string comment '源部门编码',bgng_prcg_date_llmt string comment '期初定价日下限',bgng_prcg_date_ulmt string comment '期初定价日上限',bel_busi_dept string comment '所属业务部门') partitioned by (src_tbl string comment '源表') row format delimited fields terminated by ',' stored as orc;",
+      "columns": [
+        {
+          "name": "busi_type",
+          "partition": false,
+          "raw_definition": "busi_type string comment '业务类型'"
+        },
+        {
+          "name": "calc_type",
+          "partition": false,
+          "raw_definition": "calc_type string comment '计算类型'"
+        },
+        {
+          "name": "coef_type",
+          "partition": false,
+          "raw_definition": "coef_type string comment '系数类型'"
+        },
+        {
+          "name": "src_comp_type_cd",
+          "partition": false,
+          "raw_definition": "src_comp_type_cd string comment '源合约类型代码'"
+        },
+        {
+          "name": "src_comp_type_desc",
+          "partition": false,
+          "raw_definition": "src_comp_type_desc string comment '源合约类型名称'"
+        },
+        {
+          "name": "src_undrl_type_cd",
+          "partition": false,
+          "raw_definition": "src_undrl_type_cd string comment '源标的类型代码'"
+        },
+        {
+          "name": "vld_date",
+          "partition": false,
+          "raw_definition": "vld_date string comment '生效日期'"
+        },
+        {
+          "name": "base_yield",
+          "partition": false,
+          "raw_definition": "base_yield string comment '基础收益率'"
+        },
+        {
+          "name": "estb_time",
+          "partition": false,
+          "raw_definition": "estb_time string comment '创建时间'"
+        },
+        {
+          "name": "upd_time",
+          "partition": false,
+          "raw_definition": "upd_time string comment '更新时间'"
+        },
+        {
+          "name": "creator",
+          "partition": false,
+          "raw_definition": "creator string comment '创建人'"
+        },
+        {
+          "name": "upd_prsn",
+          "partition": false,
+          "raw_definition": "upd_prsn string comment '更新人'"
+        },
+        {
+          "name": "desc",
+          "partition": false,
+          "raw_definition": "desc string comment '描述'"
+        },
+        {
+          "name": "del_flag",
+          "partition": false,
+          "raw_definition": "del_flag string comment '删除标志'"
+        },
+        {
+          "name": "data_src_cd",
+          "partition": false,
+          "raw_definition": "data_src_cd string comment '数据来源代码'"
+        },
+        {
+          "name": "task_name",
+          "partition": false,
+          "raw_definition": "task_name string comment '任务名'"
+        },
+        {
+          "name": "data_etl_date",
+          "partition": false,
+          "raw_definition": "data_etl_date string comment '数据加载日期'"
+        },
+        {
+          "name": "data_upt_date",
+          "partition": false,
+          "raw_definition": "data_upt_date string comment '数据更新日期'"
+        },
+        {
+          "name": "data_time",
+          "partition": false,
+          "raw_definition": "data_time string comment '数据时间'"
+        },
+        {
+          "name": "real_src_tbl",
+          "partition": false,
+          "raw_definition": "real_src_tbl string comment '真实源表'"
+        },
+        {
+          "name": "src_dept_no",
+          "partition": false,
+          "raw_definition": "src_dept_no string comment '源部门编码'"
+        },
+        {
+          "name": "bgng_prcg_date_llmt",
+          "partition": false,
+          "raw_definition": "bgng_prcg_date_llmt string comment '期初定价日下限'"
+        },
+        {
+          "name": "bgng_prcg_date_ulmt",
+          "partition": false,
+          "raw_definition": "bgng_prcg_date_ulmt string comment '期初定价日上限'"
+        },
+        {
+          "name": "bel_busi_dept",
+          "partition": false,
+          "raw_definition": "bel_busi_dept string comment '所属业务部门'"
+        },
+        {
+          "name": "src_tbl",
+          "partition": true,
+          "raw_definition": "src_tbl string comment '源表'"
+        }
+      ],
+      "source": "SZDATA_TABLE_DDL"
+    },
+    {
+      "db": "pdata_n",
+      "table": "t99_deri_comp_type_fnd_cost_ref",
+      "qualified_name": "pdata_n.t99_deri_comp_type_fnd_cost_ref",
+      "required_for_star": false,
+      "status": "SUCCESS",
+      "guid": "82165fd0-218d-4ae0-bd9a-588980457978",
+      "metadata_qualified_name": "pdata_n.t99_deri_comp_type_fnd_cost_ref@gfhive",
+      "table_status": "ACTIVE",
+      "description": "衍生品合约类型资金成本参考信息",
+      "ddl_sha256": "1ceb72709822687d1294577fe2f5b53df85219daa44681cc7cf35a8b01ffa383",
+      "ddl": "create table t99_deri_comp_type_fnd_cost_ref(busi_type string comment '业务类型',src_comp_type_cd string comment '源合约类型代码',src_comp_type_desc string comment '源合约类型名称',src_undrl_type_cd string comment '源标的类型代码',vld_date string comment '生效日期',fnd_cost string comment '资金成本',estb_time string comment '创建时间',upd_time string comment '更新时间',creator string comment '创建人',upd_prsn string comment '更新人',desc string comment '描述',del_flag string comment '逻辑删除标识',data_src_cd string comment '数据来源代码',task_name string comment '任务名',data_etl_date string comment '数据加载日期',data_upt_date string comment '数据更新日期',data_time string comment '数据时间',real_src_tbl string comment '真实源表',src_dept_no string comment '源部门编码',intr_strt_date string comment '起息开始日期',intr_end_date string comment '起息结束日期',bel_busi_dept string comment '所属业务部门') partitioned by (src_tbl string comment '源表') row format delimited fields terminated by ',' stored as orc;",
+      "columns": [
+        {
+          "name": "busi_type",
+          "partition": false,
+          "raw_definition": "busi_type string comment '业务类型'"
+        },
+        {
+          "name": "src_comp_type_cd",
+          "partition": false,
+          "raw_definition": "src_comp_type_cd string comment '源合约类型代码'"
+        },
+        {
+          "name": "src_comp_type_desc",
+          "partition": false,
+          "raw_definition": "src_comp_type_desc string comment '源合约类型名称'"
+        },
+        {
+          "name": "src_undrl_type_cd",
+          "partition": false,
+          "raw_definition": "src_undrl_type_cd string comment '源标的类型代码'"
+        },
+        {
+          "name": "vld_date",
+          "partition": false,
+          "raw_definition": "vld_date string comment '生效日期'"
+        },
+        {
+          "name": "fnd_cost",
+          "partition": false,
+          "raw_definition": "fnd_cost string comment '资金成本'"
+        },
+        {
+          "name": "estb_time",
+          "partition": false,
+          "raw_definition": "estb_time string comment '创建时间'"
+        },
+        {
+          "name": "upd_time",
+          "partition": false,
+          "raw_definition": "upd_time string comment '更新时间'"
+        },
+        {
+          "name": "creator",
+          "partition": false,
+          "raw_definition": "creator string comment '创建人'"
+        },
+        {
+          "name": "upd_prsn",
+          "partition": false,
+          "raw_definition": "upd_prsn string comment '更新人'"
+        },
+        {
+          "name": "desc",
+          "partition": false,
+          "raw_definition": "desc string comment '描述'"
+        },
+        {
+          "name": "del_flag",
+          "partition": false,
+          "raw_definition": "del_flag string comment '逻辑删除标识'"
+        },
+        {
+          "name": "data_src_cd",
+          "partition": false,
+          "raw_definition": "data_src_cd string comment '数据来源代码'"
+        },
+        {
+          "name": "task_name",
+          "partition": false,
+          "raw_definition": "task_name string comment '任务名'"
+        },
+        {
+          "name": "data_etl_date",
+          "partition": false,
+          "raw_definition": "data_etl_date string comment '数据加载日期'"
+        },
+        {
+          "name": "data_upt_date",
+          "partition": false,
+          "raw_definition": "data_upt_date string comment '数据更新日期'"
+        },
+        {
+          "name": "data_time",
+          "partition": false,
+          "raw_definition": "data_time string comment '数据时间'"
+        },
+        {
+          "name": "real_src_tbl",
+          "partition": false,
+          "raw_definition": "real_src_tbl string comment '真实源表'"
+        },
+        {
+          "name": "src_dept_no",
+          "partition": false,
+          "raw_definition": "src_dept_no string comment '源部门编码'"
+        },
+        {
+          "name": "intr_strt_date",
+          "partition": false,
+          "raw_definition": "intr_strt_date string comment '起息开始日期'"
+        },
+        {
+          "name": "intr_end_date",
+          "partition": false,
+          "raw_definition": "intr_end_date string comment '起息结束日期'"
+        },
+        {
+          "name": "bel_busi_dept",
+          "partition": false,
+          "raw_definition": "bel_busi_dept string comment '所属业务部门'"
+        },
+        {
+          "name": "src_tbl",
+          "partition": true,
+          "raw_definition": "src_tbl string comment '源表'"
+        }
+      ],
+      "source": "SZDATA_TABLE_DDL"
+    },
+    {
+      "db": "pdata_n",
+      "table": "t99_deri_cutp_comp_type_sprd_coef_ref",
+      "qualified_name": "pdata_n.t99_deri_cutp_comp_type_sprd_coef_ref",
+      "required_for_star": false,
+      "status": "SUCCESS",
+      "guid": "ede7b79e-2266-4b29-87e0-1a49c58785d5",
+      "metadata_qualified_name": "pdata_n.t99_deri_cutp_comp_type_sprd_coef_ref@gfhive",
+      "table_status": "ACTIVE",
+      "description": "衍生品对手方合约类型价差系数参考信息",
+      "ddl_sha256": "8e50add255a8ed5cbda6735bd91fe26c46a5e7c75b74be410cd7e4f2335b9f3c",
+      "ddl": "create table t99_deri_cutp_comp_type_sprd_coef_ref(pty_id string comment '当事人编号',pty_cate_cd string comment '当事人类别代码',busi_type string comment '业务类型',calc_type string comment '计算类型',coef_type string comment '系数类型',src_comp_type_cd string comment '源合约类型代码',src_comp_type_desc string comment '源合约类型名称',src_undrl_type_cd string comment '源标的类型代码',annu_sprd_coef string comment '年化价差系数',absl_sprd_coef string comment '绝对价差系数',vld_date string comment '生效日期',desc string comment '描述',estb_time string comment '创建时间',creator string comment '创建人',del_flag string comment '删除标志',data_src_cd string comment '数据来源代码',task_name string comment '任务名',data_etl_date string comment '数据加载日期',data_upt_date string comment '数据更新日期',data_time string comment '数据时间',bgng_prcg_date_llmt string comment '期初定价日下限',bgng_prcg_date_ulmt string comment '期初定价日上限') partitioned by (src_tbl string comment '源表') row format delimited fields terminated by ',' stored as orc;",
+      "columns": [
+        {
+          "name": "pty_id",
+          "partition": false,
+          "raw_definition": "pty_id string comment '当事人编号'"
+        },
+        {
+          "name": "pty_cate_cd",
+          "partition": false,
+          "raw_definition": "pty_cate_cd string comment '当事人类别代码'"
+        },
+        {
+          "name": "busi_type",
+          "partition": false,
+          "raw_definition": "busi_type string comment '业务类型'"
+        },
+        {
+          "name": "calc_type",
+          "partition": false,
+          "raw_definition": "calc_type string comment '计算类型'"
+        },
+        {
+          "name": "coef_type",
+          "partition": false,
+          "raw_definition": "coef_type string comment '系数类型'"
+        },
+        {
+          "name": "src_comp_type_cd",
+          "partition": false,
+          "raw_definition": "src_comp_type_cd string comment '源合约类型代码'"
+        },
+        {
+          "name": "src_comp_type_desc",
+          "partition": false,
+          "raw_definition": "src_comp_type_desc string comment '源合约类型名称'"
+        },
+        {
+          "name": "src_undrl_type_cd",
+          "partition": false,
+          "raw_definition": "src_undrl_type_cd string comment '源标的类型代码'"
+        },
+        {
+          "name": "annu_sprd_coef",
+          "partition": false,
+          "raw_definition": "annu_sprd_coef string comment '年化价差系数'"
+        },
+        {
+          "name": "absl_sprd_coef",
+          "partition": false,
+          "raw_definition": "absl_sprd_coef string comment '绝对价差系数'"
+        },
+        {
+          "name": "vld_date",
+          "partition": false,
+          "raw_definition": "vld_date string comment '生效日期'"
+        },
+        {
+          "name": "desc",
+          "partition": false,
+          "raw_definition": "desc string comment '描述'"
+        },
+        {
+          "name": "estb_time",
+          "partition": false,
+          "raw_definition": "estb_time string comment '创建时间'"
+        },
+        {
+          "name": "creator",
+          "partition": false,
+          "raw_definition": "creator string comment '创建人'"
+        },
+        {
+          "name": "del_flag",
+          "partition": false,
+          "raw_definition": "del_flag string comment '删除标志'"
+        },
+        {
+          "name": "data_src_cd",
+          "partition": false,
+          "raw_definition": "data_src_cd string comment '数据来源代码'"
+        },
+        {
+          "name": "task_name",
+          "partition": false,
+          "raw_definition": "task_name string comment '任务名'"
+        },
+        {
+          "name": "data_etl_date",
+          "partition": false,
+          "raw_definition": "data_etl_date string comment '数据加载日期'"
+        },
+        {
+          "name": "data_upt_date",
+          "partition": false,
+          "raw_definition": "data_upt_date string comment '数据更新日期'"
+        },
+        {
+          "name": "data_time",
+          "partition": false,
+          "raw_definition": "data_time string comment '数据时间'"
+        },
+        {
+          "name": "bgng_prcg_date_llmt",
+          "partition": false,
+          "raw_definition": "bgng_prcg_date_llmt string comment '期初定价日下限'"
+        },
+        {
+          "name": "bgng_prcg_date_ulmt",
+          "partition": false,
+          "raw_definition": "bgng_prcg_date_ulmt string comment '期初定价日上限'"
+        },
+        {
+          "name": "src_tbl",
+          "partition": true,
+          "raw_definition": "src_tbl string comment '源表'"
+        }
+      ],
+      "source": "SZDATA_TABLE_DDL"
     }
   ]
 }

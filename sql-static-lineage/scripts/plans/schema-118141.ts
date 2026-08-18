@@ -1,7 +1,6 @@
-// 118141 真实表结构 Schema —— 来源: szdata table-ddl 实测 (pdata_n 库, 2026-08-15)
-//   info = T98_OTC_DERI_COMP_SALE_INFO 92列 / det = T98_OTC_DERI_COMP_SALE_ADTNL_DET 23列 (21普通+2分区)
-//   m    = T98_OTC_COMP_MNG_RELA_INFO 60列 (59普通+1分区)
-//   其余表 (s_sp/c_sp/s_ba/c_ba/cc/actl) 在 SQL 中是显式列子查询, 无需 schema
+// 118141 计划回归用的最小 Schema —— 来源: szdata table-ddl 实测
+//   Machine Facts 的完整物理输入证据由 --refresh-schema 从 SQL/Plan 自动发现并采集，
+//   不在这里硬编码任务的外部参考表名单。
 import { Schema } from "../../src/index.ts";
 
 const cols = (names: string[]) => Object.fromEntries(names.map((c) => [c, "string"]));

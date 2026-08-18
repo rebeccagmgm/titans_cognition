@@ -546,7 +546,7 @@ describe("machine facts contract", () => {
 			.filter(Boolean)
 			.map((line) => JSON.parse(line));
 
-		expect(manifest.counts.schema_refs).toBe(3);
+		expect(manifest.counts.schema_refs).toBe(9);
 		expect(manifest.counts.column_lineage_edges).toBeGreaterThan(2);
 		expect(expressions.some((item) => item.output_name_status === "STAR_EXPANSION" && item.input_dependency_status === "PHYSICAL")).toBe(true);
 	});
