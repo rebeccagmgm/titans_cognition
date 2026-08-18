@@ -344,6 +344,54 @@ function schemaProjection(raw: JsonRecord, logicalSourceId: string): JsonRecord 
 	return mergeSchemaEvidence([raw], logicalSourceId);
 }
 
+/**
+ * Schema evidence is task-scoped. A batch-level evidence file is an input
+ * catalog, not proof that every task reads every table in that catalog.
+ * Discover the physical inputs without a schema so missing evidence remains
+ * visible instead of being hidden by an unrelated global snapshot.
+ */
+function taskSchemaNames(task: GenericTaskProfile, profile: GenericAnalysisProfile): Set<string> | null {
+	try {
+		const sql = readFileSync(resolve(workspace, task.sql_snapshot), "utf8");
+		const parserSql = sanitizeSqlForParser(sql);
+		const session = SqlSession.create(parserSql.sql, profile.dialect as any);
+		const names = new Set(normalizeWrites(task));
+		for (const [statementIndex, cell] of session.doc.statements.entries()) {
+			const rawSql = sql.slice(cell.span.start, cell.span.end);
+			const write = parseSqlWrite(rawSql);
+			if (write) names.add(write);
+			const plan = parserSql.restore(
+				buildPlanFacts(cell, sql, {
+					statement_index: statementIndex,
+					dialect: profile.dialect,
+					include_expression_dependencies: true,
+				}),
+			);
+			for (const table of plan.physical_inputs) names.add(normalizeName(table));
+		}
+		return names;
+	} catch {
+		// A schema-free discovery failure must not narrow evidence and create
+		// artificial Unknowns. The normal task analysis will retain its own
+		// parser/failure evidence.
+		return null;
+	}
+}
+
+function schemaBundleForTask(
+	globalSchemaBundle: JsonRecord,
+	task: GenericTaskProfile,
+	profile: GenericAnalysisProfile,
+): JsonRecord {
+	const names = taskSchemaNames(task, profile);
+	if (names === null) return globalSchemaBundle;
+	const records = (globalSchemaBundle.records as JsonRecord[]).filter((record) => {
+		const qualifiedName = String(record.qualified_name ?? `${record.db ?? ""}.${record.table ?? ""}`).trim();
+		return names.has(normalizeName(qualifiedName));
+	});
+	return mergeSchemaEvidence([{ records }], String(globalSchemaBundle.logical_source_id));
+}
+
 function schemaProvider(schemaBundle: JsonRecord): Schema {
 	const mapping: SchemaMapping = {};
 	for (const record of schemaBundle.records as JsonRecord[]) {
@@ -1568,9 +1616,13 @@ export function processProfile(profilePath: string, outputRoot: string, sourceId
 	const schemaBytes = Buffer.from(canonicalJson(schemaBundle), "utf8");
 	const schemaBundleHash = sha256(schemaBytes);
 	snapshot(root, "schema", schemaBundleHash, schemaBytes);
-	const tasks = profile.tasks.map((task) =>
-		runTask(task, profile, logicalSourceId, root, schemaBundle, schemaBundleHash),
-	);
+	const tasks = profile.tasks.map((task) => {
+		const taskBundle = schemaBundleForTask(schemaBundle, task, profile);
+		const taskBytes = Buffer.from(canonicalJson(taskBundle), "utf8");
+		const taskHash = sha256(taskBytes);
+		snapshot(root, "schema", taskHash, taskBytes);
+		return runTask(task, profile, logicalSourceId, root, taskBundle, taskHash);
+	});
 	return { output_root: root, tasks, index: rebuildIndex(root) };
 }
 

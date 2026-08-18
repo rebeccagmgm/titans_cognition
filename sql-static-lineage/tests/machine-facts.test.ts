@@ -58,6 +58,28 @@ describe("machine facts contract", () => {
 		});
 	});
 
+	it("scopes each task bundle to its SQL inputs and declared output", () => {
+		const f = fixture();
+		const schemaPath = join(f.root, "schema.json");
+		const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+		schema.records.push({
+			qualified_name: "demo.unrelated",
+			status: "SUCCESS",
+			columns: [{ name: "noise" }],
+		});
+		writeFileSync(schemaPath, JSON.stringify(schema), "utf8");
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const schemaRefs = readFileSync(join(bundle, "schema-refs.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+
+		expect(schemaRefs.map((record) => record.qualified_name)).toEqual(["demo.source", "demo.target"]);
+	});
+
 	it("creates one current bundle, reuses it, and replaces it when SQL changes", () => {
 		const f = fixture();
 		const first = processProfile(f.profile, f.output, "test-source");
