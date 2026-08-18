@@ -85,7 +85,8 @@ export interface ExprSpec {
 	display_text: string;
 	/** 该表达式在源文本中的 span (文档坐标)。 */
 	span: SourceSpan;
-	/** 可选：表达式直接引用的列。仅在调用方显式启用表达式依赖提取时生成。 */
+	/** 可选：project/aggregate 输出表达式的依赖引用及 native lineage 已证明的物理来源。
+	 * WHERE/JOIN/GROUP BY 的关系条件依赖仍由各自 relation 的 ColumnRef 承载，不混入输出字段血缘。 */
 	input_columns?: ColumnRef[];
 	/** 可选：由 IR 提取的运算符、字面量、函数和谓词。 */
 	expression_facts?: ExpressionFacts;
