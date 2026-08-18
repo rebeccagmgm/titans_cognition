@@ -53,6 +53,10 @@ function spanOf(
 	return { start: cellBase + node.start.start, end: cellBase + node.stop.stop + 1 };
 }
 
+function spanOfCst(cellBase: number, cst: unknown): SourceSpan {
+	return spanOf(cellBase, cst as { start?: { start: number }; stop?: { stop: number } });
+}
+
 const DISPLAY_MAX = 120;
 /** 完整原文 (machine truth)。 */
 function fullTextOf(
@@ -599,9 +603,9 @@ export interface PlanAdapterOptions {
 }
 
 const CONTRACT_VERSION = "1.1.2";
-const ADAPTER_VERSION = "0.2.1";
+const ADAPTER_VERSION = "0.2.2";
 const EXPRESSION_DEPENDENCY_CONTRACT_VERSION = "1.1.3";
-export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.10";
+export const EXPRESSION_DEPENDENCY_ADAPTER_VERSION = "0.2.11";
 
 export function buildPlanFacts(
 	cell: { scopes: ScopeTree; span: { start: number } },
@@ -802,7 +806,11 @@ export function buildPlanFacts(
 			// join 节点 (左深链)
 			const joinRec = (body.joins ?? [])[fi - 1];
 			const id = `${path}.join.${fi}`;
-			const joinCols = joinRec?.on ? inputColumnsFor(joinRec.on, scope, "join", schema, dialect) : [];
+			const joinCols = joinRec?.on
+				? inputColumnsFor(joinRec.on, scope, "join", schema, dialect, true, (error) =>
+						recordNativeLineageFailure(id, "join", spanOfCst(cellBase, joinRec.on!.cst), error),
+				  )
+				: [];
 			const j: JoinRelation = {
 				id,
 				type: "join",
@@ -838,7 +846,9 @@ export function buildPlanFacts(
 		// ---- 3. filter 节点 ----
 		if (body.where) {
 			const id = `${path}.filter`;
-			const whereCols = inputColumnsFor(body.where, scope, "where", schema, dialect);
+			const whereCols = inputColumnsFor(body.where, scope, "where", schema, dialect, true, (error) =>
+				recordNativeLineageFailure(id, "where", spanOfCst(cellBase, body.where!.cst), error),
+			);
 			const f: FilterRelation = {
 				id,
 				type: "filter",
@@ -861,7 +871,12 @@ export function buildPlanFacts(
 		if (body.aggregated) {
 			const id = `${path}.aggregate`;
 			const gbCols: ColumnRef[] = [];
-			for (const e of gbExprs) gbCols.push(...inputColumnsFor(e, scope, "groupBy", schema, dialect));
+			for (const e of gbExprs)
+				gbCols.push(
+					...inputColumnsFor(e, scope, "groupBy", schema, dialect, true, (error) =>
+						recordNativeLineageFailure(id, "groupBy", spanOfCst(cellBase, e.cst), error),
+					),
+				);
 			const a: AggregateRelation = {
 				id,
 				type: "aggregate",
@@ -1202,14 +1217,19 @@ export function buildPlanFacts(
 	// the first evidence-bearing ref and remove only duplicate physical origins;
 	// unresolved and SQL-candidate refs remain untouched.
 	for (const relation of relations) {
-		if (relation.type === "project") {
+		if (relation.type === "join") {
+			relation.condition_columns = dedupePhysicalInputColumns(relation.condition_columns);
+		} else if (relation.type === "filter") {
+			relation.predicate_columns = dedupePhysicalInputColumns(relation.predicate_columns);
+		} else if (relation.type === "aggregate") {
+			relation.group_by = dedupePhysicalInputColumns(relation.group_by);
+			for (const measure of relation.measures) {
+				if (measure.input_columns) measure.input_columns = dedupePhysicalInputColumns(measure.input_columns);
+			}
+		} else if (relation.type === "project") {
 			for (const expression of relation.expressions) {
 				if (expression.input_columns)
 					expression.input_columns = dedupePhysicalInputColumns(expression.input_columns);
-			}
-		} else if (relation.type === "aggregate") {
-			for (const measure of relation.measures) {
-				if (measure.input_columns) measure.input_columns = dedupePhysicalInputColumns(measure.input_columns);
 			}
 		}
 	}
