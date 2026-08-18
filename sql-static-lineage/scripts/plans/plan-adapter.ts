@@ -8,7 +8,7 @@
 //
 // v1.1 (2026-08-15):
 //   - 原文不截断: *_expr / expr_text 完整原文, *_display / display_text 截断预览
-//   - ColumnRef.physical: 接 schema 后用 lineageAt 解析到基表 (数组, 多源可能)
+//   - ColumnRef.physical: 接 schema 后复用原生 lineageAt/originsOf 解析到基表 (数组, 多源可能)
 //   - inferGrain + propagateGrain: aggregate 的 grain key 沿 plan 传播,
 //     join 右表 key 被连接条件覆盖时可判定不扩行 (无需外部元数据)
 //   - expand: fanout 模型 (cardinality_effect/per_input_rows/grain_effect),
@@ -38,6 +38,7 @@ import type {
 } from "./plan-contract.js";
 import type { SelectExpr, Expr } from "../../src/ir/ir.js";
 import { lineageAt } from "../../src/lineage/hops.js";
+import { originsOf } from "../../src/lineage/lineage.js";
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -118,6 +119,63 @@ function collectColumns(e: Expr | null | undefined, clause: ColumnRef["clause"],
 	}
 }
 
+/**
+ * Keep the adapter's syntactic references, but add the physical origins already
+ * proven by sql-static-lineage's native expression lineage walk.  The latter is
+ * essential for nested scalar/EXISTS subqueries: their columns live in a child
+ * scope and are not direct ColumnRef nodes of the enclosing scope.
+ */
+function inputColumnsFor(
+	e: Expr | null | undefined,
+	scope: Scope,
+	clause: ColumnRef["clause"],
+	schema: unknown,
+	dialect: string,
+	includeNativeLineage = false,
+	onNativeLineageError?: (error: unknown) => void,
+): ColumnRef[] {
+	const out: ColumnRef[] = [];
+	collectColumns(e, clause, out);
+	if (!includeNativeLineage || !e || !schema) return out;
+	try {
+		for (const origin of originsOf(e, scope, schema as SchemaProvider)) {
+			const table = origin.table.join(".");
+			if (!schemaContainsField(schema, table, origin.column, dialect)) continue;
+			out.push({
+				name: origin.column,
+				clause,
+				physical: [{ table, column: origin.column }],
+				resolution: "PHYSICAL",
+			});
+		}
+	} catch (error) {
+		// Keep the existing syntactic path as a fallback, but never hide the
+		// native failure from Machine Facts consumers.
+		onNativeLineageError?.(error);
+	}
+	return out;
+}
+
+function nativeLineageErrorMessage(error: unknown): string {
+	const message = error instanceof Error ? error.message : String(error);
+	return message.replace(/\s+/g, " ").trim().slice(0, 240) || "unknown error";
+}
+
+/** Remove duplicate physical origins after syntactic refs and native origins meet. */
+function dedupePhysicalInputColumns(refs: ColumnRef[]): ColumnRef[] {
+	const seen = new Set<string>();
+	return refs.flatMap((ref) => {
+		if (ref.resolution !== "PHYSICAL" || !ref.physical?.length) return [ref];
+		const physical = ref.physical.filter((item) => {
+			const key = `${item.table}.${item.column}`.toLowerCase();
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		});
+		return physical.length > 0 ? [{ ...ref, physical }] : [];
+	});
+}
+
 type RefWithOffset = ColumnRef & { _cellOffset?: number };
 
 /**
@@ -141,13 +199,17 @@ function sqlCandidateFor(ref: ColumnRef, scope: Scope): { table: string; column:
 }
 
 function schemaContainsField(schema: unknown, table: string, column: string, dialect: string): boolean {
-	const provider = schema as { columnsFor?: (parts: string[], dialect?: string) => Array<{ name?: string }> | undefined } | null;
+	const provider = schema as {
+		columnsFor?: (parts: string[], dialect?: string) => Array<{ name?: string }> | undefined;
+	} | null;
 	const columns = provider?.columnsFor?.(table.split("."), dialect);
-	return Array.isArray(columns) && columns.some((candidate) => candidate.name?.toLowerCase() === column.toLowerCase());
+	return (
+		Array.isArray(columns) && columns.some((candidate) => candidate.name?.toLowerCase() === column.toLowerCase())
+	);
 }
 
 type DerivedOutputResolution =
-	{ kind: "PHYSICAL"; physical: { table: string; column: string }[] }
+	| { kind: "PHYSICAL"; physical: { table: string; column: string }[] }
 	| { kind: "SQL_CANDIDATE"; candidates: { table: string; column: string }[] }
 	| { kind: "DERIVED_OUTPUT" }
 	| null;
@@ -165,8 +227,10 @@ function resolveSetopOutput(
 	if (scope.body.kind === "setop") {
 		if (!scope.branches) return null;
 		const branches = [scope.branches.left, scope.branches.right];
-		const resolutions = branches.map((branch) =>
-			resolveDerivedOutput?.(branch, name) ?? resolveSetopOutput(cell, schema, branch, name, resolveDerivedOutput),
+		const resolutions = branches.map(
+			(branch) =>
+				resolveDerivedOutput?.(branch, name) ??
+				resolveSetopOutput(cell, schema, branch, name, resolveDerivedOutput),
 		);
 		if (resolutions.some((resolution) => resolution === null)) return null;
 		const physical = resolutions.flatMap((resolution) =>
@@ -220,21 +284,29 @@ function resolveSetopOutput(
 	if (projection.expr.kind === "literal") return { kind: "DERIVED_OUTPUT" };
 	if (projection.expr.kind !== "column" || projection.expr.partSpans?.[0]?.start == null) return null;
 	const hop = lineageAt(cell.scopes, projection.expr.partSpans[0].start, schema as never);
-	if (hop && hop.terminal !== "unresolved" && hop.terminal && hop.terminal.every((origin) =>
-		schemaContainsField(schema, origin.table.join("."), origin.column, cell.scopes.root.dialect)
-	)) {
+	if (
+		hop &&
+		hop.terminal !== "unresolved" &&
+		hop.terminal &&
+		hop.terminal.every((origin) =>
+			schemaContainsField(schema, origin.table.join("."), origin.column, cell.scopes.root.dialect),
+		)
+	) {
 		return {
 			kind: "PHYSICAL",
 			physical: hop.terminal.map((origin) => ({ table: origin.table.join("."), column: origin.column })),
 		};
 	}
 	const parts = projection.expr.parts;
-	const candidate = sqlCandidateFor({
-		name: parts[parts.length - 1] ?? name,
-		qualifier: parts.length > 1 ? parts[0] : undefined,
-		clause: "projection",
-		physical: null,
-	}, scope);
+	const candidate = sqlCandidateFor(
+		{
+			name: parts[parts.length - 1] ?? name,
+			qualifier: parts.length > 1 ? parts[0] : undefined,
+			clause: "projection",
+			physical: null,
+		},
+		scope,
+	);
 	return candidate ? { kind: "SQL_CANDIDATE", candidates: candidate } : null;
 }
 
@@ -354,9 +426,14 @@ function resolvePhysical(
 	resolveDerivedOutput?: DerivedOutputResolver,
 ): void {
 	const schemaHasColumn = (table: string[], column: string): boolean => {
-		const provider = schema as { columnsFor?: (parts: string[], dialect?: string) => Array<{ name?: string }> | undefined };
+		const provider = schema as {
+			columnsFor?: (parts: string[], dialect?: string) => Array<{ name?: string }> | undefined;
+		};
 		const columns = provider.columnsFor?.(table, dialect);
-		return Array.isArray(columns) && columns.some((candidate) => candidate.name?.toLowerCase() === column.toLowerCase());
+		return (
+			Array.isArray(columns) &&
+			columns.some((candidate) => candidate.name?.toLowerCase() === column.toLowerCase())
+		);
 	};
 	const sourceFor = (qualifier: string): any => {
 		for (const [key, source] of scope.sources) {
@@ -382,14 +459,10 @@ function resolvePhysical(
 			// CTEs and parenthesized derived tables expose the same output
 			// boundary. Keep both on the adapter path so CTE references do not
 			// fall back to lineageAt and get misreported as a lateral blind spot.
-			const sourceScope = source?.kind === "subquery"
-				? source.scope
-				: source?.kind === "cte" ? source.ref.scope : undefined;
+			const sourceScope =
+				source?.kind === "subquery" ? source.scope : source?.kind === "cte" ? source.ref.scope : undefined;
 			const sourceOutputs = sourceScope?.outputs;
-			if (
-				sourceScope &&
-				sourceScope.body.kind !== "setop"
-			) {
+			if (sourceScope && sourceScope.body.kind !== "setop") {
 				const derived = resolveDerivedOutput?.(sourceScope, ref.name);
 				if (derived?.kind === "PHYSICAL") {
 					ref.physical = derived.physical;
@@ -412,7 +485,9 @@ function resolvePhysical(
 			}
 			if (
 				sourceScope?.body.kind === "setop" &&
-				(Array.isArray(sourceOutputs) ? sourceOutputs.some((output: string) => output.toLowerCase() === ref.name.toLowerCase()) : true)
+				(Array.isArray(sourceOutputs)
+					? sourceOutputs.some((output: string) => output.toLowerCase() === ref.name.toLowerCase())
+					: true)
 			) {
 				const derived = resolveSetopOutput(cell, schema, sourceScope, ref.name, resolveDerivedOutput);
 				if (derived?.kind === "PHYSICAL") {
@@ -439,9 +514,10 @@ function resolvePhysical(
 			const onlySource = [...scope.sources.values()][0];
 			if (onlySource?.kind === "subquery" || onlySource?.kind === "cte") {
 				const onlySourceScope = onlySource.kind === "subquery" ? onlySource.scope : onlySource.ref.scope;
-				const derived = onlySourceScope.body.kind === "setop"
-					? resolveSetopOutput(cell, schema, onlySourceScope, ref.name, resolveDerivedOutput)
-					: resolveDerivedOutput?.(onlySourceScope, ref.name);
+				const derived =
+					onlySourceScope.body.kind === "setop"
+						? resolveSetopOutput(cell, schema, onlySourceScope, ref.name, resolveDerivedOutput)
+						: resolveDerivedOutput?.(onlySourceScope, ref.name);
 				if (derived?.kind === "PHYSICAL") {
 					ref.physical = derived.physical;
 					ref.resolution = "PHYSICAL";
@@ -472,7 +548,12 @@ function resolvePhysical(
 			}
 		}
 		const hop = lineageAt(cell.scopes, withOff._cellOffset, schema as never);
-		if (hop && hop.terminal !== "unresolved" && hop.terminal && hop.terminal.every((output) => schemaHasColumn(output.table, output.column))) {
+		if (
+			hop &&
+			hop.terminal !== "unresolved" &&
+			hop.terminal &&
+			hop.terminal.every((output) => schemaHasColumn(output.table, output.column))
+		) {
 			ref.physical = hop.terminal.map((o) => ({ table: o.table.join("."), column: o.column }));
 			ref.resolution = "PHYSICAL";
 		} else {
@@ -487,7 +568,8 @@ function resolvePhysical(
 				? "锚定失败"
 				: hop.terminal === "unresolved"
 					? "sql-static-lineage 判定 unresolved (列不在 schema/绑定失败)"
-					: Array.isArray(hop.terminal) && !hop.terminal.every((output) => schemaHasColumn(output.table, output.column))
+					: Array.isArray(hop.terminal) &&
+						  !hop.terminal.every((output) => schemaHasColumn(output.table, output.column))
 						? "lineage 已找到候选基表，但当前 schema 快照缺少字段证据"
 						: "followColumn 无来源 (sql-static-lineage 对 lateral 子查询别名列盲区)";
 			ref.resolution = "UNRESOLVED";
@@ -528,6 +610,7 @@ export function buildPlanFacts(
 ): PlanFacts {
 	const relations: PlanRelation[] = [];
 	const unknowns: PlanFacts["unknowns"] = [];
+	const nativeLineageFailures = new Set<string>();
 	const physical = new Set<string>();
 	const relationScopes = new Map<string, Scope>();
 	const roots: string[] = [];
@@ -535,6 +618,23 @@ export function buildPlanFacts(
 	const cellBase = cell.span.start ?? 0;
 	const schema = opts?.schema;
 	const dialect = opts?.dialect ?? "databricks";
+	const recordNativeLineageFailure = (
+		nodeId: string,
+		clause: ColumnRef["clause"],
+		span: SourceSpan,
+		error: unknown,
+	): void => {
+		const message = nativeLineageErrorMessage(error);
+		const key = `${nodeId}:${clause}:${span.start}:${span.end}:${message}`;
+		if (nativeLineageFailures.has(key)) return;
+		nativeLineageFailures.add(key);
+		unknowns.push({
+			node_id: nodeId,
+			field: "native_lineage",
+			reason: `sql-static-lineage originsOf failed for ${clause}: ${message}`,
+			span,
+		});
+	};
 
 	// 每个 scope 的根节点 id 缓存 (子查询源可能被多次引用, 如 join 右臂 + from 列表)
 	const rootIds = new Map<Scope, string>();
@@ -578,7 +678,11 @@ export function buildPlanFacts(
 			};
 			relations.push(s);
 			if (branchIds.length === 0) {
-				unknowns.push({ node_id: id, field: "branches", reason: "setop 无 branches (sql-static-lineage 未建模分支)" });
+				unknowns.push({
+					node_id: id,
+					field: "branches",
+					reason: "setop 无 branches (sql-static-lineage 未建模分支)",
+				});
 			}
 			rootIds.set(scope, id);
 			return id;
@@ -698,8 +802,7 @@ export function buildPlanFacts(
 			// join 节点 (左深链)
 			const joinRec = (body.joins ?? [])[fi - 1];
 			const id = `${path}.join.${fi}`;
-			const joinCols: ColumnRef[] = [];
-			if (joinRec?.on) collectColumns(joinRec.on, "join", joinCols);
+			const joinCols = joinRec?.on ? inputColumnsFor(joinRec.on, scope, "join", schema, dialect) : [];
 			const j: JoinRelation = {
 				id,
 				type: "join",
@@ -735,8 +838,7 @@ export function buildPlanFacts(
 		// ---- 3. filter 节点 ----
 		if (body.where) {
 			const id = `${path}.filter`;
-			const whereCols: ColumnRef[] = [];
-			collectColumns(body.where, "where", whereCols);
+			const whereCols = inputColumnsFor(body.where, scope, "where", schema, dialect);
 			const f: FilterRelation = {
 				id,
 				type: "filter",
@@ -759,7 +861,7 @@ export function buildPlanFacts(
 		if (body.aggregated) {
 			const id = `${path}.aggregate`;
 			const gbCols: ColumnRef[] = [];
-			for (const e of gbExprs) collectColumns(e, "groupBy", gbCols);
+			for (const e of gbExprs) gbCols.push(...inputColumnsFor(e, scope, "groupBy", schema, dialect));
 			const a: AggregateRelation = {
 				id,
 				type: "aggregate",
@@ -768,9 +870,18 @@ export function buildPlanFacts(
 				group_by_exprs_display: gbExprs.map((e) => displayTextOf(sql, cellBase, e.cst)),
 				measures: body.projections
 					.filter((p) => p.expr.kind === "function" && (p.expr as { aggregate?: boolean }).aggregate)
-					.map((p, ordinal) => {
-						const inputColumns: ColumnRef[] = [];
-						if (opts?.include_expression_dependencies) collectColumns(p.expr, "projection", inputColumns);
+						.map((p, ordinal) => {
+							const inputColumns = opts?.include_expression_dependencies
+								? inputColumnsFor(
+										p.expr,
+										scope,
+										"projection",
+										schema,
+										dialect,
+										true,
+										(error) => recordNativeLineageFailure(id, "projection", spanOf(cellBase, p.cst), error),
+								  )
+								: [];
 						return {
 							output: p.name ?? `$expr_${ordinal}`,
 							output_name_status: p.name ? ("EXPLICIT" as const) : ("ANONYMOUS_EXPRESSION" as const),
@@ -832,9 +943,10 @@ export function buildPlanFacts(
 					const sub = relations.find((r) => r.id === subId);
 					const subOut = sub?.output_columns;
 					if (!Array.isArray(subOut) || subOut.length === 0) return null;
-					const projectExpressions = sub && Array.isArray((sub as Partial<ProjectRelation>).expressions)
-						? (sub as ProjectRelation).expressions
-						: [];
+					const projectExpressions =
+						sub && Array.isArray((sub as Partial<ProjectRelation>).expressions)
+							? (sub as ProjectRelation).expressions
+							: [];
 					cols.push(
 						...(subOut as string[]).map((name) => ({
 							name,
@@ -885,8 +997,17 @@ export function buildPlanFacts(
 				const expr = p.expr as Expr & { window?: unknown; aggregate?: boolean };
 				const anonymous = !p.name;
 				const output = p.name ?? `$expr_${outNames.length}`;
-				const inputColumns: ColumnRef[] = [];
-				if (opts?.include_expression_dependencies) collectColumns(expr, "projection", inputColumns);
+					const inputColumns = opts?.include_expression_dependencies
+						? inputColumnsFor(
+								expr,
+								scope,
+								"projection",
+								schema,
+								dialect,
+								true,
+								(error) => recordNativeLineageFailure(pid, "projection", spanOf(cellBase, p.cst), error),
+						  )
+					: [];
 				exprs.push({
 					output,
 					output_name_status: anonymous ? "ANONYMOUS_EXPRESSION" : "EXPLICIT",
@@ -940,26 +1061,31 @@ export function buildPlanFacts(
 	// boundary it does not own.
 	const resolveDerivedOutput: DerivedOutputResolver = (scope, name) => {
 		const rootId = rootIds.get(scope);
-		const project = relations.find((relation) => relation.id === rootId && relation.type === "project") as ProjectRelation | undefined;
-		const expression = project?.expressions.find((candidate) => candidate.output.toLowerCase() === name.toLowerCase());
+		const project = relations.find((relation) => relation.id === rootId && relation.type === "project") as
+			ProjectRelation | undefined;
+		const expression = project?.expressions.find(
+			(candidate) => candidate.output.toLowerCase() === name.toLowerCase(),
+		);
 		if (!expression) return null;
 		const inputs = expression.input_columns ?? [];
 		if (inputs.length === 0 && expression.output_name_status === "STAR_EXPANSION" && scope.sources.size === 1) {
 			const source = [...scope.sources.values()][0];
-			const sourceScope = source?.kind === "subquery"
-				? source.scope
-				: source?.kind === "cte" ? source.ref.scope : undefined;
+			const sourceScope =
+				source?.kind === "subquery" ? source.scope : source?.kind === "cte" ? source.ref.scope : undefined;
 			if (sourceScope?.body.kind === "setop") {
 				const derived = resolveSetopOutput(cell, schema, sourceScope, name, resolveDerivedOutput);
 				if (derived) return derived;
 			}
 		}
-		const physical = inputs.flatMap((input) => input.resolution === "PHYSICAL" ? input.physical ?? [] : []);
-		const candidates = inputs.flatMap((input) => input.resolution === "SQL_CANDIDATE" ? input.sql_candidate ?? [] : []);
-		const unresolved = inputs.some((input) =>
-			input.resolution !== "PHYSICAL" &&
-			input.resolution !== "DERIVED_OUTPUT" &&
-			input.resolution !== "SQL_CANDIDATE"
+		const physical = inputs.flatMap((input) => (input.resolution === "PHYSICAL" ? (input.physical ?? []) : []));
+		const candidates = inputs.flatMap((input) =>
+			input.resolution === "SQL_CANDIDATE" ? (input.sql_candidate ?? []) : [],
+		);
+		const unresolved = inputs.some(
+			(input) =>
+				input.resolution !== "PHYSICAL" &&
+				input.resolution !== "DERIVED_OUTPUT" &&
+				input.resolution !== "SQL_CANDIDATE",
 		);
 		if (physical.length > 0 && candidates.length === 0 && !unresolved) {
 			const seen = new Set<string>();
@@ -985,14 +1111,24 @@ export function buildPlanFacts(
 				}),
 			};
 		}
-		if (physical.length === 0 && candidates.length === 0 && inputs.length > 0 && inputs.every((input) => input.resolution === "DERIVED_OUTPUT")) {
+		if (
+			physical.length === 0 &&
+			candidates.length === 0 &&
+			inputs.length > 0 &&
+			inputs.every((input) => input.resolution === "DERIVED_OUTPUT")
+		) {
 			return { kind: "DERIVED_OUTPUT" };
 		}
 		// An expression with no column inputs is still a derived output when it
 		// is a function, CASE, cast, or arithmetic expression rather than a
 		// literal. Do not turn a computed constant/system value into a fake
 		// physical-field Unknown at a derived-table or set-op boundary.
-		if (physical.length === 0 && candidates.length === 0 && inputs.length === 0 && expression.expr_kind !== "column") {
+		if (
+			physical.length === 0 &&
+			candidates.length === 0 &&
+			inputs.length === 0 &&
+			expression.expr_kind !== "column"
+		) {
 			return { kind: "DERIVED_OUTPUT" };
 		}
 		return null;
@@ -1006,19 +1142,74 @@ export function buildPlanFacts(
 		for (const r of relations) {
 			const scope = relationScopes.get(r.id);
 			if (!scope) continue;
-			if (r.type === "join") resolvePhysical(cell, schema, scope, r.id, r.condition_columns, unknowns, dialect, resolveDerivedOutput);
-			else if (r.type === "filter") resolvePhysical(cell, schema, scope, r.id, r.predicate_columns, unknowns, dialect, resolveDerivedOutput);
+			if (r.type === "join")
+				resolvePhysical(
+					cell,
+					schema,
+					scope,
+					r.id,
+					r.condition_columns,
+					unknowns,
+					dialect,
+					resolveDerivedOutput,
+				);
+			else if (r.type === "filter")
+				resolvePhysical(
+					cell,
+					schema,
+					scope,
+					r.id,
+					r.predicate_columns,
+					unknowns,
+					dialect,
+					resolveDerivedOutput,
+				);
 			else if (r.type === "aggregate") {
 				resolvePhysical(cell, schema, scope, r.id, r.group_by, unknowns, dialect, resolveDerivedOutput);
 				for (const measure of r.measures) {
 					if (measure.input_columns)
-						resolvePhysical(cell, schema, scope, r.id, measure.input_columns, unknowns, dialect, resolveDerivedOutput);
+						resolvePhysical(
+							cell,
+							schema,
+							scope,
+							r.id,
+							measure.input_columns,
+							unknowns,
+							dialect,
+							resolveDerivedOutput,
+						);
 				}
 			} else if (r.type === "project") {
 				for (const expression of r.expressions) {
 					if (expression.input_columns)
-						resolvePhysical(cell, schema, scope, r.id, expression.input_columns, unknowns, dialect, resolveDerivedOutput);
+						resolvePhysical(
+							cell,
+							schema,
+							scope,
+							r.id,
+							expression.input_columns,
+							unknowns,
+							dialect,
+							resolveDerivedOutput,
+						);
 				}
+			}
+		}
+	}
+
+	// Native origins and syntactic refs can describe the same physical field
+	// through different names (for example `x.record_id` and `base.id`). Keep
+	// the first evidence-bearing ref and remove only duplicate physical origins;
+	// unresolved and SQL-candidate refs remain untouched.
+	for (const relation of relations) {
+		if (relation.type === "project") {
+			for (const expression of relation.expressions) {
+				if (expression.input_columns)
+					expression.input_columns = dedupePhysicalInputColumns(expression.input_columns);
+			}
+		} else if (relation.type === "aggregate") {
+			for (const measure of relation.measures) {
+				if (measure.input_columns) measure.input_columns = dedupePhysicalInputColumns(measure.input_columns);
 			}
 		}
 	}
