@@ -170,6 +170,29 @@ machine-facts/
 └─ indexes/task-fact-index.jsonl
 ```
 
+共享物理 Schema Facts 作为 Machine Facts 的附加 Projection，不按 Task 或路线复制，也不使用 Schema Bundle/Scope Hash 作为目录层级：
+
+```text
+machine-facts/projections/schema-facts/
+├─ manifest.json
+├─ index.jsonl
+└─ tables/<table_storage_key>/
+   ├─ table.json
+   └─ columns.jsonl
+```
+
+从当前 source-layer 事实重建该 Projection：
+
+```powershell
+cd sql-static-lineage
+npx tsx scripts/machine-facts/schema-facts-projection.ts `
+  ../machine-facts/registry/source-layer/source-layer-table-facts.jsonl `
+  ../machine-facts/projections/schema-facts `
+  gfhive-test
+```
+
+`table_storage_key` 优先使用数综已提供的 `guid`；缺失时依次回退到 Metadata 限定名、`logical_source_id + qualified_name` 的安全编码，不伪造 GUID。`table.json` 只表达当前物理对象位置、对象类型、注释/分区/DDL 证据和 Metadata 明确给出的 `OBSERVED_SOURCE_MAPPING`；`columns.jsonl` 提供既有 `dataset_id`/`field_id` 兼容身份，便于与任务级字段表达式关联。该 Projection 不生成约束、候选键、粒度、基数、业务语义、Review 或完整血缘结论；完整 DDL仍由既有 Schema Evidence/Snapshot 保管，`ddl_ref` 以 DDL 内容 SHA-256 关联已有证据，不复制完整 DDL。
+
 同一输入重跑返回 `REUSED`；输入或方法变化在校验成功后替换同一 Task 的当前 Bundle。Windows 发布采用单写者的 Staging/Recovery 可恢复流程，不保存 Fact Diff、历史 Edition 或旧版本目录。V1 不生成 Grain、跨任务血缘、指标/影响 Projection、Capability Package 或查询层结果。
 
 环境要求：Node.js ≥ 20.11，`npm install` 后 `npm run gen:all`（生成 ANTLR parser）。
