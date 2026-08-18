@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { canonicalJson, datasetId, sha256, safeSegment, stripVolatile } from "../scripts/machine-facts/machine-facts-contract.ts";
+import { canonicalJson, datasetId, fieldId, sha256, safeSegment, stripVolatile } from "../scripts/machine-facts/machine-facts-contract.ts";
 import { inputDependencyStatus, mergeSchemaEvidence, processProfile, rebuildIndex, relationNeedsMissingSchema } from "../scripts/machine-facts/machine-facts.ts";
 
 const workspace = resolve(import.meta.dirname, "../..");
@@ -82,6 +82,172 @@ describe("machine facts contract", () => {
 		const secondManifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 		expect(secondManifest.inputs.sql_sha256).not.toBe(firstManifest.inputs.sql_sha256);
 		expect(rebuildIndex(join(f.root, "machine-facts")).count).toBe(1);
+	});
+
+	it("binds root SELECT expressions to an explicit INSERT target by target schema order", () => {
+		const f = fixture();
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const bindings = readFileSync(join(bundle, "output-field-bindings.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		const manifest = JSON.parse(readFileSync(join(bundle, "manifest.json"), "utf8"));
+
+		expect(bindings).toHaveLength(1);
+		expect(bindings[0]).toMatchObject({
+			task_id: "test-task",
+			statement_id: "task:test-task:statement:1",
+			target_dataset_id: datasetId("test-source", "demo.target"),
+			target_field_id: fieldId("test-source", "demo.target", "id"),
+			target_dataset: "demo.target",
+			target_field: "id",
+			source_ordinal: 0,
+			target_ordinal: 0,
+			binding_method: "TARGET_SCHEMA_POSITIONAL",
+			binding_status: "RESOLVED",
+			target_schema_status: "MATCH",
+		});
+		expect(manifest.counts.output_field_bindings).toBe(1);
+		expect(manifest.outputs.some((output: { path?: string }) => output.path === "output-field-bindings.jsonl")).toBe(true);
+	});
+
+	it("uses a matching task-local CREATE schema while preserving physical target schema drift", () => {
+		const f = fixture();
+		const schemaPath = join(f.root, "schema.json");
+		const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+		const target = schema.records.find((record: { qualified_name?: string }) => record.qualified_name === "demo.target");
+		target.columns.push({ name: "new_tail", partition: false });
+		writeFileSync(schemaPath, JSON.stringify(schema), "utf8");
+		writeFileSync(
+			f.sql,
+			"CREATE TABLE IF NOT EXISTS demo.target (id STRING);\nINSERT OVERWRITE TABLE demo.target SELECT id FROM demo.source;\n",
+			"utf8",
+		);
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const bindings = readFileSync(join(bundle, "output-field-bindings.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+
+		expect(bindings).toHaveLength(1);
+		expect(bindings[0]).toMatchObject({
+			target_field: "id",
+			binding_method: "SQL_CREATE_POSITIONAL",
+			binding_status: "RESOLVED",
+			target_schema_status: "DRIFT_EXTRA_TARGET_COLUMNS",
+		});
+		expect(unknowns).toContainEqual(
+			expect.objectContaining({
+				outcome_class: "UNKNOWN",
+				reason_code: "TARGET_SCHEMA_DRIFT",
+			}),
+		);
+	});
+
+	it("does not guess positional output bindings when target schema and SELECT counts differ", () => {
+		const f = fixture();
+		const schemaPath = join(f.root, "schema.json");
+		const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+		const target = schema.records.find((record: { qualified_name?: string }) => record.qualified_name === "demo.target");
+		target.columns.push({ name: "required_tail", partition: false });
+		writeFileSync(schemaPath, JSON.stringify(schema), "utf8");
+		writeFileSync(f.sql, "INSERT OVERWRITE TABLE demo.target SELECT id FROM demo.source;\n", "utf8");
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const bindingText = readFileSync(join(bundle, "output-field-bindings.jsonl"), "utf8").trim();
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+
+		expect(bindingText).toBe("");
+		expect(unknowns).toContainEqual(
+			expect.objectContaining({
+				outcome_class: "NOT_EVALUABLE",
+				reason_code: "OUTPUT_BINDING_NOT_PROVABLE",
+			}),
+		);
+	});
+
+	it("honors an explicit INSERT target column list instead of physical schema position", () => {
+		const f = fixture();
+		const schemaPath = join(f.root, "schema.json");
+		const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+		const source = schema.records.find((record: { qualified_name?: string }) => record.qualified_name === "demo.source");
+		const target = schema.records.find((record: { qualified_name?: string }) => record.qualified_name === "demo.target");
+		source.columns.unshift({ name: "amount", partition: false });
+		target.columns = [
+			{ name: "id", partition: false },
+			{ name: "amount", partition: false },
+			{ name: "unused_tail", partition: false },
+		];
+		writeFileSync(schemaPath, JSON.stringify(schema), "utf8");
+		writeFileSync(
+			f.sql,
+			"INSERT OVERWRITE TABLE demo.target (amount, id) SELECT amount, id FROM demo.source;\n",
+			"utf8",
+		);
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		const bindings = readFileSync(join(bundle, "output-field-bindings.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+
+		expect(bindings).toHaveLength(2);
+		expect(bindings.map((binding) => ({
+			target: binding.target_field,
+			sourceOrdinal: binding.source_ordinal,
+			targetOrdinal: binding.target_ordinal,
+			method: binding.binding_method,
+			schema: binding.target_schema_status,
+		}))).toEqual([
+			{ target: "amount", sourceOrdinal: 0, targetOrdinal: 1, method: "EXPLICIT_TARGET_COLUMN_LIST", schema: "MATCH" },
+			{ target: "id", sourceOrdinal: 1, targetOrdinal: 0, method: "EXPLICIT_TARGET_COLUMN_LIST", schema: "MATCH" },
+		]);
+	});
+
+	it("keeps dynamic partition output mapping unresolved", () => {
+		const f = fixture();
+		const schemaPath = join(f.root, "schema.json");
+		const schema = JSON.parse(readFileSync(schemaPath, "utf8"));
+		const target = schema.records.find((record: { qualified_name?: string }) => record.qualified_name === "demo.target");
+		target.columns.push({ name: "dt", partition: true });
+		writeFileSync(schemaPath, JSON.stringify(schema), "utf8");
+		writeFileSync(
+			f.sql,
+			"INSERT OVERWRITE TABLE demo.target PARTITION (dt) SELECT id, '2026-08-18' AS dt FROM demo.source;\n",
+			"utf8",
+		);
+
+		processProfile(f.profile, f.output, "test-source");
+		const bundle = join(f.root, "machine-facts", "registry", "tasks", "test-task", "bundle");
+		expect(readFileSync(join(bundle, "output-field-bindings.jsonl"), "utf8").trim()).toBe("");
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		expect(unknowns).toContainEqual(
+			expect.objectContaining({
+				outcome_class: "NOT_EVALUABLE",
+				reason_code: "DYNAMIC_PARTITION_BINDING_NOT_PROVABLE",
+			}),
+		);
 	});
 
 	it("excludes failed status and corrupted current bundles from the index", () => {
@@ -397,6 +563,16 @@ describe("machine facts contract", () => {
 			.filter(Boolean)
 			.map((line) => JSON.parse(line));
 		const targets = expressions.filter((item) => ["Init_Nom_Prin", "Dyna_Nom_Prin", "Absl_Nom_Prin"].includes(item.output_name));
+		const outputBindings = readFileSync(join(bundle, "output-field-bindings.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
+		const unknowns = readFileSync(join(bundle, "unknowns.jsonl"), "utf8")
+			.trim()
+			.split(/\r?\n/)
+			.filter(Boolean)
+			.map((line) => JSON.parse(line));
 
 		expect(targets).toHaveLength(3);
 		for (const target of targets) {
@@ -404,5 +580,21 @@ describe("machine facts contract", () => {
 			expect(target.input_fields.length, target.output_name).toBeGreaterThan(0);
 			expect(target.unresolved_input_columns, target.output_name).toHaveLength(0);
 		}
+		expect(outputBindings).toHaveLength(89);
+		expect(outputBindings).toContainEqual(
+			expect.objectContaining({
+				expression_id: targets.find((target) => target.output_name === "Dyna_Nom_Prin")?.expression_id,
+				target_dataset: "pdata_n.t98_otc_deri_comp_sale_info",
+				target_field: "dyna_nom_prin",
+				source_ordinal: 26,
+				target_ordinal: 26,
+				binding_method: "SQL_CREATE_POSITIONAL",
+				binding_status: "RESOLVED",
+				target_schema_status: "DRIFT_EXTRA_TARGET_COLUMNS",
+			}),
+		);
+		expect(unknowns).toContainEqual(
+			expect.objectContaining({ outcome_class: "UNKNOWN", reason_code: "TARGET_SCHEMA_DRIFT" }),
+		);
 	});
 });

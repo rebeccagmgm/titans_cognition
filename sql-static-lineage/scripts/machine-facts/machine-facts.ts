@@ -4,6 +4,7 @@ import { basename, dirname, join, relative, resolve } from "node:path";
 import { Schema, SqlSession, type SchemaMapping } from "../../src/index.ts";
 import { buildPlanFacts, EXPRESSION_DEPENDENCY_ADAPTER_VERSION } from "../plans/plan-adapter.ts";
 import type { PlanFacts } from "../plans/plan-contract.ts";
+import { deriveOutputFieldBindings, type WriteOutputContext } from "./output-field-bindings.ts";
 import {
 	MACHINE_FACTS_ADAPTER_VERSION,
 	MACHINE_FACTS_CONTRACT_VERSION,
@@ -31,6 +32,7 @@ import {
 	type FieldExpressionRecord,
 	type InputDependencyStatus,
 	type ColumnLineageRecord,
+	type OutputFieldBindingRecord,
 	type UnknownOutcomeRecord,
 	type SourceArtifactRecord,
 	type TaskFactIndexRecord,
@@ -71,6 +73,7 @@ const REQUIRED_DATASETS = [
 	"relation-edges.jsonl",
 	"field-expression-nodes.jsonl",
 	"column-lineage-edges.jsonl",
+	"output-field-bindings.jsonl",
 	"unknowns.jsonl",
 ] as const;
 
@@ -902,6 +905,11 @@ export function validateBundle(bundleDir: string): string[] {
 	for (const edge of readJsonlForValidation(join(bundleDir, "column-lineage-edges.jsonl"), errors)) {
 		if (!expressionIds.has(edge.to_expression_id)) errors.push(`lineage expression endpoint missing ${edge.edge_id}`);
 	}
+	for (const binding of readJsonlForValidation(join(bundleDir, "output-field-bindings.jsonl"), errors)) {
+		if (!expressionIds.has(binding.expression_id)) errors.push(`output binding expression endpoint missing ${binding.binding_id}`);
+		if (binding.binding_status !== "RESOLVED") errors.push(`output binding must be resolved ${binding.binding_id}`);
+		if (!Number.isInteger(binding.source_ordinal) || !Number.isInteger(binding.target_ordinal)) errors.push(`output binding ordinal is invalid ${binding.binding_id}`);
+	}
 	return [...new Set(errors)];
 }
 
@@ -990,7 +998,9 @@ function buildTaskBundle(
 	const relationEdges: RelationEdgeRecord[] = [];
 	const expressions: FieldExpressionRecord[] = [];
 	const lineage: ColumnLineageRecord[] = [];
+	const outputBindings: OutputFieldBindingRecord[] = [];
 	const unknowns: UnknownOutcomeRecord[] = [];
+	const writeContexts: WriteOutputContext[] = [];
 	const schemaRefs: SchemaReferenceRecord[] = (schemaBundle.records as JsonRecord[]).map((record, index) => ({
 		schema_ref_id: `schema-ref:${logicalSourceId}:${index}`,
 		logical_source_id: logicalSourceId,
@@ -1049,12 +1059,29 @@ function buildTaskBundle(
 		lineage.push(...records.lineage);
 		unknowns.push(...records.unknowns);
 		datasetIo.push(...records.reads);
+		const rootRelationIds = new Set(plan.roots.map((rootId) => globalRelationId(task.task_id, statementIndex, rootId)));
+		writeContexts.push({
+			statementId,
+			statementType,
+			rawSql,
+			expressions: records.fields.filter((expression) => rootRelationIds.has(expression.relation_id)),
+		});
 		if (cell.errors > 0) {
 			for (const diagnostic of cell.diagnostics) {
 				unknowns.push({ task_id: task.task_id, statement_id: statementId, outcome_class: "UNKNOWN", reason_code: "SYNTAX_DIAGNOSTIC", message: diagnostic.message, source_locator: { start: diagnostic.offset ?? span.start, end: (diagnostic.offset ?? span.start) + diagnostic.length } });
 			}
 		}
 	}
+	const outputBindingResult = deriveOutputFieldBindings({
+		taskId: task.task_id,
+		logicalSourceId,
+		statements,
+		writes: writeContexts,
+		schemaRefs,
+		declaredWrites: normalizeWrites(task),
+	});
+	outputBindings.push(...outputBindingResult.bindings);
+	unknowns.push(...outputBindingResult.unknowns);
 	const dedupedUnknowns = new Set<string>();
 	const retainedUnknowns = unknowns.filter((item) => {
 		if (item.reason_code !== "SCHEMA_BINDING_NOT_EVALUABLE" || !item.message.startsWith("physical references lack schema evidence:")) return true;
@@ -1082,6 +1109,7 @@ function buildTaskBundle(
 		["relation-edges.jsonl", relationEdges, "machine-facts-relation-edges-v1"],
 		["field-expression-nodes.jsonl", expressions, "machine-facts-field-expressions-v1"],
 		["column-lineage-edges.jsonl", lineage, "machine-facts-column-lineage-v1"],
+		["output-field-bindings.jsonl", outputBindings, "machine-facts-output-field-bindings-v1"],
 		["unknowns.jsonl", unknowns, "machine-facts-unknowns-v1"],
 	] as const) {
 		const result = writeJsonl(join(staging, name), records);
@@ -1114,10 +1142,11 @@ function buildTaskBundle(
 			relation_edges: relationEdges.length,
 			field_expression_nodes: expressions.length,
 			column_lineage_edges: lineage.length,
+			output_field_bindings: outputBindings.length,
 			unknowns: unknowns.length,
 			unknowns_by_outcome: unknownsByOutcome,
 		},
-		gates: { required_files: true, hash_integrity: true, span_roundtrip: true, relation_endpoints: true, lineage_endpoints: true },
+		gates: { required_files: true, hash_integrity: true, span_roundtrip: true, relation_endpoints: true, lineage_endpoints: true, output_binding_endpoints: true },
 		boundaries: { business_logic_correctness: "NOT_EVALUATED", runtime_execution: "NOT_EVALUATED", business_rows_read: false, external_model_calls: 0, cross_task_field_stitching: "NOT_GENERATED" },
 	};
 	writeCanonical(join(staging, "manifest.json"), manifest);

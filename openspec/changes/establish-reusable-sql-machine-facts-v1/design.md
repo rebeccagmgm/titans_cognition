@@ -47,6 +47,7 @@ machine-facts/
 │        ├─ relation-edges.jsonl
 │        ├─ field-expression-nodes.jsonl
 │        ├─ column-lineage-edges.jsonl
+│        ├─ output-field-bindings.jsonl
 │        └─ unknowns.jsonl
 └─ indexes/
    └─ task-fact-index.jsonl
@@ -105,7 +106,8 @@ Declared Write 是有用的任务上下文，但 Provenance 固定为 `PROFILE_D
 | `relation-nodes.jsonl` | 阶段 2 Operator Fact |
 | `relation-edges.jsonl` | 仅任务内 Operator Topology |
 | `field-expression-nodes.jsonl` | Relation Node 产生或使用的表达式 |
-| `column-lineage-edges.jsonl` | 物理输入到表达式，以及已验证的表达式到物理输出边 |
+| `column-lineage-edges.jsonl` | 物理输入字段到表达式的任务内血缘 |
+| `output-field-bindings.jsonl` | 已验证的表达式到物理输出字段绑定，保留源/目标 Ordinal、绑定方法和目标 Schema 状态 |
 | `unknowns.jsonl` | 类型化未解析、不可评测、不适用和失败结果 |
 
 ID 由 Task、Statement Ordinal、Relation Local ID、Expression Role 和 Ordinal 确定性生成，并在 Bundle 内有效。Dataset 和 Physical Field ID 使用 `logical_source_id + 可获得的 Catalog/Schema/Dataset/Field` 规范化标识，防止不同数据源或环境的同名对象被自动合并；存在原始拼写时将其作为证据保留。所有表达式保留完整 Machine Text，事实层不包含展示截断。
@@ -114,7 +116,9 @@ ID 由 Task、Statement Ordinal、Relation Local ID、Expression Role 和 Ordina
 
 V1 的 Schema Binding 指使用当前 `schema_bundle_sha256` 将 SQL 中的表别名、未限定字段、子查询字段和 Star Projection 解析为物理 Dataset/Field。它属于阶段 1 的当前事实输出，直接保存在 Task Core Bundle，并通过 `schema-refs.jsonl` 和 Manifest 记录来源；Schema Bundle 变化时重建并通过可恢复发布替换当前 Bundle，不另建 Binding History。
 
-输入物理字段来自使用 Canonical Schema Bundle 的 sql-static-lineage Lineage/Name Resolution。只有 SQL Statement 与 Target 能形成无歧义的位置/名称绑定时，才输出 Field-Expression-to-Output-Field Edge。`focus_outputs` 和 Profile 声明的 Target Table 本身不足以构成该证据。
+输入物理字段来自使用 Canonical Schema Bundle 的 sql-static-lineage Lineage/Name Resolution。输出绑定单独写入 `output-field-bindings.jsonl`，避免与“物理输入字段到表达式”的 Lineage Edge 混成一个联合契约。只有 SQL Statement 与 Target 能形成无歧义的位置/名称绑定时才输出：显式 INSERT Target Column List 优先按名称绑定；否则仅在静态分区已从输出序列排除、且 SELECT 输出数量能与任务内 CREATE 列序或 Canonical Target Schema 非分区列序唯一对应时按位置绑定。`focus_outputs` 和 Profile 声明的 Target Table 本身不足以构成该证据。
+
+当前物理 Target Schema 比任务内 CREATE 多出尾部字段时，Writer 可以保留已被 SQL CREATE 和 SELECT 顺序共同证实的前缀绑定，但必须把 `target_schema_status` 标为 `DRIFT_EXTRA_TARGET_COLUMNS`，并以 `TARGET_SCHEMA_DRIFT` 记录未绑定字段。动态分区、字段数量不一致、显式列在可用 Target Schema 中缺失或重复时不得猜测，分别保留类型化不可评测结果。
 
 这样既允许后续通过共享 Physical Field Identity 组合跨任务关系，又不会把组合关系写成 Canonical Fact。缺少可靠 Output Binding 时，任务内溯源和 Relation Analysis 仍可复用，并且缺口保持显式。
 

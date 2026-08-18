@@ -13,6 +13,7 @@
     "relation-edges.jsonl": { "type": "object", "required": ["edge_id", "task_id", "statement_id", "from_relation_id", "to_relation_id", "edge_type", "provenance", "source_span"] },
     "field-expression-nodes.jsonl": { "type": "object", "required": ["expression_id", "task_id", "statement_id", "relation_id", "role", "ordinal", "expression_text", "source_span", "input_fields", "unresolved_input_columns", "input_dependency_status"] },
     "column-lineage-edges.jsonl": { "type": "object", "required": ["edge_id", "task_id", "statement_id", "from_field_id", "to_expression_id", "method", "resolution_provenance"] },
+    "output-field-bindings.jsonl": { "type": "object", "required": ["binding_id", "task_id", "statement_id", "expression_id", "target_dataset_id", "target_field_id", "target_dataset", "target_field", "source_ordinal", "target_ordinal", "binding_method", "binding_status", "target_schema_status", "static_partition_columns", "evidence_refs"] },
     "unknowns.jsonl": { "type": "object", "required": ["outcome_class", "reason_code", "message"] }
   }
 }
