@@ -30,6 +30,11 @@ const opencliEntry = resolve(
 	"npm/node_modules/@jackwener/opencli/dist/src/main.js",
 );
 
+function positiveEnvNumber(name: string, fallback: number): number {
+	const value = Number(process.env[name]);
+	return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
 const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
 const normalizeIdentifier = (value: string): string => value.replace(/[`"\[\]]/g, "").toLowerCase();
 
@@ -87,17 +92,19 @@ export function discoverRequiredTables(profilePath: string): SchemaRefreshTable[
 
 async function opencli(args: string[]): Promise<any[]> {
 	let lastError: unknown;
-	for (let attempt = 0; attempt < 4; attempt += 1) {
+	const attempts = Math.floor(positiveEnvNumber("MACHINE_FACTS_SCHEMA_REFRESH_ATTEMPTS", 4));
+	const timeout = positiveEnvNumber("MACHINE_FACTS_SCHEMA_REFRESH_TIMEOUT_MS", 120_000);
+	for (let attempt = 0; attempt < attempts; attempt += 1) {
 		try {
 			const { stdout } = await execFileAsync(
 				process.execPath,
 				[opencliEntry, "szdata", ...args, "-f", "json"],
-				{ cwd: workspace, encoding: "utf8", maxBuffer: 20 * 1024 * 1024, timeout: 120_000 },
+				{ cwd: workspace, encoding: "utf8", maxBuffer: 20 * 1024 * 1024, timeout },
 			);
 			return JSON.parse(stdout) as any[];
 		} catch (error) {
 			lastError = error;
-			if (attempt < 3) {
+			if (attempt + 1 < attempts) {
 				const delayMs = isSzDataRateLimited(error)
 					? 15_000 * (attempt + 1)
 					: 1_500 * (attempt + 1);
