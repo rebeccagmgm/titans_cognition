@@ -5,6 +5,14 @@ import { Schema, SqlSession, type SchemaMapping } from "../../src/index.ts";
 import { buildPlanFacts, EXPRESSION_DEPENDENCY_ADAPTER_VERSION } from "../plans/plan-adapter.ts";
 import type { PlanFacts } from "../plans/plan-contract.ts";
 import { deriveOutputFieldBindings, type WriteOutputContext } from "./output-field-bindings.ts";
+import { refreshSchemaEvidence } from "./schema-evidence-refresh.ts";
+import {
+	fileHash as runtimeFileHash,
+	publishArtifactBundle,
+	recoverArtifactState,
+	writeCanonical as runtimeWriteCanonical,
+	writeCanonicalJsonl,
+} from "./machine-facts-runtime.ts";
 import {
 	MACHINE_FACTS_ADAPTER_VERSION,
 	MACHINE_FACTS_CONTRACT_VERSION,
@@ -212,18 +220,15 @@ function json<T>(path: string): T {
 }
 
 function writeCanonical(path: string, value: unknown): void {
-	mkdirSync(dirname(path), { recursive: true });
-	writeFileSync(path, canonicalJson(value), "utf8");
+	runtimeWriteCanonical(path, value);
 }
 
 function writeJsonl(path: string, records: readonly unknown[]): { row_count: number; content_sha256: string } {
-	const bytes = canonicalJsonl(records);
-	writeFileSync(path, bytes, "utf8");
-	return { row_count: records.length, content_sha256: sha256(bytes) };
+	return writeCanonicalJsonl(path, records);
 }
 
 function fileHash(path: string): string {
-	return sha256(readFileSync(path));
+	return runtimeFileHash(path);
 }
 
 function rootForBundle(bundleDir: string): string {
@@ -620,32 +625,7 @@ function readCurrentManifestHash(taskRoot: string): string | null {
 }
 
 function recoverTaskState(taskRoot: string): void {
-	const statusBackup = join(taskRoot, "analysis-status.json.bak");
-	if (existsSync(statusBackup)) {
-		if (existsSync(join(taskRoot, "analysis-status.json"))) throw new Error("RECOVERY_REQUIRED: status and status backup both exist");
-		renameSync(statusBackup, join(taskRoot, "analysis-status.json"));
-	}
-	const recovery = join(taskRoot, ".recovery");
-	const staging = readdirSync(taskRoot, { withFileTypes: true })
-		.filter((entry) => entry.isDirectory() && entry.name.startsWith(".staging-"))
-		.map((entry) => join(taskRoot, entry.name));
-	for (const stagingPath of staging) {
-		if (validateBundle(stagingPath).length === 0) throw new Error("RECOVERY_REQUIRED: valid staging directory requires inspection");
-		rmSync(stagingPath, { recursive: true, force: true });
-	}
-	if (existsSync(recovery)) {
-		const recoveryErrors = validateBundle(recovery);
-		const bundle = join(taskRoot, "bundle");
-		if (existsSync(bundle) || recoveryErrors.length > 0) throw new Error(`RECOVERY_REQUIRED: recovery directory requires inspection (${recoveryErrors.join("; ")})`);
-		renameSync(recovery, bundle);
-	}
-	let status: AnalysisStatus | null;
-	try {
-		status = readStatus(taskRoot);
-	} catch (error) {
-		throw new Error(`RECOVERY_REQUIRED: analysis-status.json is invalid (${error instanceof Error ? error.message : String(error)})`);
-	}
-	if (status?.state === "ANALYZING") throw new Error("RECOVERY_REQUIRED: previous analysis was interrupted");
+	recoverArtifactState(taskRoot, validateBundle);
 }
 
 function snapshot(root: string, kind: "sql" | "schema", hash: string, bytes: Buffer): string {
@@ -1204,36 +1184,14 @@ function readJsonlForValidation(path: string, errors: string[]): JsonRecord[] {
 
 function publishBundle(taskRoot: string, staging: string, manifest: MachineFactsManifest): { status: "CREATED" | "REUSED" | "REPLACED"; manifest_sha256: string } {
 	const bundle = join(taskRoot, "bundle");
-	const manifestBytes = canonicalJson(manifest);
-	const manifestHash = sha256(manifestBytes);
-	const hadExisting = existsSync(bundle);
-	if (existsSync(bundle)) {
-		const existing = json<MachineFactsManifest>(join(bundle, "manifest.json"));
-		const existingErrors = validateBundle(bundle);
-		const sameCanonicalManifest = sha256(canonicalJson(existing)) === sha256(manifestBytes);
-		if (sameCanonicalManifest && existingErrors.length === 0) {
-			rmSync(staging, { recursive: true, force: true });
-			return { status: "REUSED", manifest_sha256: sha256(canonicalJson(existing)) };
-		}
-		if (existingErrors.length === 0 && sha256(canonicalJson(manifestContext(existing))) === sha256(canonicalJson(manifestContext(manifest)))) {
-			rmSync(staging, { recursive: true, force: true });
-			throw new Error("NON_DETERMINISTIC_OUTPUT: same analysis context produced different Bundle content");
-		}
-	}
-	const recovery = join(taskRoot, ".recovery");
-	if (existsSync(recovery)) throw new Error("RECOVERY_REQUIRED: recovery directory exists");
-	try {
-		if (existsSync(bundle)) renameSync(bundle, recovery);
-		renameSync(staging, bundle);
-		const errors = validateBundle(bundle);
-		if (errors.length) throw new Error(`published Bundle failed validation: ${errors.join("; ")}`);
-		if (existsSync(recovery)) rmSync(recovery, { recursive: true, force: true });
-		return { status: hadExisting ? "REPLACED" : "CREATED", manifest_sha256: manifestHash };
-	} catch (error) {
-		if (existsSync(bundle)) rmSync(bundle, { recursive: true, force: true });
-		if (existsSync(recovery)) renameSync(recovery, bundle);
-		throw error;
-	}
+	return publishArtifactBundle({
+		root: taskRoot,
+		staging,
+		bundle,
+		manifest,
+		validateBundle,
+		manifestContext: (value) => manifestContext(value as MachineFactsManifest),
+	});
 }
 
 function buildTaskBundle(
@@ -1568,16 +1526,25 @@ export function processProfile(profilePath: string, outputRoot: string, sourceId
 	return { output_root: root, tasks, index: rebuildIndex(root) };
 }
 
-function parseArgs(args: string[]): { profile: string; output: string; sourceId?: string } {
+function parseArgs(args: string[]): { profile: string; output: string; sourceId?: string; refreshSchema: boolean } {
 	const value = (name: string, fallback: string): string => {
 		const index = args.indexOf(name);
 		return index >= 0 && args[index + 1] ? args[index + 1] : fallback;
 	};
-	return { profile: value("--profile", "cases/indicator-journey-rgstcomp-mthend/processing-graph-profile.json"), output: value("--output", "machine-facts"), sourceId: args.includes("--source-id") ? value("--source-id", "") : undefined };
+	return {
+		profile: value("--profile", "cases/indicator-journey-rgstcomp-mthend/processing-graph-profile.json"),
+		output: value("--output", "machine-facts"),
+		sourceId: args.includes("--source-id") ? value("--source-id", "") : undefined,
+		refreshSchema: args.includes("--refresh-schema"),
+	};
 }
 
 if (process.argv[1] && basename(process.argv[1]).startsWith("machine-facts")) {
 	const args = parseArgs(process.argv.slice(2));
-	const result = processProfile(args.profile, args.output, args.sourceId);
-	console.log(JSON.stringify({ output: result.output_root, tasks: result.tasks, index: result.index }, null, 2));
+	const run = async (): Promise<void> => {
+		const schemaRefresh = args.refreshSchema ? await refreshSchemaEvidence(args.profile) : null;
+		const result = processProfile(args.profile, args.output, args.sourceId);
+		console.log(JSON.stringify({ schema_refresh: schemaRefresh, output: result.output_root, tasks: result.tasks, index: result.index }, null, 2));
+	};
+	await run();
 }
