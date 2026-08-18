@@ -295,6 +295,8 @@ export interface PlanFacts {
 		reason: string;
 		span?: SourceSpan;
 	}[];
+	/** Native LineageHop projection; this is VALUE_LINEAGE only and never a relation graph. */
+	lineage_hops: PlanLineageHopProjection;
 }
 
 // ---------------------------------------------------------------------------
@@ -325,4 +327,65 @@ export interface GrainInference {
 	per_input_rows?: string;
 	/** grain 效应: "expanded" = 行扩展改变粒度; "unchanged"; "unknown"。 */
 	grain_effect?: "expanded" | "unchanged" | "unknown";
+}
+
+// ---------------------------------------------------------------------------
+// Native value-lineage Hop projection
+// ---------------------------------------------------------------------------
+
+export type HopCoverageState = "FULL_HOP" | "FLAT_ORIGIN_ONLY" | "UNKNOWN_COVERAGE" | "NOT_EVALUABLE";
+export type HopProjectionStatus = "PROJECTED" | "PARTIAL_NATIVE" | "NOT_EVALUABLE";
+export type HopEdgeType = "PHYSICAL_FIELD_TO_HOP" | "HOP_TO_HOP";
+
+export interface LocalPhysicalField {
+	table: string;
+	column: string;
+}
+
+export interface LocalHopViaStep {
+	readonly relation_id: string;
+	readonly kind: "rename" | "expand";
+}
+
+export interface PlanLineageHopRoot {
+	readonly root_expression_id: string;
+	readonly head_hop_id: string | null;
+	readonly coverage_state: HopCoverageState;
+	readonly projection_status: HopProjectionStatus;
+	readonly reason_code?: string;
+	readonly reason?: string;
+	readonly flow_kind: "VALUE_LINEAGE";
+	readonly physical_input_fields: readonly LocalPhysicalField[];
+	readonly candidate_input_fields: readonly LocalPhysicalField[];
+}
+
+export interface PlanLineageHopNode {
+	readonly hop_id: string;
+	readonly scope_relation_id: string;
+	readonly expression_id?: string;
+	readonly expr_kind: string;
+	readonly expression_text: string;
+	readonly source_span: SourceSpan;
+	readonly terminal_fields: readonly LocalPhysicalField[];
+	readonly terminal: "PRESENT" | "NONE" | "UNRESOLVED";
+	readonly has_downstream: boolean;
+	readonly via: readonly LocalHopViaStep[];
+	readonly flow_kind: "VALUE_LINEAGE";
+}
+
+export interface PlanLineageHopEdge {
+	readonly edge_id: string;
+	readonly edge_type: HopEdgeType;
+	readonly from_hop_id?: string;
+	readonly from_field?: LocalPhysicalField;
+	readonly to_hop_id: string;
+	readonly branch_relation_id?: string;
+	readonly branch_ordinal?: number;
+	readonly flow_kind: "VALUE_LINEAGE";
+}
+
+export interface PlanLineageHopProjection {
+	readonly roots: readonly PlanLineageHopRoot[];
+	readonly nodes: readonly PlanLineageHopNode[];
+	readonly edges: readonly PlanLineageHopEdge[];
 }
