@@ -5,7 +5,7 @@
   "type": "object",
   "required": ["schema_version", "task_id", "logical_source_id", "status", "inputs", "method", "outputs", "counts", "gates", "boundaries"],
   "properties": {
-    "schema_version": { "const": "1.0.0" },
+    "schema_version": { "const": "1.1.0" },
     "task_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$" },
     "logical_source_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$" },
     "status": { "const": "SUCCESS" },

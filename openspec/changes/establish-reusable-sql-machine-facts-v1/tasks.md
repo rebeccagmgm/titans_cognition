@@ -36,4 +36,4 @@
 - [x] 5.5 更新 `.gitignore` 和 SQL 分析文档，说明生成目录、一 Task 一份当前 Bundle、失败状态、可恢复替换、Schema Binding 和逻辑数据源身份，以及 V1 不定义阶段 3、跨任务、Derived Package、Projection、Capability Negotiation 或查询层的边界。
 - [x] 5.6 复核最终 Diff，检查是否误改既有脏文件、泄露原始 SQL/Schema、将案例事实写入 Canonical Output、出现未版本化行为变化或缺少测试；记录最终 OpenSpec 严格校验和测试结果。
 
-最终校验记录：`openspec validate establish-reusable-sql-machine-facts-v1 --strict --json` 通过；sql-static-lineage 全量回归 169 个测试文件通过（3976 passed、5 skipped）；机器事实新增测试 9 passed；Golden、指标加工图、最小因果路径分别为 22、28、61 通过且无失败。
+最终校验记录：`openspec validate establish-reusable-sql-machine-facts-v1 --strict --json` 通过；sql-static-lineage 全量回归 173 个测试文件通过（4022 passed、5 skipped）；Machine Facts 定向测试 27 passed，Machine Facts/Plan Adapter 相关回归 44 passed。TypeScript 全局检查仍有仓库既存的导入配置、Plan Adapter 及并行查询脚本错误，未将其误报为本任务通过。

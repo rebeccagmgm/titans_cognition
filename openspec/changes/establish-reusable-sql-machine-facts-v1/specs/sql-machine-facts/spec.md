@@ -136,7 +136,7 @@
 - **THEN** 系统保留 `OTHER` Node 或带源证据的显式未解析结果，不得静默丢弃
 
 ### Requirement: 字段表达式与任务内字段溯源
-每个分析包 SHALL 包含 `field-expression-nodes.jsonl` 和 `column-lineage-edges.jsonl`。Field Expression Node SHALL 保留所属 Statement 与 Relation、Role、Ordinal、Output Name Status、完整表达式文本、存在时的 Source Span 和已解析输入字段。任务内 Lineage Edge SHALL 只表达本任务分析可获得的证据：物理输入字段到字段表达式，或在输出绑定无歧义时字段表达式到物理输出字段。
+每个分析包 SHALL 包含 `field-expression-nodes.jsonl`、`column-lineage-edges.jsonl` 和 `output-field-bindings.jsonl`。Field Expression Node SHALL 保留所属 Statement 与 Relation、Role、Ordinal、Output Name Status、完整表达式文本、存在时的 Source Span 和已解析输入字段。任务内 Lineage Edge SHALL 表达物理输入字段到字段表达式；只有输出绑定无歧义时，Output Field Binding SHALL 单独表达字段表达式到物理输出字段，并保留源/目标 Ordinal、绑定方法和 Target Schema 状态。
 
 #### Scenario: 表达式读取到已解析物理字段
 - **WHEN** Schema 辅助血缘为表达式解析到一个或多个物理输入字段
@@ -144,7 +144,23 @@
 
 #### Scenario: 输出绑定不可靠
 - **WHEN** 表达式存在 Output Name，但其物理 Write Target 只来自 Focus 配置，或无法按位置和结构完成映射
-- **THEN** 系统不得输出 Expression-to-Physical-Output Edge；当该缺口影响完整性时必须显式记录
+- **THEN** 系统不得输出 Output Field Binding；当该缺口影响完整性时必须显式记录
+
+#### Scenario: 显式 INSERT 目标列
+- **WHEN** INSERT Statement 给出 Target Column List，且每个目标字段可在可用 Target Schema 中唯一定位
+- **THEN** 系统按显式名称绑定每个 SELECT 输出表达式，并保留目标字段在 Target Schema 中的 Ordinal，不得以物理字段顺序覆盖显式顺序
+
+#### Scenario: 静态分区下的位置绑定
+- **WHEN** INSERT 只含静态分区，且 SELECT 输出数量与任务内 CREATE 非分区列序或 Canonical Target Schema 非分区列序唯一对应
+- **THEN** 系统按顺序输出已解析绑定，静态分区列不得占用 SELECT 输出 Ordinal
+
+#### Scenario: Target Schema 尾部漂移
+- **WHEN** 任务内 CREATE 与 SELECT 顺序共同证实一个字段前缀，但当前物理 Target Schema 仅多出尾部字段
+- **THEN** 系统保留该前缀绑定，将 Target Schema 状态标为 `DRIFT_EXTRA_TARGET_COLUMNS`，并以 `TARGET_SCHEMA_DRIFT` 显式记录未绑定字段
+
+#### Scenario: 动态分区或数量冲突
+- **WHEN** INSERT 使用动态分区，或 SELECT 输出数量无法与任何有证据的目标字段序列唯一对应
+- **THEN** 系统不得推测输出绑定，并以稳定 Reason Code 记录 `NOT_EVALUABLE`
 
 #### Scenario: Schema 展开 Star Projection
 - **WHEN** Star Projection 能通过 Canonical Schema Bundle 展开
