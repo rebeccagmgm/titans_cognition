@@ -1,0 +1,18 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://local.titans-cognition/downstream-machine-facts-records.schema.json",
+	"title": "TITANS Downstream Lineage Machine Facts V1 JSONL records",
+	"type": "object",
+	"required": ["fact_id", "fact_type", "run_id", "evidence_file", "fact_status", "closure_status"],
+	"properties": {
+		"fact_id": { "type": "string" },
+		"fact_type": {
+			"type": "string",
+			"enum": ["PLATFORM_LINEAGE_EDGE", "TABLE_DETAIL", "DOWNSTREAM_DM_GATED_SCOPE"]
+		},
+		"run_id": { "type": "string" },
+		"evidence_file": { "type": "string", "minLength": 1 },
+		"fact_status": { "const": "PROVISIONAL" },
+		"closure_status": { "const": "PARTIAL" }
+	}
+}

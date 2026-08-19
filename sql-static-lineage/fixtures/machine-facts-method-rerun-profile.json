@@ -1,0 +1,19 @@
+{
+  "schema_version": "machine-facts-method-rerun-v1",
+  "dialect": "databricks",
+  "logical_source_id": "gfhive-test",
+  "schema_evidence": [
+    "machine-facts/staging/method-rerun-20260818/schema-evidence.json",
+    "machine-facts/staging/source-layer-method-evidence-20260818/schema-evidence.json"
+  ],
+  "tasks": [
+    {
+      "task_id": "220641",
+      "sql_snapshot": "machine-facts/snapshots/sql/bbac5a3627180e3b2965e3cdcbd4637222446713945b363b2efa6a852da2154d.sql"
+    },
+    {
+      "task_id": "215630",
+      "sql_snapshot": "machine-facts/snapshots/sql/d2da71c1e9a140f451252ebd552638e41f5df3bf4eaac0b538f16f3649f6d643.sql"
+    }
+  ]
+}
