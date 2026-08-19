@@ -212,6 +212,43 @@ npx tsx scripts/machine-facts/schema-facts-projection.ts `
 
 同一输入重跑返回 `REUSED`；输入或方法变化在校验成功后替换同一 Task 的当前 Bundle。Windows 发布采用单写者的 Staging/Recovery 可恢复流程，不保存 Fact Diff、历史 Edition 或旧版本目录。V1 不生成 Grain、跨任务血缘、指标/影响 Projection、Capability Package 或查询层结果。
 
+### 5.4.1 一跳直接下游候选发现
+
+在已有 Task Machine Facts 之上，可以先按已确认的模型层（或其他种子资产）扫描直接消费者，圈出候选范围；该命令只消费现有 `dataset-io` 和字段表达式事实，不查询业务行、不执行调度，也不递归追下游的下游：
+
+```powershell
+cd sql-static-lineage
+npx tsx scripts/query/downstream-candidates-from-machine-facts.ts `
+  --facts-root ../machine-facts `
+  --output ../machine-facts/projections/downstream-candidates `
+  --seed t98_otc_deri_comp_sale_info `
+  --seed t05_otc_comp_rgst_sac_evt
+```
+
+若要覆盖当前 Fact Registry 中的全量任务，可使用 `--all-write-assets`，自动将 1003 个任务观察到的全部去重 WRITE 资产作为种子；任务内部同一资产的自读自写不计为下游，重复 READ 证据归并为一条候选关系：
+
+```powershell
+cd sql-static-lineage
+npx tsx scripts/query/downstream-candidates-from-machine-facts.ts `
+  --facts-root ../machine-facts `
+  --output ../machine-facts/projections/downstream-candidates `
+  --all-write-assets
+```
+
+在一跳 Projection 基础上继续找全量下游，可加 `--recursive` 并写入独立目录。递归按任务/资产图做 BFS，每个“起始资产—下游任务”只保留最短路径，并对已访问资产/任务去重以处理环：
+
+```powershell
+npx tsx scripts/query/downstream-candidates-from-machine-facts.ts `
+  --facts-root ../machine-facts `
+  --output ../machine-facts/projections/downstream-candidates-transitive `
+  --all-write-assets `
+  --recursive
+```
+
+递归目录同时生成 `range.jsonl`，将结果进一步压成“起始资产—下游资产”的去重范围；不要求消费者路径完整展开。`manifest.json` 同时记录去重后的下游资产数、任务数和起始资产—下游资产关系数。
+
+结果写入被忽略的 `machine-facts/projections/downstream-candidates/`：`manifest.json` 记录种子、扫描任务数、跳数和边界；`candidates.jsonl` 一行表示“种子资产—直接消费者任务”候选，并保留下游写表、字段绑定摘要、证据引用和 `PHYSICAL/PARTIAL/UNRESOLVED` 状态。候选关系不是已确认业务血缘；同一消费者同时读取多个种子时保留多条关系。
+
 环境要求：Node.js ≥ 20.11，`npm install` 后 `npm run gen:all`（生成 ANTLR parser）。
 
 ### 5.5 下游 `SELECT *` 元数据批处理

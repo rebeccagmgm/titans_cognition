@@ -1,0 +1,53 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://local.titans-cognition/downstream-machine-facts.schema.json",
+	"title": "TITANS Downstream Lineage Machine Facts V1",
+	"type": "object",
+	"required": [
+		"schema_version",
+		"fact_family",
+		"run_id",
+		"task_id",
+		"logical_source_id",
+		"status",
+		"inputs",
+		"method",
+		"outputs",
+		"counts",
+		"gates",
+		"boundaries",
+		"fact_status",
+		"closure_status"
+	],
+	"properties": {
+		"schema_version": { "const": "1.2.0" },
+		"fact_family": { "const": "DOWNSTREAM_LINEAGE" },
+		"run_id": { "type": "string" },
+		"task_id": { "type": "string" },
+		"logical_source_id": { "type": "string" },
+		"status": { "const": "SUCCESS" },
+		"fact_status": { "const": "PROVISIONAL" },
+		"closure_status": { "const": "PARTIAL" },
+		"inputs": {
+			"type": "object",
+			"required": ["inputs_sha256", "source_directories", "processed_parts", "skipped_unstable_parts"]
+		},
+		"method": { "type": "object", "required": ["adapter", "parser", "evidence_boundary"] },
+		"outputs": {
+			"type": "array",
+			"items": { "type": "object", "required": ["path", "schema_version", "row_count", "content_sha256"] }
+		},
+		"counts": { "type": "object" },
+		"gates": { "type": "object" },
+		"boundaries": {
+			"type": "object",
+			"required": [
+				"business_logic_correctness",
+				"runtime_execution",
+				"business_rows_read",
+				"external_model_calls",
+				"cross_task_field_stitching"
+			]
+		}
+	}
+}
