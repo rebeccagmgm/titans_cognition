@@ -1104,10 +1104,50 @@ export function validateBundle(bundleDir: string): string[] {
 	for (const edge of columnLineage) {
 		if (!expressionIds.has(edge.to_expression_id)) errors.push(`lineage expression endpoint missing ${edge.edge_id}`);
 	}
-	for (const binding of readJsonlForValidation(join(bundleDir, "output-field-bindings.jsonl"), errors)) {
+	const datasetIo = readJsonlForValidation(join(bundleDir, "dataset-io.jsonl"), errors);
+	const unknownRecords = readJsonlForValidation(join(bundleDir, "unknowns.jsonl"), errors);
+	const writeObservations = new Map(datasetIo.filter((record) => record.direction === "WRITE" && typeof record.write_observation_id === "string").map((record) => [record.write_observation_id, record]));
+	const bindingOrdinals = new Set<string>();
+	const bindings = readJsonlForValidation(join(bundleDir, "output-field-bindings.jsonl"), errors);
+	for (const binding of bindings) {
 		if (!expressionIds.has(binding.expression_id)) errors.push(`output binding expression endpoint missing ${binding.binding_id}`);
 		if (binding.binding_status !== "RESOLVED") errors.push(`output binding must be resolved ${binding.binding_id}`);
 		if (!Number.isInteger(binding.source_ordinal) || !Number.isInteger(binding.target_ordinal)) errors.push(`output binding ordinal is invalid ${binding.binding_id}`);
+		const write = writeObservations.get(binding.write_observation_id);
+		if (!write) errors.push(`output binding write observation endpoint missing ${binding.binding_id}`);
+		else {
+			if (binding.task_id !== manifest.task_id || write.task_id !== manifest.task_id) errors.push(`output binding task isolation failed ${binding.binding_id}`);
+			if (binding.write_kind !== write.write_kind || binding.write_statement_id !== write.write_statement_id || binding.statement_id !== write.statement_id || binding.query_producer_statement_id !== (write.query_producer_statement_id ?? null)) errors.push(`output binding write identity mismatch ${binding.binding_id}`);
+			const ordinalKey = `${binding.write_observation_id}:${binding.source_ordinal}`;
+			if (bindingOrdinals.has(ordinalKey)) errors.push(`duplicate output binding producer ordinal ${ordinalKey}`);
+			bindingOrdinals.add(ordinalKey);
+		}
+	}
+	for (const write of writeObservations.values()) {
+		if (write.field_producing !== true) continue;
+		const producerOrdinals = Array.isArray(write.producer_ordinals) ? write.producer_ordinals.filter((ordinal: unknown): ordinal is number => Number.isInteger(ordinal)) : [];
+		const writeBindings = bindings.filter((binding) => binding.write_observation_id === write.write_observation_id);
+		const writeGaps = unknownRecords.filter((unknown) => unknown.write_observation_id === write.write_observation_id && Array.isArray(unknown.uncovered_ordinals));
+		const expected = new Set<number>();
+		const dispositions = new Map<number, number>();
+		for (const ordinal of producerOrdinals) {
+			if (expected.has(ordinal)) errors.push(`duplicate producer ordinal ${write.write_observation_id}:${ordinal}`);
+			expected.add(ordinal);
+		}
+		const addDisposition = (ordinal: number, source: string): void => {
+			if (!expected.has(ordinal)) {
+				errors.push(`disposition references unknown producer ordinal ${write.write_observation_id}:${ordinal}`);
+				return;
+			}
+			dispositions.set(ordinal, (dispositions.get(ordinal) ?? 0) + 1);
+			if ((dispositions.get(ordinal) ?? 0) > 1) errors.push(`producer ordinal has multiple dispositions ${write.write_observation_id}:${ordinal} (${source})`);
+		};
+		for (const binding of writeBindings) addDisposition(binding.source_ordinal, `binding:${binding.binding_id}`);
+		for (const gap of writeGaps) for (const ordinal of gap.uncovered_ordinals as unknown[]) if (Number.isInteger(ordinal)) addDisposition(ordinal, `gap:${gap.unknown_id}`);
+		for (const ordinal of expected) if ((dispositions.get(ordinal) ?? 0) !== 1) errors.push(`producer ordinal does not have exactly one disposition ${write.write_observation_id}:${ordinal}`);
+		if (write.producer_enumeration_status === "NOT_EVALUABLE" && !unknownRecords.some((unknown) => unknown.write_observation_id === write.write_observation_id && unknown.reason_code === "PRODUCER_OUTPUT_ENUMERATION_NOT_EVALUABLE")) {
+			errors.push(`field-producing Write lacks producer enumeration gap ${write.write_observation_id}`);
+		}
 	}
 	const hopRoots = readJsonlForValidation(join(bundleDir, "lineage-hop-roots.jsonl"), errors);
 	const hopNodes = readJsonlForValidation(join(bundleDir, "lineage-hop-nodes.jsonl"), errors);
@@ -1336,9 +1376,6 @@ function buildTaskBundle(
 		const rawSql = sql.slice(span.start, span.end);
 		const parsedWrite = parseSqlWrite(rawSql);
 		const statementType = classifyStatement(rawSql);
-		if (parsedWrite) {
-			datasetIo.push({ task_id: task.task_id, statement_id: statementId, direction: "WRITE", dataset_id: datasetId(logicalSourceId, parsedWrite), physical_dataset: parsedWrite, provenance: "SQL_PARSE", resolution_status: "RESOLVED" });
-		}
 		const plan: PlanFacts = parserSql.restore(buildPlanFacts(cell, sql, {
 			statement_index: statementIndex,
 			dialect: profile.dialect,
@@ -1372,12 +1409,45 @@ function buildTaskBundle(
 		unknowns.push(...records.unknowns);
 		datasetIo.push(...records.reads);
 		const rootRelationIds = new Set(plan.roots.map((rootId) => globalRelationId(task.task_id, statementIndex, rootId)));
-		writeContexts.push({
-			statementId,
-			statementType,
-			rawSql,
-			expressions: records.fields.filter((expression) => rootRelationIds.has(expression.relation_id)),
-		});
+		if (parsedWrite) {
+			const producerExpressions = records.fields.filter((expression) => rootRelationIds.has(expression.relation_id));
+			const producerOrdinals = producerExpressions.map((expression) => expression.ordinal).sort((left, right) => left - right);
+			const producerComplete = producerOrdinals.length > 0 && producerOrdinals.every((ordinal, index) => ordinal === index);
+			const hasCtasBoundary = statementType === "CREATE_TABLE" && /\bAS\s+(?:SELECT|WITH)\b/i.test(rawSql);
+			const writeKind = statementType === "CREATE_TABLE" ? (hasCtasBoundary ? "CTAS" : "CREATE_TABLE") : statementType;
+			const fieldProducing = hasCtasBoundary || statementType === "INSERT_OVERWRITE" || statementType === "INSERT_INTO";
+			const producerEnumerationStatus = fieldProducing && producerComplete ? "COMPLETE" : fieldProducing ? "NOT_EVALUABLE" : "NOT_APPLICABLE";
+			const writeObservationId = `write-observation:${task.task_id}:${statementIndex}`;
+			datasetIo.push({
+				task_id: task.task_id,
+				statement_id: statementId,
+				direction: "WRITE",
+				dataset_id: datasetId(logicalSourceId, parsedWrite),
+				physical_dataset: parsedWrite,
+				provenance: "SQL_PARSE",
+				resolution_status: "RESOLVED",
+				write_observation_id: writeObservationId,
+				write_kind: writeKind,
+				write_statement_id: statementId,
+				query_producer_statement_id: fieldProducing ? statementId : null,
+				producer_ordinals: producerOrdinals,
+				producer_enumeration_status: producerEnumerationStatus,
+				field_producing: fieldProducing,
+				source_as_boundary: { proven: hasCtasBoundary, statement_span: span },
+			});
+			writeContexts.push({
+				writeObservationId,
+				statementId,
+				statementType,
+				writeKind,
+				rawSql,
+				target: parsedWrite,
+				queryProducerStatementId: fieldProducing ? statementId : null,
+				queryBoundaryProven: hasCtasBoundary,
+				producerEnumerationStatus,
+				expressions: producerExpressions,
+			});
+		}
 		if (cell.errors > 0) {
 			for (const diagnostic of cell.diagnostics) {
 				unknowns.push({ task_id: task.task_id, statement_id: statementId, outcome_class: "UNKNOWN", reason_code: "SYNTAX_DIAGNOSTIC", message: diagnostic.message, source_locator: { start: diagnostic.offset ?? span.start, end: (diagnostic.offset ?? span.start) + diagnostic.length } });

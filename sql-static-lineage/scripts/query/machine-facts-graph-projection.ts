@@ -34,6 +34,33 @@ function fieldEntityId(dataset: string, field: string): string {
 	return `field:${normalizeName(dataset)}:${normalizeName(field)}`;
 }
 
+/**
+ * Conservative evidence gate for a field path.  This is deliberately a pure
+ * function so readers and projections share the same fail-closed vocabulary.
+ */
+export function assessFieldPathEvidence(subject: Record<string, unknown>): { evidence_state: string; reasons: string[] } {
+	const reasons: string[] = [];
+	const freshness = String(subject.freshness_status ?? "CURRENT");
+	if (freshness === "STALE") return { evidence_state: "STALE", reasons: [ ...(Array.isArray(subject.freshness_reasons) ? subject.freshness_reasons.map(String) : ["STALE_INPUT"]) ] };
+	const producer = (subject.producer_binding ?? {}) as Record<string, unknown>;
+	const consumer = (subject.consumer_input ?? {}) as Record<string, unknown>;
+	const targetStatus = String(subject.target_expression_status ?? "UNKNOWN");
+	if (producer.write_coverage_status === "PARTIAL" || Array.isArray(producer.uncovered_ordinals) && producer.uncovered_ordinals.length > 0) {
+		reasons.push("PARTIAL_TARGET_COVERAGE");
+	}
+	if (producer.status !== "RESOLVED" || !producer.target_field_id) {
+		reasons.push("MISSING_PRODUCER_BINDING");
+	}
+	if (consumer.status !== "RESOLVED" || !consumer.field_id) reasons.push("MISSING_PHYSICAL_CONSUMER_INPUT");
+	if (producer.target_field_id && consumer.field_id && producer.target_field_id !== consumer.field_id) reasons.push("FIELD_ID_MISMATCH");
+	if (targetStatus !== "RESOLVED") reasons.push("TARGET_EXPRESSION_NOT_RESOLVED");
+	if (reasons.length > 0) {
+		if (reasons.length === 1 && reasons[0] === "MISSING_PRODUCER_BINDING" && subject.profile_assisted === true) return { evidence_state: "PROFILE_ASSISTED", reasons };
+		return { evidence_state: "PARTIAL", reasons };
+	}
+	return { evidence_state: "CONFIRMED_STATIC", reasons: [] };
+}
+
 function artifactForStatement(statements: JsonRecord[], statementId: string): string | undefined {
 	return statements.find((statement) => statement.statement_id === statementId)?.artifact_id as string | undefined;
 }
@@ -172,6 +199,7 @@ export function loadMachineFactsGraphInputs(profilePath: string, factsRoot: stri
 		const taskRelations = readJsonl(bundlePath(factsRoot, task.task_id, "relation-nodes.jsonl"));
 		const taskFields = readJsonl(bundlePath(factsRoot, task.task_id, "field-expression-nodes.jsonl"));
 		const datasetIo = readJsonl(bundlePath(factsRoot, task.task_id, "dataset-io.jsonl"));
+		const outputBindings = readJsonl(bundlePath(factsRoot, task.task_id, "output-field-bindings.jsonl"));
 		allDatasetIo.push(...datasetIo);
 		datasetIoByTask.set(task.task_id, datasetIo);
 		const relationMap = new Map(taskRelations.map((record) => [record.relation_id as string, record]));
@@ -253,6 +281,26 @@ export function loadMachineFactsGraphInputs(profilePath: string, factsRoot: stri
 			}
 		}
 
+		for (const binding of outputBindings) {
+			const expression = fieldExpressions.find((item) => item.node_id === binding.expression_id && item.task_id === task.task_id);
+			if (!expression || !binding.target_dataset || !binding.target_field) continue;
+			const targetId = fieldEntityId(binding.target_dataset, binding.target_field);
+			addEntity(entities, { entity_id: targetId, entity_type: "DATASET_FIELD", dataset: normalizeName(binding.target_dataset), field: normalizeName(binding.target_field) });
+			addEdge(edges, {
+				edge_type: "FIELD_EXPRESSION_WRITES_FIELD",
+				from: expression.node_id,
+				to: targetId,
+				dataset: normalizeName(binding.target_dataset),
+				field: normalizeName(binding.target_field),
+				provenance: "MACHINE_FACTS_OUTPUT_FIELD_BINDING",
+				evidence_state: binding.binding_status === "RESOLVED" ? "CONFIRMED_STATIC" : "PARTIAL",
+				binding_status: binding.binding_status,
+				target_field_id: binding.target_field_id,
+				write_observation_id: binding.write_observation_id,
+				evidenceRefs: binding.evidence_refs ?? [],
+			});
+		}
+
 		for (const focusOutput of task.focus_outputs ?? []) {
 			const fieldId = fieldEntityId(task.writes, focusOutput);
 			addEntity(entities, {
@@ -264,6 +312,11 @@ export function loadMachineFactsGraphInputs(profilePath: string, factsRoot: stri
 			for (const expression of fieldExpressions.filter(
 				(item) => item.task_id === task.task_id && normalizeName(item.output) === normalizeName(focusOutput),
 			)) {
+				const targetId = fieldId;
+				const hasCanonicalBinding = [...edges.values()].some(
+					(edge) => edge.edge_type === "FIELD_EXPRESSION_WRITES_FIELD" && edge.from === expression.node_id && edge.to === targetId && edge.provenance === "MACHINE_FACTS_OUTPUT_FIELD_BINDING",
+				);
+				if (hasCanonicalBinding) continue;
 				addEdge(edges, {
 					edge_type: "FIELD_EXPRESSION_WRITES_FIELD",
 					from: expression.node_id,
@@ -271,6 +324,7 @@ export function loadMachineFactsGraphInputs(profilePath: string, factsRoot: stri
 					provenance: "PROFILE_TARGET_PLUS_MACHINE_FACTS_EXPRESSION",
 					artifact_id: expression.artifact_id,
 					profile_sha256: profileHash,
+					evidence_state: "PROFILE_ASSISTED",
 					evidenceRefs: [`profile:${profileHash}`],
 				});
 			}

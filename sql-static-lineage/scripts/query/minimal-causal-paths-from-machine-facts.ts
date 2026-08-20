@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -54,7 +54,7 @@ interface CausalPath {
 	pathId: string;
 	pathType: PathType;
 	description: string;
-	status: "COMPLETE" | "PARTIAL";
+	status: "COMPLETE" | "PARTIAL" | "PROFILE_ASSISTED";
 	producerTaskId?: string;
 	producerRole: string;
 	consumerTaskId?: string;
@@ -69,7 +69,7 @@ interface CausalPath {
 export interface MinimalCausalPathsResult {
 	schemaVersion: "minimal-causal-paths-v1";
 	caseId: string;
-	status: "PASS" | "PARTIAL" | "FAIL";
+	status: "PASS" | "PARTIAL" | "PROFILE_ASSISTED" | "FAIL" | "STALE";
 	paths: CausalPath[];
 	validation: JsonRecord;
 	boundaries: { notClaimed: string[] };
@@ -184,7 +184,9 @@ function findWriteEdge(
 		(edge) =>
 			edge.edge_type === "FIELD_EXPRESSION_WRITES_FIELD" &&
 			edge.to === target &&
-			String(edge.from).startsWith(`task:${taskId}:`),
+			String(edge.from).startsWith(`task:${taskId}:`) &&
+			(edge.provenance !== "MACHINE_FACTS_OUTPUT_FIELD_BINDING" ||
+				(edge.binding_status === "RESOLVED" && typeof edge.target_field_id === "string" && typeof edge.write_observation_id === "string")),
 	);
 }
 
@@ -217,7 +219,9 @@ function targetAggregate(
 			(edge) =>
 				edge.edge_type === "FIELD_EXPRESSION_WRITES_FIELD" &&
 				edge.to === target &&
-				String(edge.from).startsWith(`task:${consumerTaskId}:`),
+				String(edge.from).startsWith(`task:${consumerTaskId}:`) &&
+				(edge.provenance !== "MACHINE_FACTS_OUTPUT_FIELD_BINDING" ||
+					(edge.binding_status === "RESOLVED" && typeof edge.target_field_id === "string" && typeof edge.write_observation_id === "string")),
 		)
 		.sort((left, right) => String(left.from).localeCompare(String(right.from)));
 	for (const writeEdge of writeEdges) {
@@ -555,13 +559,21 @@ function assembleRowsetControl(inputs: GraphInputs, spec: MinimalPathSpec): Caus
 
 export function assembleMinimalCausalPaths(inputs: GraphInputs): MinimalCausalPathsResult {
 	const specs = inputs.profile.minimal_causal_paths ?? [];
-	const paths = specs.map((spec) =>
+	const assembledPaths = specs.map((spec) =>
 		spec.path_type === "VALUE_FLOW" ? assembleValueFlow(inputs, spec) : assembleRowsetControl(inputs, spec),
 	);
+	const paths = assembledPaths.map((path) => {
+		const profileAssisted = path.edges.some((edge) =>
+			String(edge.provenance ?? "").startsWith("PROFILE_") || edge.evidence_state === "PROFILE_ASSISTED",
+		);
+		return profileAssisted && path.status === "COMPLETE" ? { ...path, status: "PROFILE_ASSISTED" as const, gaps: [...path.gaps, "profile-declared output is not canonical output-field evidence"] } : path;
+	});
 	const completePathCount = paths.filter((path) => path.status === "COMPLETE").length;
 	const status: MinimalCausalPathsResult["status"] =
 		specs.length > 0 && paths.length === specs.length && completePathCount === specs.length
 			? "PASS"
+			: paths.some((path) => path.status === "PROFILE_ASSISTED")
+				? "PROFILE_ASSISTED"
 			: paths.some((path) => path.steps.length > 0)
 				? "PARTIAL"
 				: "FAIL";
@@ -589,6 +601,40 @@ export function assembleMinimalCausalPaths(inputs: GraphInputs): MinimalCausalPa
 	};
 }
 
+export function readPersistedMinimalCausalPathsProjection(options: {
+	factsRoot: string;
+	profilePath: string;
+	projectionDir: string;
+}): MinimalCausalPathsResult & { mismatched_task_ids?: string[]; freshness_status?: string } {
+	const resultPath = join(options.projectionDir, "minimal-causal-paths.json");
+	const manifestPath = join(options.projectionDir, "projection-manifest.json");
+	if (!existsSync(resultPath) || !existsSync(manifestPath)) throw new Error("missing persisted minimal causal paths projection");
+	const resultBytes = readFileSync(resultPath);
+	const result = JSON.parse(resultBytes.toString("utf8")) as MinimalCausalPathsResult;
+	const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as JsonRecord;
+	if (manifest.result_sha256 && manifest.result_sha256 !== sha256(resultBytes)) throw new Error("persisted projection result hash mismatch");
+	const mismatchedTaskIds: string[] = [];
+	if (manifest.profile_sha256 && manifest.profile_sha256 !== sha256(readFileSync(options.profilePath))) mismatchedTaskIds.push("__profile__");
+	const indexPath = join(options.factsRoot, "indexes", "task-fact-index.jsonl");
+	const indexRows = existsSync(indexPath)
+		? readFileSync(indexPath, "utf8").trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as JsonRecord)
+		: [];
+	const currentIndex = new Map(indexRows.map((row) => [String(row.task_id), row]));
+	const attestedIndex = new Map(((manifest.upstream_index_rows ?? []) as JsonRecord[]).map((row) => [String(row.task_id), row]));
+	for (const upstream of (manifest.upstream_task_manifests ?? []) as JsonRecord[]) {
+		const taskId = String(upstream.task_id ?? "");
+		const manifestPathForTask = join(options.factsRoot, "registry", "tasks", taskId, "bundle", "manifest.json");
+		const currentHash = existsSync(manifestPathForTask) ? sha256(readFileSync(manifestPathForTask)) : undefined;
+		const currentRow = currentIndex.get(taskId);
+		const attestedRow = attestedIndex.get(taskId);
+		const rowFields = ["manifest_sha256", "current_manifest_sha256", "sql_sha256", "bundle_path", "status", "state"];
+		const rowChanged = Boolean(attestedRow) && rowFields.some((field) => attestedRow?.[field] !== undefined && currentRow?.[field] !== attestedRow[field]);
+		if (!currentHash || currentHash !== upstream.manifest_sha256 || !currentRow || (currentRow.manifest_sha256 && currentRow.manifest_sha256 !== upstream.manifest_sha256) || rowChanged) mismatchedTaskIds.push(taskId);
+	}
+	if (mismatchedTaskIds.length > 0) return { ...result, status: "STALE", freshness_status: "STALE", mismatched_task_ids: [...new Set(mismatchedTaskIds)] };
+	return { ...result, freshness_status: "CURRENT" };
+}
+
 function runCli(): void {
 	const profilePath = resolve(
 		workspace,
@@ -607,6 +653,11 @@ function runCli(): void {
 		const path = join(factsRoot, "registry", "tasks", task.task_id, "bundle", "manifest.json");
 		return { task_id: task.task_id, manifest_sha256: sha256(readFileSync(path)) };
 	});
+	const indexPath = join(factsRoot, "indexes", "task-fact-index.jsonl");
+	const currentIndexRows = existsSync(indexPath)
+		? readFileSync(indexPath, "utf8").trim().split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line) as JsonRecord)
+		: [];
+	const taskIds = new Set(inputs.profile.tasks.map((task) => task.task_id));
 	const projectionManifest = {
 		schema_version: "machine-facts-projection-manifest-v1",
 		projection_version: PROJECTION_VERSION,
@@ -617,6 +668,7 @@ function runCli(): void {
 		profile_sha256: sha256(readFileSync(profilePath)),
 		facts_root: "../../..",
 		upstream_task_manifests: taskManifests,
+		upstream_index_rows: currentIndexRows.filter((row) => taskIds.has(String(row.task_id))),
 		result_sha256: sha256(resultBytes),
 		status: result.status,
 		boundaries: result.boundaries,

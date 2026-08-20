@@ -71,7 +71,7 @@
         "flow_kind": { "const": "VALUE_LINEAGE" }
       }
     },
-    "output-field-bindings.jsonl": { "type": "object", "required": ["binding_id", "task_id", "statement_id", "expression_id", "target_dataset_id", "target_field_id", "target_dataset", "target_field", "source_ordinal", "target_ordinal", "binding_method", "binding_status", "target_schema_status", "static_partition_columns", "evidence_refs"] },
+    "output-field-bindings.jsonl": { "type": "object", "required": ["binding_id", "task_id", "write_observation_id", "write_kind", "write_statement_id", "query_producer_statement_id", "statement_id", "expression_id", "target_dataset_id", "target_field_id", "target_dataset", "target_field", "source_ordinal", "target_ordinal", "binding_method", "binding_status", "target_schema_status", "static_partition_columns", "evidence_refs"] },
     "unknowns.jsonl": { "type": "object", "required": ["outcome_class", "reason_code", "message"] }
   }
 }

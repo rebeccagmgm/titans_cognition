@@ -177,6 +177,10 @@ export interface LineageHopEdgeRecord {
 export interface OutputFieldBindingRecord {
 	readonly binding_id: string;
 	readonly task_id: string;
+	readonly write_observation_id: string;
+	readonly write_kind: string;
+	readonly write_statement_id: string;
+	readonly query_producer_statement_id: string | null;
 	readonly statement_id: string;
 	readonly expression_id: string;
 	readonly target_dataset_id: string;
